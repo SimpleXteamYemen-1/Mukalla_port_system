@@ -76,10 +76,14 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-500/20 border-green-400/30 text-green-200';
-      case 'rejected': return 'bg-red-500/20 border-red-400/30 text-red-200';
-      case 'pending': return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
-      default: return 'bg-blue-500/20 border-blue-400/30 text-blue-200';
+      case 'approved':
+        return 'bg-green-100/50 border-green-200 text-green-700'; // Darker text for light mode
+      case 'rejected':
+        return 'bg-red-100/50 border-red-200 text-red-700';
+      case 'pending':
+        return 'bg-amber-100/50 border-amber-200 text-amber-700'; // Darker text for light mode
+      default:
+        return 'bg-blue-100/50 border-blue-200 text-blue-700';
     }
   };
 
@@ -97,12 +101,12 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-          <p className="text-blue-200">{t.subtitle}</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t.title}</h1>
+          <p className="text-[var(--text-secondary)]">{t.subtitle}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Clock className="w-5 h-5 text-blue-300" />
-          <span className="text-blue-200 text-sm">
+        <div className="flex items-center gap-3 bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-2xl px-4 py-2 shadow-sm">
+          <Clock className="w-5 h-5 text-[var(--primary)]" />
+          <span className="text-[var(--text-primary)] text-sm font-medium">
             {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
               weekday: 'long',
               year: 'numeric',
@@ -118,47 +122,47 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className={`bg-white/10 backdrop-blur-xl rounded-2xl border ${stat.borderColor} p-6 hover:scale-[1.02] transition-transform`}>
+            <div key={stat.label} className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 hover:border-[var(--primary)] transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group">
               <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg shadow-${stat.color.split(' ')[0].replace('from-', '')}/20`}>
                   <Icon className="w-6 h-6 text-white" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-green-400" />
+                <TrendingUp className="w-5 h-5 text-[var(--accent)]" />
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-blue-200 text-sm">{stat.label}</div>
+              <div className="text-3xl font-bold text-[var(--text-primary)] mb-1">{stat.value}</div>
+              <div className="text-[var(--text-secondary)] text-sm">{stat.label}</div>
             </div>
           );
         })}
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-        <h2 className="text-xl font-bold text-white mb-4">{t.quickActions}</h2>
+      <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t.quickActions}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={() => onNavigate('arrivals')}
-            className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-400/30 rounded-xl transition-all transform hover:scale-[1.02]"
+            className="flex items-center gap-4 p-4 border border-[var(--secondary)] hover:border-[var(--primary)] rounded-2xl transition-all duration-300 hover:shadow-md group bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-card)]"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
               <Plus className="w-6 h-6 text-white" />
             </div>
             <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
-              <div className="text-white font-semibold">{t.submitArrival}</div>
-              <div className="text-blue-200 text-sm">{t.submitArrivalDesc}</div>
+              <div className="text-[var(--text-primary)] font-bold group-hover:text-blue-600 transition-colors">{t.submitArrival}</div>
+              <div className="text-[var(--text-secondary)] text-sm">{t.submitArrivalDesc}</div>
             </div>
           </button>
 
           <button
             onClick={() => onNavigate('anchorage')}
-            className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-400/30 rounded-xl transition-all transform hover:scale-[1.02]"
+            className="flex items-center gap-4 p-4 border border-[var(--secondary)] hover:border-[var(--primary)] rounded-2xl transition-all duration-300 hover:shadow-md group bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-card)]"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-300">
               <Anchor className="w-6 h-6 text-white" />
             </div>
             <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
-              <div className="text-white font-semibold">{t.requestAnchorage}</div>
-              <div className="text-blue-200 text-sm">{t.requestAnchorageDesc}</div>
+              <div className="text-[var(--text-primary)] font-bold group-hover:text-blue-600 transition-colors">{t.requestAnchorage}</div>
+              <div className="text-[var(--text-secondary)] text-sm">{t.requestAnchorageDesc}</div>
             </div>
           </button>
         </div>
@@ -167,81 +171,71 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">{t.recentActivity}</h2>
+        <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">{t.recentActivity}</h2>
+            <button
+              onClick={() => onNavigate('tracker')}
+              className="text-[var(--accent)] text-sm hover:underline"
+            >
+              {t.viewAll}
+            </button>
+          </div>
           <div className="space-y-3">
             {recentActivity.length === 0 ? (
-              <div className="text-blue-200 text-sm p-4">{t.noRecentActivity || "No recent activity"}</div>
+              <div className="text-[var(--text-secondary)] text-sm p-4 text-center border border-dashed border-[var(--secondary)] rounded-xl">
+                {t.noRecentActivity || "No recent activity"}
+              </div>
             ) : recentActivity.map((activity) => (
-              <div key={activity.id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors">
+              <div key={activity.id} className="border border-[var(--secondary)] rounded-xl p-4 hover:border-[var(--primary)] hover:bg-[var(--bg-card)] transition-all duration-300 group">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="text-white font-medium mb-1">{activity.action}</div>
-                    <div className="text-blue-300 text-sm">{activity.details}</div>
+                    <div className="text-[var(--text-primary)] font-medium mb-1">{activity.action}</div>
+                    <div className="text-[var(--text-secondary)] text-sm">{activity.details}</div>
                   </div>
-                  {/* Status badge might not apply to general activity unless we map it */}
                 </div>
-                <div className="text-blue-200 text-xs">{new Date(activity.created_at).toLocaleString()}</div>
+                <div className="text-[var(--text-secondary)] text-xs mt-2 border-t border-[var(--secondary)] pt-2">
+                  {new Date(activity.created_at).toLocaleString()}
+                </div>
               </div>
             ))}
           </div>
-          <button
-            onClick={() => onNavigate('tracker')}
-            className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm transition-colors"
-          >
-            {t.viewAll}
-          </button>
         </div>
 
         {/* Upcoming Arrivals */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">{t.upcomingArrivals}</h2>
+        <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-[var(--text-primary)]">{t.upcomingArrivals}</h2>
+            <button
+              onClick={() => onNavigate('vessels')}
+              className="text-[var(--accent)] text-sm hover:underline"
+            >
+              {t.viewAll}
+            </button>
+          </div>
           <div className="space-y-3">
             {upcomingArrivals.length === 0 ? (
-              <div className="text-blue-200 text-sm p-4">{t.noUpcomingArrivals || "No upcoming arrivals"}</div>
+              <div className="text-[var(--text-secondary)] text-sm p-4 text-center border border-dashed border-[var(--secondary)] rounded-md">
+                {t.noUpcomingArrivals || "No upcoming arrivals"}
+              </div>
             ) : upcomingArrivals.map((arrival) => (
-              <div key={arrival.id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors">
+              <div key={arrival.id} className="border border-[var(--secondary)] rounded-xl p-4 hover:border-[var(--primary)] hover:bg-[var(--bg-card)] transition-all duration-300 group">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                      <Ship className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                      <Ship className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-white font-medium">{arrival.vessel_name}</div>
-                      <div className="text-blue-300 text-xs">{language === 'ar' ? 'الوصول المتوقع' : 'ETA'}: {arrival.eta}</div>
+                      <div className="text-[var(--text-primary)] font-medium">{arrival.vessel_name}</div>
+                      <div className="text-[var(--text-secondary)] text-xs">{language === 'ar' ? 'الوصول المتوقع' : 'ETA'}: {new Date(arrival.eta).toLocaleString()}</div>
                     </div>
                   </div>
-                  <span className={`inline-block px-3 py-1 rounded-lg text-xs border ${getStatusColor(arrival.status)}`}>
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs border font-medium ${getStatusColor(arrival.status)}`}>
                     {getStatusLabel(arrival.status)}
                   </span>
                 </div>
               </div>
             ))}
-          </div>
-          <button
-            onClick={() => onNavigate('vessels')}
-            className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm transition-colors"
-          >
-            {t.viewAll}
-          </button>
-        </div>
-      </div>
-
-      {/* Alerts Section */}
-      <div className="bg-red-500/10 backdrop-blur-xl rounded-2xl border border-red-400/30 p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
-            <AlertCircle className="w-6 h-6 text-red-300" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-red-200 font-semibold mb-2">{t.alertTitle}</h3>
-            <p className="text-red-200/80 text-sm mb-3">{t.alertMessage}</p>
-            <button
-              onClick={() => onNavigate('tracker')}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 rounded-lg text-red-200 text-sm transition-colors"
-            >
-              {t.viewDetails}
-            </button>
           </div>
         </div>
       </div>

@@ -21,16 +21,16 @@ export function Sidebar({ currentPage, onNavigate, language }: SidebarProps) {
   ];
 
   return (
-    <aside className={`fixed ${language === 'ar' ? 'right-0' : 'left-0'} top-0 h-screen w-64 bg-white/5 backdrop-blur-xl border-${language === 'ar' ? 'l' : 'r'} border-white/20 z-50`}>
+    <aside className={`fixed ${language === 'ar' ? 'right-0' : 'left-0'} top-0 h-screen w-64 bg-[var(--bg-primary)] border-${language === 'ar' ? 'l' : 'r'} border-[var(--secondary)] z-50 transition-colors duration-300`}>
       {/* Logo */}
-      <div className="p-6 border-b border-white/10">
+      <div className="p-6 border-b border-[var(--secondary)]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-            <Anchor className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg flex items-center justify-center">
+            <Anchor className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-white font-bold text-lg">{t.systemName}</h2>
-            <p className="text-blue-300 text-xs">{t.agentPortal}</p>
+            <h2 className="text-[var(--text-primary)] font-bold text-lg">{t.systemName}</h2>
+            <p className="text-[var(--text-secondary)] text-xs">{t.agentPortal}</p>
           </div>
         </div>
       </div>
@@ -41,19 +41,18 @@ export function Sidebar({ currentPage, onNavigate, language }: SidebarProps) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;
-            
+
             return (
               <li key={item.id}>
                 <button
                   onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                    isActive
-                      ? 'bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border border-blue-400/50 shadow-lg text-white'
-                      : 'bg-white/5 hover:bg-white/10 border border-transparent text-blue-200 hover:text-white'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--secondary)]/10 hover:text-[var(--text-primary)]'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="font-medium text-sm">{item.label}</span>
+                  <span className="text-sm">{item.label}</span>
                 </button>
               </li>
             );
@@ -62,14 +61,14 @@ export function Sidebar({ currentPage, onNavigate, language }: SidebarProps) {
       </nav>
 
       {/* Bottom Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
-        <div className="bg-blue-500/10 border border-blue-400/20 rounded-xl p-3">
-          <p className="text-blue-200 text-xs text-center">
-            {language === 'ar' 
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[var(--secondary)]">
+        <div className="bg-[var(--secondary)]/5 border border-[var(--secondary)]/20 rounded-md p-3">
+          <p className="text-[var(--text-secondary)] text-xs text-center">
+            {language === 'ar'
               ? 'نظام إدارة الموانئ البحرية'
               : 'Maritime Port Management'}
           </p>
-          <p className="text-blue-300/70 text-xs text-center mt-1">v2.0</p>
+          <p className="text-[var(--text-secondary)]/70 text-xs text-center mt-1">v2.0</p>
         </div>
       </div>
     </aside>

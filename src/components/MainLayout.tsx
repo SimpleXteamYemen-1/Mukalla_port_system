@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, LogOut, User as UserIcon, ChevronDown, Globe } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, ChevronDown, Globe, Settings, Sun, Moon } from 'lucide-react';
 import { User, Language } from '../App';
 import { Sidebar } from './Sidebar';
 import { translations } from '../utils/translations';
@@ -12,16 +12,20 @@ interface MainLayoutProps {
   children: React.ReactNode;
   currentPage: string;
   onNavigate: (page: string) => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
-export function MainLayout({ 
-  user, 
-  language, 
-  onToggleLanguage, 
-  onLogout, 
-  children, 
-  currentPage, 
-  onNavigate 
+export function MainLayout({
+  user,
+  language,
+  onToggleLanguage,
+  onLogout,
+  children,
+  currentPage,
+  onNavigate,
+  theme,
+  onToggleTheme
 }: MainLayoutProps) {
   const t = translations[language]?.agent || translations.en.agent;
   const [showNotifications, setShowNotifications] = useState(false);
@@ -35,44 +39,50 @@ export function MainLayout({
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'approved': return 'bg-green-500/20 border-green-400/30 text-green-200';
-      case 'rejected': return 'bg-red-500/20 border-red-400/30 text-red-200';
-      case 'pending': return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
-      default: return 'bg-blue-500/20 border-blue-400/30 text-blue-200';
+      case 'approved': return 'bg-green-500/10 border-green-500/20 text-green-500';
+      case 'rejected': return 'bg-red-500/10 border-red-500/20 text-red-500';
+      case 'pending': return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
+      default: return 'bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]';
     }
   };
 
   return (
-    <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-[#0A1628] via-[#153B5E] to-[#1A4D6F]">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-96 h-96 bg-blue-400 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-400 rounded-full blur-3xl animate-pulse"></div>
-        </div>
+    <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      {/* Background Decor */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[var(--primary)]/5 to-transparent opacity-50"></div>
       </div>
 
       {/* Sidebar */}
-      <Sidebar 
-        currentPage={currentPage} 
-        onNavigate={onNavigate} 
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={onNavigate}
         language={language}
       />
 
       {/* Main Content Area */}
-      <div className={`${language === 'ar' ? 'mr-64' : 'ml-64'} min-h-screen`}>
+      <div className={`${language === 'ar' ? 'mr-64' : 'ml-64'} min-h-screen transition-all duration-300`}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-white/10 backdrop-blur-xl border-b border-white/20">
+        <header className="sticky top-0 z-40 glass-panel border-b-0 shadow-sm">
           <div className="flex items-center justify-between px-6 py-4">
             {/* Page Title - will be set by each page */}
             <div className="flex-1"></div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-4">
+              {/* Theme Toggle */}
+              <button
+                onClick={onToggleTheme}
+                className="p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+
               {/* Language Toggle */}
               <button
                 onClick={onToggleLanguage}
-                className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all text-white"
+                className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
               >
                 <Globe className="w-4 h-4" />
                 <span className="text-sm">{language === 'ar' ? 'EN' : 'ع'}</span>
@@ -82,28 +92,32 @@ export function MainLayout({
               <div className="relative">
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all text-white"
+                  className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
                 >
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                 </button>
-
                 {/* Notifications Dropdown */}
                 {showNotifications && (
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-80 bg-[#0A1628]/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl overflow-hidden`}>
-                    <div className="p-4 border-b border-white/10">
-                      <h3 className="text-white font-semibold">{t.notifications}</h3>
+                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-80 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden`}>
+                    <div className="p-4 border-b border-[var(--secondary)]">
+                      <h3 className="font-semibold text-[var(--text-primary)]">{t.notifications}</h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {mockNotifications.map((notif) => (
-                        <div key={notif.id} className="p-4 border-b border-white/5 hover:bg-white/5 transition-colors">
+                        <div key={notif.id} className="p-4 border-b border-[var(--secondary)] hover:bg-[var(--secondary)]/5 transition-colors">
                           <div className={`inline-block px-2 py-1 rounded-lg text-xs mb-2 ${getNotificationColor(notif.type)}`}>
                             {notif.type}
                           </div>
-                          <p className="text-white text-sm mb-1">{notif.message}</p>
-                          <p className="text-blue-300 text-xs">{notif.time}</p>
+                          <p className="text-[var(--text-primary)] text-sm mb-1">{notif.message}</p>
+                          <p className="text-[var(--text-secondary)] text-xs">{notif.time}</p>
                         </div>
                       ))}
+                    </div>
+                    <div className="p-3 text-center border-t border-[var(--secondary)] bg-[var(--secondary)]/5">
+                      <button className="text-sm text-[var(--accent)] hover:text-[var(--primary)] font-medium">
+                        {t.viewAll}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -113,47 +127,57 @@ export function MainLayout({
               <div className="relative">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-3 px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 transition-all"
+                  className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
                   </div>
                   <div className={`${language === 'ar' ? 'text-right' : 'text-left'} hidden md:block`}>
-                    <div className="text-white text-sm font-medium">{user.name}</div>
-                    <div className="text-blue-300 text-xs">{t.agentRole}</div>
+                    <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
+                    <div className="text-[var(--text-secondary)] text-xs">{t.agentRole}</div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-white" />
+                  <ChevronDown className={`w-4 h-4 text-[var(--text-secondary)] transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Profile Dropdown */}
                 {showProfileMenu && (
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-64 bg-[#0A1628]/95 backdrop-blur-xl rounded-xl border border-white/20 shadow-2xl overflow-hidden`}>
-                    <div className="p-4 border-b border-white/10">
+                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-64 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden`}>
+                    <div className="p-4 border-b border-[var(--secondary)]">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                          <UserIcon className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
+                          <UserIcon className="w-6 h-6 text-[var(--primary)]" />
                         </div>
                         <div>
-                          <div className="text-white font-medium">{user.name}</div>
-                          <div className="text-blue-300 text-xs">{user.email}</div>
+                          <div className="text-[var(--text-primary)] font-medium">{user.name}</div>
+                          <div className="text-[var(--text-secondary)] text-xs">{user.email}</div>
                         </div>
                       </div>
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg ${
-                        user.verified 
-                          ? 'bg-green-500/20 border border-green-400/30 text-green-200' 
-                          : 'bg-amber-500/20 border border-amber-400/30 text-amber-200'
-                      }`}>
-                        <div className={`w-2 h-2 rounded-full ${user.verified ? 'bg-green-400' : 'bg-amber-400'} animate-pulse`}></div>
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg ${user.verified
+                        ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                        : 'bg-amber-500/10 border border-amber-500/20 text-amber-500'
+                        }`}>
+                        <div className={`w-2 h-2 rounded-full ${user.verified ? 'bg-green-500' : 'bg-amber-500'} animate-pulse`}></div>
                         <span className="text-xs">{user.verified ? t.verified : t.pendingVerification}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={onLogout}
-                      className="w-full flex items-center gap-2 px-4 py-3 hover:bg-red-500/10 text-red-300 hover:text-red-200 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span className="text-sm">{t.logout}</span>
-                    </button>
+                    <div className="p-2">
+                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors">
+                        <UserIcon className="w-4 h-4" />
+                        <span className="text-sm">{t.profile}</span>
+                      </button>
+                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors">
+                        <Settings className="w-4 h-4" />
+                        <span className="text-sm">{t.settings}</span>
+                      </button>
+                      <div className="my-1 border-t border-[var(--secondary)]"></div>
+                      <button
+                        onClick={onLogout}
+                        className="w-full flex items-center gap-2 px-4 py-3 hover:bg-red-500/10 text-red-500 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span className="text-sm">{t.logout}</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

@@ -48,26 +48,26 @@ export function CargoManifests({ language }: CargoManifestsProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle2 className="w-5 h-5 text-green-400" />;
+        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
       case 'rejected':
-        return <XCircle className="w-5 h-5 text-red-400" />;
+        return <XCircle className="w-5 h-5 text-red-600" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-amber-400 animate-pulse" />;
+        return <Clock className="w-5 h-5 text-amber-600 animate-pulse" />;
       default:
-        return <FileText className="w-5 h-5 text-blue-400" />;
+        return <FileText className="w-5 h-5 text-blue-600" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-500/20 border-green-400/30 text-green-200';
+        return 'bg-green-100/50 border-green-200 text-green-700';
       case 'rejected':
-        return 'bg-red-500/20 border-red-400/30 text-red-200';
+        return 'bg-red-100/50 border-red-200 text-red-700';
       case 'pending':
-        return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
+        return 'bg-amber-100/50 border-amber-200 text-amber-700';
       default:
-        return 'bg-blue-500/20 border-blue-400/30 text-blue-200';
+        return 'bg-blue-100/50 border-blue-200 text-blue-700';
     }
   };
 
@@ -85,12 +85,12 @@ export function CargoManifests({ language }: CargoManifestsProps) {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-          <p className="text-blue-200">{t.subtitle}</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t.title}</h1>
+          <p className="text-[var(--text-secondary)]">{t.subtitle}</p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] hover:shadow-lg hover:shadow-[var(--primary)]/20 rounded-xl text-white font-bold transition-all duration-300 transform hover:-translate-y-0.5"
         >
           <Upload className="w-5 h-5" />
           {t.uploadManifest}
@@ -99,25 +99,25 @@ export function CargoManifests({ language }: CargoManifestsProps) {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-4">
-          <div className="text-blue-300 text-sm mb-1">{t.totalManifests}</div>
-          <div className="text-2xl font-bold text-white">{manifests.length}</div>
+        <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-4 shadow-sm">
+          <div className="text-[var(--text-secondary)] text-sm mb-1">{t.totalManifests}</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)]">{manifests.length}</div>
         </div>
-        <div className="bg-green-500/10 backdrop-blur-xl rounded-xl border border-green-400/30 p-4">
-          <div className="text-green-300 text-sm mb-1">{t.approved}</div>
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-green-500/10 rounded-2xl border border-green-500/20 p-4">
+          <div className="text-green-700 text-sm mb-1">{t.approved}</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)]">
             {manifests.filter(m => m.status === 'approved').length}
           </div>
         </div>
-        <div className="bg-amber-500/10 backdrop-blur-xl rounded-xl border border-amber-400/30 p-4">
-          <div className="text-amber-300 text-sm mb-1">{t.pending}</div>
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-amber-500/10 rounded-2xl border border-amber-500/20 p-4">
+          <div className="text-amber-700 text-sm mb-1">{t.pending}</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)]">
             {manifests.filter((m: any) => m.status === 'pending').length}
           </div>
         </div>
-        <div className="bg-red-500/10 backdrop-blur-xl rounded-xl border border-red-400/30 p-4">
-          <div className="text-red-300 text-sm mb-1">{t.rejected}</div>
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-red-500/10 rounded-2xl border border-red-500/20 p-4">
+          <div className="text-red-700 text-sm mb-1">{t.rejected}</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)]">
             {manifests.filter((m: any) => m.status === 'rejected').length}
           </div>
         </div>
@@ -125,17 +125,17 @@ export function CargoManifests({ language }: CargoManifestsProps) {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#0A1628] rounded-2xl border border-white/20 p-6 max-w-md w-full shadow-2xl">
-            <h2 className="text-xl font-bold text-white mb-4">{t.uploadManifest}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 max-w-md w-full shadow-2xl">
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t.uploadManifest}</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-white text-sm font-medium mb-2">{t.selectVessel}</label>
+                <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.selectVessel}</label>
                 <select
                   value={selectedVessel}
                   onChange={(e) => setSelectedVessel(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-green-400 transition-all"
+                  className="w-full px-4 py-3 bg-transparent border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]"
                 >
                   <option value="">{t.selectVesselPlaceholder}</option>
                   {vessels.map(v => (
@@ -145,8 +145,8 @@ export function CargoManifests({ language }: CargoManifestsProps) {
               </div>
 
               <div>
-                <label className="block text-white text-sm font-medium mb-2">{t.uploadFile}</label>
-                <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center hover:border-green-400/50 transition-colors cursor-pointer relative">
+                <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.uploadFile}</label>
+                <div className="border-2 border-dashed border-[var(--secondary)] rounded-xl p-8 text-center hover:border-[var(--primary)] transition-colors cursor-pointer relative bg-[var(--bg-card)]/50">
                   <input
                     type="file"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -156,31 +156,31 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                       }
                     }}
                   />
-                  <Upload className="w-12 h-12 text-blue-300 mx-auto mb-3" />
-                  <p className="text-white text-sm mb-1">{selectedFile ? selectedFile.name : t.dragDrop}</p>
-                  <p className="text-blue-300 text-xs">{t.fileFormats}</p>
+                  <Upload className="w-12 h-12 text-[var(--text-secondary)] mx-auto mb-3" />
+                  <p className="text-[var(--text-primary)] text-sm mb-1">{selectedFile ? selectedFile.name : t.dragDrop}</p>
+                  <p className="text-[var(--text-secondary)] text-xs">{t.fileFormats}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">{t.containers}</label>
+                  <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.containers}</label>
                   <input
                     type="number"
                     value={containerCount}
                     onChange={(e) => setContainerCount(e.target.value)}
                     placeholder="e.g. 100"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-green-400 transition-all"
+                    className="w-full px-4 py-3 bg-transparent border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">{t.totalWeight}</label>
+                  <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.totalWeight}</label>
                   <input
                     type="number"
                     value={totalWeight}
                     onChange={(e) => setTotalWeight(e.target.value)}
                     placeholder="e.g. 5000"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-green-400 transition-all"
+                    className="w-full px-4 py-3 bg-transparent border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                   />
                 </div>
               </div>
@@ -219,7 +219,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                   }
                 }}
                 disabled={!selectedVessel || uploading}
-                className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-semibold transition-all"
+                className="flex-1 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] hover:shadow-lg hover:shadow-[var(--primary)]/20 disabled:bg-gray-500 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-300"
               >
                 {uploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t.upload}
               </button>
@@ -228,7 +228,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                   setShowUploadModal(false);
                   setSelectedVessel('');
                 }}
-                className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl text-white transition-all"
+                className="px-6 py-3 border border-[var(--secondary)] hover:border-[var(--primary)] rounded-xl text-[var(--text-primary)] transition-all hover:bg-[var(--secondary)]/10"
               >
                 {t.cancel}
               </button>
@@ -240,53 +240,53 @@ export function CargoManifests({ language }: CargoManifestsProps) {
       {/* Manifests List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center text-blue-200 py-8">
+          <div className="text-center text-[var(--text-secondary)] py-8">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
             Loading...
           </div>
         ) : manifests.length === 0 ? (
-          <div className="text-center text-blue-200 py-8 border border-white/10 rounded-2xl bg-white/5">
+          <div className="text-center text-[var(--text-secondary)] py-8 border border-[var(--secondary)] rounded-md bg-[var(--bg-primary)]">
             No manifests found.
           </div>
         ) : manifests.map((manifest: any) => (
-          <div key={manifest.id} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+          <div key={manifest.id} className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 hover:shadow-lg transition-all duration-300">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-400/20">
                   {getStatusIcon(manifest.status)}
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg mb-1">{manifest.vessel?.name || 'Unknown Vessel'}</h3>
-                  <p className="text-blue-300 text-sm">{t.manifestId}: {manifest.id}</p>
+                  <h3 className="text-[var(--text-primary)] font-bold text-lg mb-1">{manifest.vessel?.name || 'Unknown Vessel'}</h3>
+                  <p className="text-[var(--text-secondary)] text-sm">{t.manifestId}: {manifest.id}</p>
                 </div>
               </div>
-              <span className={`inline-block px-4 py-2 rounded-lg text-sm font-medium border ${getStatusColor(manifest.status)}`}>
+              <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(manifest.status)}`}>
                 {getStatusLabel(manifest.status)}
               </span>
             </div>
 
             {/* Manifest Info Grid */}
             <div className="grid md:grid-cols-5 gap-4 mb-4">
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.uploadDate}</div>
-                <div className="text-white font-medium text-sm">{manifest.uploadDate}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.uploadDate}</div>
+                <div className="text-[var(--text-primary)] font-medium text-sm">{manifest.uploadDate}</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.containers}</div>
-                <div className="text-white font-medium text-sm">{manifest.containers}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.containers}</div>
+                <div className="text-[var(--text-primary)] font-medium text-sm">{manifest.containers}</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.totalWeight}</div>
-                <div className="text-white font-medium text-sm">{manifest.totalWeight}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.totalWeight}</div>
+                <div className="text-[var(--text-primary)] font-medium text-sm">{manifest.totalWeight}</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.fileSize}</div>
-                <div className="text-white font-medium text-sm">{manifest.file_size || 'Unknown'}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.fileSize}</div>
+                <div className="text-[var(--text-primary)] font-medium text-sm">{manifest.file_size || 'Unknown'}</div>
               </div>
               {manifest.approvedBy && (
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="text-blue-300 text-xs mb-1">{t.approvedBy}</div>
-                  <div className="text-white font-medium text-sm">{manifest.approvedBy}</div>
+                <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                  <div className="text-[var(--text-secondary)] text-xs mb-1">{t.approvedBy}</div>
+                  <div className="text-[var(--text-primary)] font-medium text-sm">{manifest.approvedBy}</div>
                 </div>
               )}
             </div>
@@ -309,11 +309,11 @@ export function CargoManifests({ language }: CargoManifestsProps) {
 
             {/* Actions */}
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-lg text-blue-200 hover:text-white transition-all">
+              <button className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] hover:border-[var(--primary)] hover:shadow-md transition-all">
                 <Eye className="w-4 h-4" />
                 <span className="text-sm">{t.view}</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 rounded-lg text-green-200 hover:text-white transition-all">
+              <button className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-xl text-green-700 hover:bg-green-100 hover:shadow-md transition-all">
                 <Download className="w-4 h-4" />
                 <span className="text-sm">{t.download}</span>
               </button>

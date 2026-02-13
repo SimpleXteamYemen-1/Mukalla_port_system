@@ -19,6 +19,7 @@ export const translations = {
         emailInvalid: 'البريد الإلكتروني غير صالح',
         passwordRequired: 'كلمة المرور مطلوبة',
         passwordTooShort: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+        general: 'حدث خطأ أثناء تسجيل الدخول',
       },
     },
     register: {
@@ -99,6 +100,9 @@ export const translations = {
         cargoManifests: 'بيانات الشحن',
         requestStatusTracker: 'متابعة الطلبات',
       },
+      viewAll: 'عرض الكل',
+      profile: 'الملف الشخصي',
+      settings: 'الإعدادات',
       dashboard: {
         title: 'لوحة التحكم',
         subtitle: 'نظرة عامة على جميع العمليات والطلبات',
@@ -554,6 +558,7 @@ export const translations = {
         emailInvalid: 'Email is invalid',
         passwordRequired: 'Password is required',
         passwordTooShort: 'Password must be at least 6 characters',
+        general: 'An error occurred during login',
       },
     },
     register: {
@@ -634,6 +639,9 @@ export const translations = {
         cargoManifests: 'Cargo Manifests',
         requestStatusTracker: 'Request Status Tracker',
       },
+      viewAll: 'View All',
+      profile: 'Profile',
+      settings: 'Settings',
       dashboard: {
         title: 'Dashboard',
         subtitle: 'Overview of all operations and requests',

@@ -82,37 +82,34 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
   const isFormValid = email && password && password.length >= 6;
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
-      {/* Maritime Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628] via-[#153B5E] to-[#1A4D6F]">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-20 w-96 h-96 bg-blue-400 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-400 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4 bg-[var(--bg-primary)]">
+      {/* Background Decor */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-[var(--primary)]/5 blur-3xl"></div>
+        <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-[var(--secondary)]/5 blur-3xl"></div>
       </div>
 
       {/* Language Toggle */}
       <button
         onClick={onToggleLanguage}
-        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/20 transition-all text-white z-10"
+        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-[var(--bg-primary)] rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)] z-10 shadow-sm"
       >
-        <Globe className="w-5 h-5" />
-        <span className="font-medium">{language === 'ar' ? 'English' : 'العربية'}</span>
+        <Globe className="w-4 h-4" />
+        <span className="font-medium text-sm">{language === 'ar' ? 'English' : 'العربية'}</span>
       </button>
 
       {/* Login Card */}
-      <div className="relative w-full max-w-md">
-        {/* Glassmorphic Container */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 md:p-10">
+      <div className="relative w-full max-w-md z-10">
+        <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl p-8 md:p-10">
           {/* Logo & Title */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl mb-4 shadow-lg">
-              <Anchor className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--primary)]/10 text-[var(--primary)] rounded-xl mb-4">
+              <Anchor className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] mb-2">
               {t.title}
             </h1>
-            <p className="text-blue-200 text-sm">
+            <p className="text-[var(--text-secondary)] text-sm">
               {t.subtitle}
             </p>
           </div>
@@ -121,69 +118,69 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Field */}
             <div>
-              <label className="block text-white text-sm font-medium mb-2">
+              <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">
                 {t.email}
               </label>
               <div className="relative">
-                <div className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-blue-200`}>
+                <div className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-[var(--text-secondary)]`}>
                   <Mail className="w-5 h-5" />
                 </div>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full ${language === 'ar' ? 'pr-11 text-right' : 'pl-11'} py-3 bg-white/10 border ${errors.email ? 'border-red-400' : 'border-white/20'} rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:border-blue-400 focus:bg-white/15 transition-all backdrop-blur-sm`}
+                  className={`w-full ${language === 'ar' ? 'pr-11 text-right' : 'pl-11'} py-3 bg-[var(--bg-primary)] border ${errors.email ? 'border-red-500' : 'border-[var(--secondary)]'} rounded-md text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all`}
                   placeholder={t.emailPlaceholder}
                 />
               </div>
               {errors.email && (
-                <p className="text-red-300 text-xs mt-1">{errors.email}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
               )}
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-white text-sm font-medium mb-2">
+              <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">
                 {t.password}
               </label>
               <div className="relative">
-                <div className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-blue-200`}>
+                <div className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-[var(--text-secondary)]`}>
                   <Lock className="w-5 h-5" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full ${language === 'ar' ? 'pr-11 pl-11 text-right' : 'pl-11 pr-11'} py-3 bg-white/10 border ${errors.password ? 'border-red-400' : 'border-white/20'} rounded-xl text-white placeholder-blue-200/50 focus:outline-none focus:border-blue-400 focus:bg-white/15 transition-all backdrop-blur-sm`}
+                  className={`w-full ${language === 'ar' ? 'pr-11 pl-11 text-right' : 'pl-11 pr-11'} py-3 bg-[var(--bg-primary)] border ${errors.password ? 'border-red-500' : 'border-[var(--secondary)]'} rounded-md text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all`}
                   placeholder={t.passwordPlaceholder}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute ${language === 'ar' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-blue-200 hover:text-white transition-colors`}
+                  className={`absolute ${language === 'ar' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors`}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-300 text-xs mt-1">{errors.password}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
               )}
             </div>
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex items-center gap-2 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-2 focus:ring-blue-400 focus:ring-offset-0"
+                  className="w-4 h-4 rounded border-[var(--secondary)] bg-[var(--bg-primary)] text-[var(--primary)] focus:ring-[var(--accent)] focus:ring-offset-0"
                 />
-                <span className="text-blue-100 text-sm">{t.rememberMe}</span>
+                <span className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] text-sm transition-colors">{t.rememberMe}</span>
               </label>
               <button
                 type="button"
-                className="text-blue-300 hover:text-white text-sm transition-colors"
+                className="text-[var(--accent)] hover:text-[var(--primary)] text-sm transition-colors hover:underline"
               >
                 {t.forgotPassword}
               </button>
@@ -191,7 +188,7 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
 
             {/* Error Message */}
             {errors.general && (
-              <div className="bg-red-500/20 border border-red-400/30 rounded-xl p-3 text-red-200 text-sm">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-md p-3 text-red-500 text-sm">
                 {errors.general}
               </div>
             )}
@@ -200,13 +197,13 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
             <button
               type="submit"
               disabled={!isFormValid || isLoading}
-              className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] disabled:transform-none"
+              className="w-full py-3.5 bg-[var(--primary)] hover:bg-[var(--accent)] disabled:bg-[var(--secondary)] disabled:cursor-not-allowed text-white font-semibold rounded-md shadow-sm transition-all flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2">
+                <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                   <span>{t.loggingIn}</span>
-                </div>
+                </>
               ) : (
                 t.loginButton
               )}
@@ -215,11 +212,11 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
 
           {/* Register Link */}
           <div className="mt-6 text-center">
-            <p className="text-blue-200 text-sm">
+            <p className="text-[var(--text-secondary)] text-sm">
               {t.noAccount}{' '}
               <button
                 onClick={onNavigateToRegister}
-                className="text-white font-semibold hover:text-cyan-300 transition-colors"
+                className="text-[var(--primary)] font-semibold hover:text-[var(--accent)] hover:underline transition-colors"
               >
                 {t.createAccount}
               </button>
@@ -229,7 +226,7 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-blue-200/70 text-xs">
+          <p className="text-[var(--text-secondary)]/70 text-xs">
             {t.footer}
           </p>
         </div>

@@ -85,13 +85,13 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
     switch (status) {
       case 'approved':
       case 'completed':
-        return <CheckCircle2 className="w-5 h-5 text-green-400" />;
+        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
       case 'rejected':
-        return <XCircle className="w-5 h-5 text-red-400" />;
+        return <XCircle className="w-5 h-5 text-red-600" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-amber-400 animate-pulse" />;
+        return <Clock className="w-5 h-5 text-amber-600 animate-pulse" />;
       default:
-        return <AlertCircle className="w-5 h-5 text-blue-400" />;
+        return <AlertCircle className="w-5 h-5 text-blue-600" />;
     }
   };
 
@@ -99,15 +99,15 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
     switch (status) {
       case 'approved':
       case 'completed':
-        return 'bg-green-500/20 border-green-400/30 text-green-200';
+        return 'bg-green-100/50 border-green-200 text-green-700';
       case 'rejected':
-        return 'bg-red-500/20 border-red-400/30 text-red-200';
+        return 'bg-red-100/50 border-red-200 text-red-700';
       case 'pending':
-        return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
+        return 'bg-amber-100/50 border-amber-200 text-amber-700';
       case 'cancelled':
-        return 'bg-gray-500/20 border-gray-400/30 text-gray-200';
+        return 'bg-gray-100/50 border-gray-200 text-gray-700';
       default:
-        return 'bg-blue-500/20 border-blue-400/30 text-blue-200';
+        return 'bg-blue-100/50 border-blue-200 text-blue-700';
     }
   };
 
@@ -127,13 +127,13 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-          <p className="text-blue-200">{t.subtitle}</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t.title}</h1>
+          <p className="text-[var(--text-secondary)]">{t.subtitle}</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           disabled={approvedVessels.length === 0}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] disabled:transform-none"
+          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-lg hover:shadow-blue-500/20 disabled:bg-gray-500 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-300 transform hover:-translate-y-0.5"
         >
           <Plus className="w-5 h-5" />
           {t.submitNew}
@@ -141,29 +141,29 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       </div>
 
       {/* Dependency Notice */}
-      <div className="bg-blue-500/10 backdrop-blur-xl rounded-2xl border border-blue-400/30 p-6">
+      <div className="bg-[var(--secondary)]/10 rounded-2xl border border-[var(--secondary)] p-6 shadow-sm">
         <div className="flex items-start gap-4">
-          <AlertCircle className="w-6 h-6 text-blue-300 flex-shrink-0" />
+          <AlertCircle className="w-6 h-6 text-[var(--accent)] flex-shrink-0" />
           <div>
-            <h3 className="text-blue-200 font-semibold mb-2">{t.dependencyTitle}</h3>
-            <p className="text-blue-200/80 text-sm">{t.dependencyMessage}</p>
+            <h3 className="text-[var(--text-primary)] font-semibold mb-2">{t.dependencyTitle}</h3>
+            <p className="text-[var(--text-secondary)] text-sm">{t.dependencyMessage}</p>
           </div>
         </div>
       </div>
 
       {/* Submission Form */}
       {showForm && (
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">{t.formTitle}</h2>
+        <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 shadow-lg shadow-black/5">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t.formTitle}</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               {/* Vessel Selection - Only Approved Arrivals */}
               <div>
-                <label className="block text-white text-sm font-medium mb-2">{t.selectVessel}</label>
+                <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.selectVessel}</label>
                 <select
                   value={formData.vesselId}
                   onChange={(e) => setFormData({ ...formData, vesselId: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white/10 border ${errors.vessel ? 'border-red-400' : 'border-white/20'} rounded-xl text-white focus:outline-none focus:border-purple-400 transition-all`}
+                  className={`w-full px-4 py-3 bg-transparent border ${errors.vessel ? 'border-red-400' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
                 >
                   <option value="">{t.selectVesselPlaceholder}</option>
                   {approvedVessels.map(v => (
@@ -177,11 +177,11 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
 
               {/* Duration */}
               <div>
-                <label className="block text-white text-sm font-medium mb-2">{t.duration}</label>
+                <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.duration}</label>
                 <select
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className={`w-full px-4 py-3 bg-white/10 border ${errors.duration ? 'border-red-400' : 'border-white/20'} rounded-xl text-white focus:outline-none focus:border-purple-400 transition-all`}
+                  className={`w-full px-4 py-3 bg-transparent border ${errors.duration ? 'border-red-400' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
                 >
                   <option value="">{t.selectDuration}</option>
                   <option value="24">24 {t.hours}</option>
@@ -194,11 +194,11 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
 
               {/* Preferred Location */}
               <div>
-                <label className="block text-white text-sm font-medium mb-2">{t.preferredLocation}</label>
+                <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.preferredLocation}</label>
                 <select
                   value={formData.preferredLocation}
                   onChange={(e) => setFormData({ ...formData, preferredLocation: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-purple-400 transition-all"
+                  className="w-full px-4 py-3 bg-transparent border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]"
                 >
                   <option value="">{t.selectLocation}</option>
                   <option value="zone-a">{t.zoneA}</option>
@@ -209,13 +209,13 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
 
               {/* Reason */}
               <div className="md:col-span-2">
-                <label className="block text-white text-sm font-medium mb-2">{t.reason}</label>
+                <label className="block text-[var(--text-primary)] text-sm font-medium mb-2">{t.reason}</label>
                 <textarea
                   value={formData.reason}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                   placeholder={t.reasonPlaceholder}
                   rows={3}
-                  className={`w-full px-4 py-3 bg-white/10 border ${errors.reason ? 'border-red-400' : 'border-white/20'} rounded-xl text-white placeholder-blue-300/50 focus:outline-none focus:border-purple-400 transition-all resize-none`}
+                  className={`w-full px-4 py-3 bg-transparent border ${errors.reason ? 'border-red-400' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all resize-none`}
                 />
                 {errors.reason && <p className="text-red-300 text-xs mt-1">{errors.reason}</p>}
               </div>
@@ -224,7 +224,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
             <div className="flex gap-3">
               <button
                 type="submit"
-                className="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl text-white font-semibold transition-all"
+                className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-lg hover:shadow-blue-500/20 rounded-xl text-white font-bold transition-all duration-300"
               >
                 {t.submitButton}
               </button>
@@ -234,7 +234,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                   setShowForm(false);
                   setErrors({});
                 }}
-                className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/20 rounded-xl text-white transition-all"
+                className="px-6 py-3 border border-[var(--secondary)] hover:border-[var(--primary)] rounded-xl text-[var(--text-primary)] transition-all hover:bg-[var(--secondary)]/10"
               >
                 {t.cancel}
               </button>
@@ -246,49 +246,49 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       {/* Requests List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center text-blue-200 py-8">
+          <div className="text-center text-[var(--text-secondary)] py-8">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
             {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </div>
         ) : requests.length === 0 ? (
-          <div className="text-center text-blue-200 py-8 border border-white/10 rounded-2xl bg-white/5">
+          <div className="text-center text-[var(--text-secondary)] py-8 border border-[var(--secondary)] rounded-md bg-[var(--bg-primary)]">
             {language === 'ar' ? 'لا توجد طلبات رسو.' : 'No anchorage requests found.'}
           </div>
         ) : requests.map((request) => (
-          <div key={request.id} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+          <div key={request.id} className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 hover:shadow-lg transition-all duration-300">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-400/20">
                   {getStatusIcon(request.status)}
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-lg mb-1">{request.vessel?.name || 'Unknown Vessel'}</h3>
-                  <p className="text-blue-300 text-sm">
+                  <h3 className="text-[var(--text-primary)] font-bold text-lg mb-1">{request.vessel?.name || 'Unknown Vessel'}</h3>
+                  <p className="text-[var(--text-secondary)] text-sm">
                     {t.requestId}: {request.id}
                   </p>
                 </div>
               </div>
-              <span className={`inline-block px-4 py-2 rounded-lg text-sm font-medium border ${getStatusColor(request.status)}`}>
+              <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(request.status)}`}>
                 {getStatusLabel(request.status)}
               </span>
             </div>
 
             <div className="grid md:grid-cols-4 gap-4 mb-4">
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.duration}</div>
-                <div className="text-white font-medium">{request.duration}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.duration}</div>
+                <div className="text-[var(--text-primary)] font-medium">{request.duration}</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.location}</div>
-                <div className="text-white font-medium">{request.location || 'N/A'}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.location}</div>
+                <div className="text-[var(--text-primary)] font-medium">{request.location || 'N/A'}</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.submittedOn}</div>
-                <div className="text-white font-medium">{new Date(request.created_at).toLocaleDateString()}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.submittedOn}</div>
+                <div className="text-[var(--text-primary)] font-medium">{new Date(request.created_at).toLocaleDateString()}</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-blue-300 text-xs mb-1">{t.status}</div>
-                <div className="text-white font-medium capitalize">{request.status}</div>
+              <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
+                <div className="text-[var(--text-secondary)] text-xs mb-1">{t.status}</div>
+                <div className="text-[var(--text-primary)] font-medium capitalize">{request.status}</div>
               </div>
             </div>
 
@@ -298,24 +298,24 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                 <div className="flex items-start gap-3">
                   <XCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-red-200/80 text-sm mb-1">{request.rejection_reason}</div>
+                    <div className="text-red-700 text-sm mb-1">{request.rejection_reason}</div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Simple Status Info instead of fake timeline */}
-            <div className="bg-white/5 rounded-xl p-4">
-              <h4 className="text-white font-semibold text-sm mb-4">{t.approvalProcess}</h4>
+            <div className="border border-[var(--secondary)] rounded-xl p-4 bg-[var(--bg-primary)]">
+              <h4 className="text-[var(--text-primary)] font-semibold text-sm mb-4">{t.approvalProcess}</h4>
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
                   <div className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-green-500/20 border-2 border-green-400">
                     <CheckCircle2 className="w-4 h-4 text-green-400" />
                   </div>
                   <div className="flex-1 pb-2">
-                    <div className="font-medium mb-1 text-white">Submitted</div>
-                    <div className="text-blue-300 text-xs mb-1">{new Date(request.created_at).toLocaleString()}</div>
-                    <div className="text-blue-300/70 text-xs">Agent</div>
+                    <div className="font-medium mb-1 text-[var(--text-primary)]">Submitted</div>
+                    <div className="text-[var(--text-secondary)] text-xs mb-1">{new Date(request.created_at).toLocaleString()}</div>
+                    <div className="text-[var(--text-secondary)]/70 text-xs">Agent</div>
                   </div>
                 </div>
 
@@ -326,10 +326,10 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                       {request.status === 'approved' ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />}
                     </div>
                     <div className="flex-1 pb-2">
-                      <div className={`font-medium mb-1 ${request.status === 'approved' ? 'text-white' : 'text-red-200'}`}>
+                      <div className={`font-medium mb-1 ${request.status === 'approved' ? 'text-[var(--text-primary)]' : 'text-red-700'}`}>
                         {request.status === 'approved' ? 'Approved' : 'Rejected'}
                       </div>
-                      <div className="text-blue-300 text-xs mb-1">{new Date(request.updated_at).toLocaleString()}</div>
+                      <div className="text-[var(--text-secondary)] text-xs mb-1">{new Date(request.updated_at).toLocaleString()}</div>
                     </div>
                   </div>
                 )}
