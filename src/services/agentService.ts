@@ -133,9 +133,19 @@ export const agentService = {
         }
     },
 
+    getTrackerData: async () => {
+        try {
+            const response = await api.get('/agent/tracker');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching tracker data', error);
+            return [];
+        }
+    },
+
     uploadManifest: async (formData: FormData) => {
         try {
-            const response = await api.post('/agent/manifest', formData, {
+            const response = await api.post('/agent/manifests', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { DashboardRouter } from './components/DashboardRouter';
@@ -18,6 +18,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'dashboard'>('login');
   const [language, setLanguage] = useState<Language>('ar');
   const [user, setUser] = useState<User | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -38,8 +39,23 @@ function App() {
     setLanguage(prev => prev === 'ar' ? 'en' : 'ar');
   };
 
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.remove('light');
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
   return (
-    <div className={language === 'ar' ? 'rtl' : 'ltr'} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`${language === 'ar' ? 'rtl' : 'ltr'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {currentPage === 'login' && (
         <LoginPage
           language={language}
@@ -62,6 +78,8 @@ function App() {
           language={language}
           onLogout={handleLogout}
           onToggleLanguage={toggleLanguage}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
       )}
     </div>

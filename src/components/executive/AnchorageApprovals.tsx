@@ -282,11 +282,10 @@ export function AnchorageApprovals({ language }: AnchorageApprovalsProps) {
               <button
                 onClick={() => handleApprove(request.id)}
                 disabled={!request.canApprove}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${
-                  request.canApprove
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all ${request.canApprove
                     ? 'bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 text-green-200 hover:text-white transform hover:scale-[1.02] cursor-pointer'
                     : 'bg-gray-500/10 border border-gray-400/20 text-gray-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 <CheckCircle2 className="w-5 h-5" />
                 {t.approve}
@@ -308,7 +307,7 @@ export function AnchorageApprovals({ language }: AnchorageApprovalsProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#0A1628] rounded-2xl border border-white/20 p-6 max-w-md w-full shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-4">{t.rejectRequest}</h2>
-            
+
             <div className="mb-4">
               <label className="block text-white text-sm font-medium mb-2">{t.justification}</label>
               <textarea

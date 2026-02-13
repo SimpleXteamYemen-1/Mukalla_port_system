@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/manifests', [AgentController::class, 'getManifests']);
         Route::post('/agent/anchorage', [AgentController::class, 'submitAnchorageRequest']);
         Route::get('/agent/anchorage', [AgentController::class, 'getAnchorageRequests']);
+        Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
     });
 
     // Port Officer Routes
@@ -69,6 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/executive/reports', [ExecutiveController::class, 'getReports']);
         Route::get('/executive/dashboard', [ExecutiveController::class, 'getDashboardStats']);
         Route::get('/executive/approvals', [ExecutiveController::class, 'getPendingApprovals']);
+        Route::get('/executive/anchorage/requests', [ExecutiveController::class, 'getAnchorageRequests']);
+        Route::post('/executive/anchorage/{id}/approve', [ExecutiveController::class, 'approveAnchorage']);
+        Route::post('/executive/anchorage/{id}/reject', [ExecutiveController::class, 'rejectAnchorage']);
         Route::get('/executive/decisions', [ExecutiveController::class, 'getRecentDecisions']);
     });
 });
