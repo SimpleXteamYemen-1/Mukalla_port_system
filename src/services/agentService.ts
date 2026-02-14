@@ -50,14 +50,8 @@ export interface CargoManifest {
 export const agentService = {
     getStats: async () => {
         try {
-            const vesselsResponse = await api.get('/agent/vessels');
-            const vessels = vesselsResponse.data;
-            return {
-                activeVessels: vessels.length,
-                pendingClearances: 0,
-                completedOperations: 0,
-                notifications: 0,
-            };
+            const response = await api.get('/agent/stats');
+            return response.data;
         } catch (error) {
             console.error('Error fetching stats', error);
             return {

@@ -21,56 +21,93 @@ export function Sidebar({ currentPage, onNavigate, language }: SidebarProps) {
   ];
 
   return (
-    <aside className={`fixed ${language === 'ar' ? 'right-0' : 'left-0'} top-0 h-screen w-64 bg-[var(--bg-primary)] border-${language === 'ar' ? 'l' : 'r'} border-[var(--secondary)] z-50 transition-colors duration-300`}>
-      {/* Logo */}
-      <div className="p-6 border-b border-[var(--secondary)]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg flex items-center justify-center">
-            <Anchor className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-[var(--text-primary)] font-bold text-lg">{t.systemName}</h2>
-            <p className="text-[var(--text-secondary)] text-xs">{t.agentPortal}</p>
+    <>
+      {/* Background blur backdrop for mobile if needed, but for desktop we use a floating sidebar */}
+      <aside
+        className={`fixed top-4 bottom-4 w-64 z-50 transition-all duration-300 flex flex-col
+          ${language === 'ar' ? 'right-4' : 'left-4'}
+          bg-[var(--sidebar-bg)] backdrop-blur-xl border border-[var(--sidebar-border)] rounded-3xl shadow-2xl shadow-black/20`}
+      >
+        {/* Logo */}
+        <div className="p-6 pb-2 border-b border-white/5">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="relative w-12 h-12 flex-shrink-0">
+              <div className="absolute inset-0 bg-blue-500 rounded-xl blur opacity-50"></div>
+              <div className="relative w-full h-full bg-gradient-to-br from-blue-500 to-blue-700 text-white rounded-xl flex items-center justify-center shadow-lg border border-white/20">
+                <Anchor className="w-6 h-6" />
+              </div>
+            </div>
+            <div className="overflow-hidden">
+              <h2 className={`font-bold text-lg leading-tight tracking-wide truncate ${language === 'ar' ? 'font-sans' : ''} text-[var(--sidebar-fg)]`}>{t.systemName}</h2>
+              <p className="text-[var(--sidebar-fg)]/60 text-xs font-medium uppercase tracking-wider mt-0.5">{t.agentPortal}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation Menu */}
-      <nav className="p-4">
-        <ul className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
+        {/* Navigation Menu */}
+        <nav className="flex-1 overflow-y-auto px-3 py-6 custom-scrollbar">
+          <ul className="space-y-1.5">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentPage === item.id;
 
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25'
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--secondary)]/10 hover:text-[var(--text-primary)]'
-                    }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => onNavigate(item.id)}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group overflow-hidden ${isActive
+                      ? 'text-white shadow-lg shadow-blue-500/20'
+                      : 'text-[var(--sidebar-fg)]/70 hover:text-[var(--sidebar-fg)] hover:bg-[var(--sidebar-bg)]/50'
+                      }`}
+                  >
+                    {/* Active Background Gradient */}
+                    {isActive && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-100" />
+                    )}
 
-      {/* Bottom Info */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[var(--secondary)]">
-        <div className="bg-[var(--secondary)]/5 border border-[var(--secondary)]/20 rounded-md p-3">
-          <p className="text-[var(--text-secondary)] text-xs text-center">
-            {language === 'ar'
-              ? 'نظام إدارة الموانئ البحرية'
-              : 'Maritime Port Management'}
-          </p>
-          <p className="text-[var(--text-secondary)]/70 text-xs text-center mt-1">v2.0</p>
+                    {/* Hover Background Gradient (Subtle) */}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    )}
+
+                    <div className="relative z-10 flex items-center gap-3 w-full">
+                      <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+                      <span className={`text-sm font-medium tracking-wide transition-all duration-300 ${isActive ? 'translate-x-1' : ''}`}>
+                        {item.label}
+                      </span>
+                    </div>
+
+                    {/* Active Indicator Dot */}
+                    {isActive && (
+                      <div className={`absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-glow-white ${language === 'ar' ? 'left-4' : 'right-4'}`} />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Bottom Info / User Profile Snippet */}
+        <div className="p-4 mt-auto">
+          <div className="bg-gradient-to-br from-[var(--sidebar-fg)]/5 to-transparent border border-[var(--sidebar-border)] rounded-2xl p-4 backdrop-blur-md shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 p-[1px]">
+                <div className="w-full h-full rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-xs font-bold text-white">
+                  {language === 'ar' ? 'أ' : 'A'}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[var(--sidebar-fg)] text-sm font-medium truncate">Agent User</p>
+                <div className="flex items-center gap-1.5 opacity-60">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-glow-emerald"></div>
+                  <p className="text-[10px] text-[var(--sidebar-fg)]">Online</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

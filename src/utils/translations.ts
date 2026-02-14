@@ -196,6 +196,7 @@ export const translations = {
         rejectedAt: 'مرفوض عند',
         rejectedBy: 'تم الرفض بواسطة',
         approvalProcess: 'عملية الموافقة',
+        pending: 'قيد الانتظار',
         errors: {
           vesselRequired: 'يجب اختيار السفينة',
           durationRequired: 'المدة مطلوبة',
@@ -735,6 +736,7 @@ export const translations = {
         rejectedAt: 'Rejected At',
         rejectedBy: 'Rejected By',
         approvalProcess: 'Approval Process',
+        pending: 'Pending',
         errors: {
           vesselRequired: 'Please select a vessel',
           durationRequired: 'Duration is required',

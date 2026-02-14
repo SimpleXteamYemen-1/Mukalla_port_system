@@ -3,6 +3,8 @@ import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { Anchor, Ship, FileCheck, AlertTriangle, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { getVessels, getWharves, getClearances, getLogs, initializeData, Vessel, Clearance, LogEntry } from '../../utils/portOfficerApi';
+import { toast } from 'react-toastify';
+import { StatCard } from '../ui/StatCard';
 
 interface PortOfficerDashboardProps {
   language: Language;
@@ -26,12 +28,13 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
         getClearances(),
         getLogs()
       ]);
-      
+
       setVessels(vesselsData);
       setClearances(clearancesData);
       setLogs(logsData);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      toast.error(isRTL ? 'فشل تحميل البيانات' : 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -42,8 +45,10 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
     try {
       await initializeData();
       await loadData();
+      toast.success(isRTL ? 'تم تهيئة البيانات بنجاح' : 'Data initialized successfully');
     } catch (error) {
       console.error('Error initializing data:', error);
+      toast.error(isRTL ? 'فشل تهيئة البيانات' : 'Failed to initialize data');
     } finally {
       setInitializing(false);
     }
@@ -71,7 +76,7 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
       .map(c => ({
         id: c.id,
         type: 'expiry',
-        message: isRTL 
+        message: isRTL
           ? `تصريح المغادرة ${c.clearanceId} سينتهي خلال ${c.hoursRemaining} ساعة`
           : `Port clearance ${c.clearanceId} expires in ${c.hoursRemaining} hours`,
         severity: 'medium' as const,
@@ -82,7 +87,7 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
       .map(c => ({
         id: c.id + '-expired',
         type: 'expiry',
-        message: isRTL 
+        message: isRTL
           ? `تصريح المغادرة ${c.clearanceId} انتهت صلاحيته`
           : `Port clearance ${c.clearanceId} has expired`,
         severity: 'high' as const,
@@ -93,11 +98,11 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
   // Get recent activity from logs
   const recentActivity = logs.slice(0, 4).map(log => ({
     id: log.id,
-    action: isRTL 
-      ? (log.action === 'berth_assignment' ? 'تعيين رصيف' : 
-         log.action === 'clearance_issued' ? 'إصدار تصريح مغادرة' : 'تحرير رصيف')
+    action: isRTL
+      ? (log.action === 'berth_assignment' ? 'تعيين رصيف' :
+        log.action === 'clearance_issued' ? 'إصدار تصريح مغادرة' : 'تحرير رصيف')
       : (log.action === 'berth_assignment' ? 'Berth Assignment' :
-         log.action === 'clearance_issued' ? 'Clearance Issued' : 'Berth Release'),
+        log.action === 'clearance_issued' ? 'Clearance Issued' : 'Berth Release'),
     vessel: log.vessel,
     wharf: log.wharf,
     clearanceId: log.clearanceId,
@@ -107,175 +112,144 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
 
   if (loading && vessels.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0A1628] via-[#153B5E] to-[#1A4D6F] p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center p-20">
         <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">{isRTL ? 'جاري تحميل البيانات...' : 'Loading data...'}</p>
+          <RefreshCw className="w-12 h-12 text-[var(--primary)] animate-spin mx-auto mb-4" />
+          <p className="text-[var(--text-secondary)] text-lg font-bold">{isRTL ? 'جاري تحميل البيانات...' : 'Loading data...'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A1628] via-[#153B5E] to-[#1A4D6F] p-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {isRTL ? 'لوحة تحكم موظف الميناء' : 'Port Officer Operations Dashboard'}
-            </h1>
-            <p className="text-blue-200">
-              {isRTL ? 'إدارة الرسو وإصدار تصاريح المغادرة' : 'Manage Berthing Operations & Port Clearances'}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            {vessels.length === 0 && (
-              <button
-                onClick={handleInitialize}
-                disabled={initializing}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2"
-              >
-                {initializing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    {isRTL ? 'جاري التهيئة...' : 'Initializing...'}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    {isRTL ? 'تهيئة البيانات' : 'Initialize Data'}
-                  </>
-                )}
-              </button>
-            )}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+        <div>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">
+            {isRTL ? 'لوحة تحكم موظف الميناء' : 'Port Officer Operations'}
+          </h1>
+          <p className="text-[var(--text-secondary)] font-medium text-lg">
+            {isRTL ? 'إدارة الرسو وإصدار تصاريح المغادرة' : 'Manage Berthing Operations & Port Clearances'}
+          </p>
+        </div>
+        <div className="flex gap-3">
+          {vessels.length === 0 && (
             <button
-              onClick={loadData}
-              disabled={loading}
-              className="bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-xl font-semibold transition-colors flex items-center gap-2"
+              onClick={handleInitialize}
+              disabled={initializing}
+              className="btn-primary bg-emerald-600 hover:bg-emerald-700 border-none"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              {isRTL ? 'تحديث' : 'Refresh'}
+              {initializing ? (
+                <>
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  {isRTL ? 'جاري التهيئة...' : 'Initializing...'}
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  {isRTL ? 'تهيئة البيانات' : 'Initialize Data'}
+                </>
+              )}
             </button>
-          </div>
+          )}
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="btn-secondary"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            {isRTL ? 'تحديث' : 'Refresh'}
+          </button>
         </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Active Vessels */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl hover:bg-white/15 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-cyan-500/20 rounded-xl">
-              <Ship className="w-8 h-8 text-cyan-400" />
-            </div>
-            <div className={`text-${isRTL ? 'left' : 'right'}`}>
-              <div className="text-3xl font-bold text-white">{stats.activeVessels}</div>
-              <div className="text-xs text-cyan-300">{isRTL ? 'نشط' : 'Active'}</div>
-            </div>
-          </div>
-          <h3 className="text-white font-semibold">
-            {isRTL ? 'السفن الحالية في الميناء' : 'Active Vessels in Port'}
-          </h3>
-        </div>
-
-        {/* Awaiting Berth */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl hover:bg-white/15 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-amber-500/20 rounded-xl">
-              <Clock className="w-8 h-8 text-amber-400" />
-            </div>
-            <div className={`text-${isRTL ? 'left' : 'right'}`}>
-              <div className="text-3xl font-bold text-white">{stats.awaitingBerth}</div>
-              <div className="text-xs text-amber-300">{isRTL ? 'انتظار' : 'Waiting'}</div>
-            </div>
-          </div>
-          <h3 className="text-white font-semibold">
-            {isRTL ? 'سفن تنتظر تعيين رصيف' : 'Vessels Awaiting Berth'}
-          </h3>
-        </div>
-
-        {/* Pending Clearances */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl hover:bg-white/15 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-500/20 rounded-xl">
-              <FileCheck className="w-8 h-8 text-blue-400" />
-            </div>
-            <div className={`text-${isRTL ? 'left' : 'right'}`}>
-              <div className="text-3xl font-bold text-white">{stats.pendingClearances}</div>
-              <div className="text-xs text-blue-300">{isRTL ? 'قيد الانتظار' : 'Pending'}</div>
-            </div>
-          </div>
-          <h3 className="text-white font-semibold">
-            {isRTL ? 'تصاريح مغادرة معلقة' : 'Clearances Pending Issue'}
-          </h3>
-        </div>
-
-        {/* Today's Assignments */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl hover:bg-white/15 transition-all">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-emerald-500/20 rounded-xl">
-              <Anchor className="w-8 h-8 text-emerald-400" />
-            </div>
-            <div className={`text-${isRTL ? 'left' : 'right'}`}>
-              <div className="text-3xl font-bold text-white">{stats.todayAssignments}</div>
-              <div className="text-xs text-emerald-300">{isRTL ? 'اليوم' : 'Today'}</div>
-            </div>
-          </div>
-          <h3 className="text-white font-semibold">
-            {isRTL ? 'تعيينات اليوم' : "Today's Berth Assignments"}
-          </h3>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          label={isRTL ? 'السفن الحالية' : 'Active Vessels'}
+          value={stats.activeVessels}
+          icon={Ship}
+          color="cyan"
+          language={language}
+        />
+        <StatCard
+          label={isRTL ? 'انتظار الرصيف' : 'Awaiting Berth'}
+          value={stats.awaitingBerth}
+          icon={Clock}
+          color="amber"
+          language={language}
+        />
+        <StatCard
+          label={isRTL ? 'تصاريح معلقة' : 'Pending Clearances'}
+          value={stats.pendingClearances}
+          icon={FileCheck}
+          color="blue"
+          language={language}
+        />
+        <StatCard
+          label={isRTL ? 'تعيينات اليوم' : "Today's Assignments"}
+          value={stats.todayAssignments}
+          icon={Anchor}
+          color="emerald"
+          language={language}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* System Alerts */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
-          <div className="flex items-center gap-3 mb-6">
-            <AlertTriangle className="w-6 h-6 text-red-400" />
-            <h2 className="text-xl font-bold text-white">
+        <div className="card-base p-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--border)]">
+            <div className="p-2 bg-red-500/10 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+            </div>
+            <h2 className="text-xl font-black text-[var(--text-primary)]">
               {isRTL ? 'تنبيهات النظام' : 'System Alerts'}
             </h2>
           </div>
 
           {systemAlerts.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {systemAlerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`p-4 rounded-xl border-2 ${
-                    alert.severity === 'high'
-                      ? 'bg-red-500/10 border-red-400/30'
-                      : 'bg-amber-500/10 border-amber-400/30'
-                  }`}
+                  className={`p-4 rounded-2xl border-l-4 shadow-sm ${alert.severity === 'high'
+                      ? 'bg-red-500/5 border-l-red-500 border-y border-r border-red-500/10'
+                      : 'bg-amber-500/5 border-l-amber-500 border-y border-r border-amber-500/10'
+                    }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     {alert.severity === 'high' ? (
-                      <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                      <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
                     ) : (
-                      <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
                     )}
                     <div className="flex-1">
-                      <p className="text-white font-medium mb-1">{alert.message}</p>
-                      <p className="text-xs text-gray-300">{alert.time}</p>
+                      <p className="text-[var(--text-primary)] font-bold mb-1">{alert.message}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Clock className="w-3 h-3 text-[var(--text-secondary)]" />
+                        <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">{alert.time}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-              <p className="text-gray-400">{isRTL ? 'لا توجد تنبيهات' : 'No alerts'}</p>
+            <div className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/50">
+              <CheckCircle className="w-12 h-12 text-emerald-500/30 mx-auto mb-3" />
+              <p className="text-[var(--text-secondary)] font-medium">{isRTL ? 'لا توجد تنبيهات' : 'No alerts'}</p>
             </div>
           )}
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
-          <div className="flex items-center gap-3 mb-6">
-            <Clock className="w-6 h-6 text-cyan-400" />
-            <h2 className="text-xl font-bold text-white">
+        <div className="card-base p-6">
+          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--border)]">
+            <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
+              <Clock className="w-5 h-5 text-[var(--primary)]" />
+            </div>
+            <h2 className="text-xl font-black text-[var(--text-primary)]">
               {isRTL ? 'النشاط الأخير' : 'Recent Activity'}
             </h2>
           </div>
@@ -285,33 +259,39 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
               {recentActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all"
+                  className="p-4 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 rounded-2xl border border-[var(--border)] hover:border-[var(--primary)] transition-all group duration-300"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-cyan-400 font-semibold text-sm">
+                    <span className="text-[var(--primary)] font-black text-sm uppercase tracking-wide">
                       {activity.action}
                     </span>
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:scale-110" />
                   </div>
-                  <p className="text-white font-medium mb-1">{activity.vessel}</p>
-                  {activity.wharf && (
-                    <p className="text-sm text-blue-300">
-                      {isRTL ? 'الرصيف: ' : 'Wharf: '}{activity.wharf}
+                  <p className="text-[var(--text-primary)] font-bold mb-2 text-lg">{activity.vessel}</p>
+                  <div className="flex flex-wrap gap-3 text-xs text-[var(--text-secondary)] font-medium bg-[var(--background)] p-2 rounded-lg">
+                    {activity.wharf && (
+                      <span className="px-2 py-1 bg-[var(--surface)] rounded border border-[var(--border)]">
+                        {isRTL ? 'الرصيف: ' : 'Wharf: '}<span className="text-[var(--text-primary)] font-bold">{activity.wharf}</span>
+                      </span>
+                    )}
+                    {activity.clearanceId && (
+                      <span className="px-2 py-1 bg-[var(--surface)] rounded border border-[var(--border)]">
+                        {isRTL ? 'رقم التصريح: ' : 'ID: '}<span className="text-[var(--text-primary)] font-bold">{activity.clearanceId}</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex justify-end mt-2">
+                    <p className="text-[10px] text-[var(--text-secondary)]/70 font-bold uppercase tracking-widest flex items-center gap-1">
+                      {activity.time}
                     </p>
-                  )}
-                  {activity.clearanceId && (
-                    <p className="text-sm text-blue-300">
-                      {isRTL ? 'رقم التصريح: ' : 'Clearance ID: '}{activity.clearanceId}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-2">{activity.time}</p>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Clock className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-400">{isRTL ? 'لا يوجد نشاط حديث' : 'No recent activity'}</p>
+            <div className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/50">
+              <Clock className="w-12 h-12 text-[var(--text-secondary)]/30 mx-auto mb-3" />
+              <p className="text-[var(--text-secondary)] font-medium">{isRTL ? 'لا يوجد نشاط حديث' : 'No recent activity'}</p>
             </div>
           )}
         </div>

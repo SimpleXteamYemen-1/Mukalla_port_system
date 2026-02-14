@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\Vessel;
 use App\Models\CargoManifest;
 use App\Models\AnchorageRequest;
+use App\Http\Requests\StoreArrivalNotificationRequest;
+use App\Http\Requests\StoreAnchorageRequest;
+use App\Services\AgentService;
 use Illuminate\Support\Facades\Storage;
 
 class AgentController extends Controller
@@ -28,37 +31,9 @@ class AgentController extends Controller
         ]);
     }
 
-    public function submitArrival(Request $request)
+    public function submitArrival(StoreArrivalNotificationRequest $request, AgentService $agentService)
     {
-        $request->validate([
-            'imo_number' => 'required|string|size:9',
-            'name' => 'required|string',
-            'type' => 'required|string',
-            'flag' => 'nullable|string',
-            'eta' => 'required|date',
-        ]);
-
-        // Check if vessel exists, if so update/use it, else create new
-        $vessel = Vessel::where('imo_number', $request->imo_number)->first();
-
-        if (!$vessel) {
-            $vessel = Vessel::create([
-                'imo_number' => $request->imo_number,
-                'name' => $request->name,
-                'type' => $request->type,
-                'flag' => $request->flag,
-                'owner_id' => $request->user()->id,
-                'eta' => $request->eta,
-                'status' => 'awaiting',
-            ]);
-        } else {
-            // Update existing vessel arrival info
-             $vessel->update([
-                'eta' => $request->eta,
-                'status' => 'awaiting',
-                // Update other fields if provided? For now assume keeping existing static data
-            ]);
-        }
+        $vessel = $agentService->processArrival($request->validated(), $request->user()->id);
 
         return response()->json($vessel, 201);
     }
@@ -106,15 +81,8 @@ class AgentController extends Controller
         return response()->json($manifests);
     }
 
-    public function submitAnchorageRequest(Request $request)
+    public function submitAnchorageRequest(StoreAnchorageRequest $request, AgentService $agentService)
     {
-        $request->validate([
-            'vessel_id' => 'required|exists:vessels,id',
-            'duration' => 'required|string',
-            'reason' => 'required|string',
-            'location' => 'nullable|string',
-        ]);
-
         // Ensure vessel belongs to agent and is approved
         $vessel = Vessel::where('id', $request->vessel_id)
             ->where('owner_id', $request->user()->id)
@@ -125,14 +93,7 @@ class AgentController extends Controller
             return response()->json(['message' => 'Vessel not found or not approved for anchorage'], 404);
         }
 
-        $anchorageRequest = AnchorageRequest::create([
-            'vessel_id' => $request->vessel_id,
-            'agent_id' => $request->user()->id,
-            'duration' => $request->duration,
-            'reason' => $request->reason,
-            'location' => $request->location,
-            'status' => 'pending',
-        ]);
+        $anchorageRequest = $agentService->processAnchorageRequest($request->validated(), $request->user()->id);
 
         return response()->json($anchorageRequest, 201);
     }
@@ -146,6 +107,31 @@ class AgentController extends Controller
         
         return response()->json($requests);
     }
+    public function getDashboardStats(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $activeVessels = Vessel::where('owner_id', $userId)
+            ->where('status', 'active')
+            ->count();
+
+        $pendingAnchorage = AnchorageRequest::where('agent_id', $userId)
+            ->where('status', 'pending')
+            ->count();
+
+        // For now, completed operations can be approved manifests or completed anchorage requests
+        $completed = AnchorageRequest::where('agent_id', $userId)
+            ->where('status', 'completed')
+            ->count();
+
+        return response()->json([
+            'activeVessels' => $activeVessels,
+            'pendingClearances' => $pendingAnchorage,
+            'completedOperations' => $completed,
+            'notifications' => 0, // Placeholder for alerts/notifications
+        ]);
+    }
+
     public function getTrackerData(Request $request)
     {
         $userId = $request->user()->id;

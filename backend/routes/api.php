@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/manifests', [AgentController::class, 'getManifests']);
         Route::post('/agent/anchorage', [AgentController::class, 'submitAnchorageRequest']);
         Route::get('/agent/anchorage', [AgentController::class, 'getAnchorageRequests']);
+        Route::get('/agent/stats', [AgentController::class, 'getDashboardStats']);
         Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
     });
 

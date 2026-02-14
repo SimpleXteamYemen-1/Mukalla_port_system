@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Clock, Ship, Anchor, FileText, Calendar, User as UserIcon } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Ship, Anchor, FileText, Calendar, User as UserIcon, Tag, MapPin, Loader2, ClipboardList } from 'lucide-react';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
@@ -25,7 +25,7 @@ interface RequestItem {
   status: 'approved' | 'pending' | 'rejected' | 'completed';
   completedDate?: string;
   rejectionReason?: string;
-  icon?: any; // LucideIcon type is hard to import sometimes, using any for icon component or generic
+  icon?: any;
   timeline: TimelineStep[];
 }
 
@@ -38,7 +38,6 @@ export function RequestStatusTracker({ language, onNavigate }: RequestStatusTrac
     const fetchData = async () => {
       try {
         const data = await agentService.getTrackerData();
-        // Map icons based on type
         const mapped = data.map((item: any): RequestItem => ({
           ...item,
           icon: item.type === 'arrival' ? Ship : (item.type === 'anchorage' ? Anchor : FileText),
@@ -53,31 +52,17 @@ export function RequestStatusTracker({ language, onNavigate }: RequestStatusTrac
     fetchData();
   }, []);
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-      case 'completed':
-        return <CheckCircle2 className="w-6 h-6 text-green-600" />;
-      case 'rejected':
-        return <XCircle className="w-6 h-6 text-red-600" />;
-      case 'pending':
-        return <Clock className="w-6 h-6 text-amber-600 animate-pulse" />;
-      default:
-        return <Clock className="w-6 h-6 text-blue-600" />;
-    }
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
       case 'completed':
-        return 'bg-green-100/50 border-green-200 text-green-700';
+        return 'status-success';
       case 'rejected':
-        return 'bg-red-100/50 border-red-200 text-red-700';
+        return 'status-danger';
       case 'pending':
-        return 'bg-amber-100/50 border-amber-200 text-amber-700';
+        return 'status-warning';
       default:
-        return 'bg-blue-100/50 border-blue-200 text-blue-700';
+        return 'status-info';
     }
   };
 
@@ -93,14 +78,10 @@ export function RequestStatusTracker({ language, onNavigate }: RequestStatusTrac
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'arrival':
-        return 'from-blue-400 to-cyan-500';
-      case 'anchorage':
-        return 'from-purple-400 to-pink-500';
-      case 'manifest':
-        return 'from-green-400 to-emerald-500';
-      default:
-        return 'from-blue-400 to-cyan-500';
+      case 'arrival': return 'from-blue-600 via-blue-500 to-cyan-500';
+      case 'anchorage': return 'from-purple-600 via-purple-500 to-pink-500';
+      case 'manifest': return 'from-emerald-600 via-emerald-500 to-teal-500';
+      default: return 'from-blue-600 to-blue-500';
     }
   };
 
@@ -112,159 +93,114 @@ export function RequestStatusTracker({ language, onNavigate }: RequestStatusTrac
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t.title}</h1>
-        <p className="text-[var(--text-secondary)]">{t.subtitle}</p>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-4 shadow-sm">
-          <div className="text-[var(--text-secondary)] text-sm mb-1">{t.totalRequests}</div>
-          <div className="text-3xl font-bold text-[var(--text-primary)]">{stats.total}</div>
-        </div>
-        <div className="bg-green-500/10 rounded-2xl border border-green-500/20 p-4">
-          <div className="text-green-700 text-sm mb-1">{t.approved}</div>
-          <div className="text-3xl font-bold text-[var(--text-primary)]">{stats.approved}</div>
-        </div>
-        <div className="bg-amber-500/10 rounded-2xl border border-amber-500/20 p-4">
-          <div className="text-amber-700 text-sm mb-1">{t.pending}</div>
-          <div className="text-3xl font-bold text-[var(--text-primary)]">{stats.pending}</div>
-        </div>
-        <div className="bg-red-500/10 rounded-2xl border border-red-500/20 p-4">
-          <div className="text-red-700 text-sm mb-1">{t.rejected}</div>
-          <div className="text-3xl font-bold text-[var(--text-primary)]">{stats.rejected}</div>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between group">
+        <div>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-cyan-500 group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">{t.title}</h1>
+          <p className="text-[var(--text-secondary)] font-medium">{t.subtitle}</p>
         </div>
       </div>
 
-      {/* Unified Timeline */}
-      <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 shadow-sm">
-        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-6">{t.unifiedTimeline}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="card-base p-6 border-b-4 border-b-blue-600 dark:border-b-blue-500 group">
+          <div className="text-[var(--text-secondary)] text-xs font-bold mb-2 uppercase tracking-wider group-hover:text-blue-500 transition-colors">{t.totalRequests}</div>
+          <div className="text-4xl font-black text-blue-600 dark:text-blue-400">{stats.total}</div>
+        </div>
+        <div className="card-base p-6 border-b-4 border-b-emerald-600 dark:border-b-emerald-500 group">
+          <div className="text-[var(--text-secondary)] text-xs font-bold mb-2 uppercase tracking-wider group-hover:text-emerald-500 transition-colors">{t.approved}</div>
+          <div className="text-4xl font-black text-emerald-600 dark:text-emerald-400">{stats.approved}</div>
+        </div>
+        <div className="card-base p-6 border-b-4 border-b-amber-600 dark:border-b-amber-500 group">
+          <div className="text-[var(--text-secondary)] text-xs font-bold mb-2 uppercase tracking-wider group-hover:text-amber-500 transition-colors">{t.pending}</div>
+          <div className="text-4xl font-black text-amber-600 dark:text-amber-400">{stats.pending}</div>
+        </div>
+        <div className="card-base p-6 border-b-4 border-b-rose-600 dark:border-b-rose-500 group">
+          <div className="text-[var(--text-secondary)] text-xs font-bold mb-2 uppercase tracking-wider group-hover:text-rose-500 transition-colors">{t.rejected}</div>
+          <div className="text-4xl font-black text-rose-600 dark:text-rose-400">{stats.rejected}</div>
+        </div>
+      </div>
+
+      <div className="card-base p-8 relative overflow-hidden">
+        <h2 className="text-2xl font-black text-[var(--text-primary)] mb-8 flex items-center gap-3 relative z-10">
+          <span className="w-2 h-8 bg-blue-500 rounded-full" />
+          {t.unifiedTimeline}
+        </h2>
 
         {loading ? (
-          <div className="text-center text-[var(--text-secondary)] py-10">Loading requests...</div>
+          <div className="text-center py-20">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+            <p className="text-[var(--text-secondary)] font-medium">Synchronizing tracking data...</p>
+          </div>
         ) : (
-          <div className="relative">
-            {/* Timeline Vertical Line */}
-            <div className={`absolute ${language === 'ar' ? 'right-6' : 'left-6'} top-0 bottom-0 w-0.5 bg-[var(--secondary)]`}></div>
+          <div className="relative z-10">
+            <div className={`absolute ${language === 'ar' ? 'right-7' : 'left-7'} top-0 bottom-0 w-1 bg-gradient-to-b from-[var(--primary)]/20 via-[var(--accent)]/20 to-[var(--success)]/20 rounded-full`} />
 
-            <div className="space-y-6">
+            <div className="space-y-10">
               {allRequests.map((request) => {
                 const Icon = request.icon || Clock;
                 return (
-                  <div key={request.id} className="relative">
-                    {/* Timeline Node */}
-                    <div className={`absolute ${language === 'ar' ? 'right-0' : 'left-0'} w-12 h-12 bg-gradient-to-br ${getTypeColor(request.type)} rounded-full flex items-center justify-center shadow-sm z-10`}>
-                      <Icon className="w-6 h-6 text-white" />
+                  <div key={request.id} className="relative group/item">
+                    <div className={`absolute ${language === 'ar' ? 'right-0' : 'left-0'} w-14 h-14 bg-gradient-to-br ${getTypeColor(request.type)} rounded-2xl flex items-center justify-center shadow-2xl shadow-black/10 z-10 transition-transform duration-500 group-hover/item:scale-110 group-hover/item:rotate-3`}>
+                      <Icon className="w-7 h-7 text-white" />
                     </div>
 
-                    {/* Content Card */}
-                    <div className={`${language === 'ar' ? 'mr-16' : 'ml-16'} bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-5 hover:border-[var(--primary)] transition-all hover:shadow-md`}>
-                      <div className="flex items-start justify-between mb-3">
+                    <div className={`${language === 'ar' ? 'mr-20' : 'ml-20'} card-base card-hover p-6 group-hover/item:border-[var(--primary)]`}>
+                      <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-[var(--text-primary)] font-bold text-lg">{request.title}</h3>
-                            <span className="text-[var(--text-secondary)] text-sm">#{request.id}</span>
+                            <h3 className="text-[var(--text-primary)] font-black text-xl">{request.title}</h3>
+                            <span className="px-2 py-0.5 bg-[var(--secondary)] rounded-lg text-[var(--text-secondary)] text-xs font-bold font-mono">#{request.id}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm mb-2">
-                            <Ship className="w-4 h-4" />
+                          <div className="flex items-center gap-2 text-[var(--text-secondary)] font-medium mb-3">
+                            <Ship className="w-4 h-4 text-[var(--primary)]" />
                             <span>{request.vessel}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-[var(--text-secondary)]/70 text-xs">
-                            <Calendar className="w-4 h-4" />
-                            <span>{t.submitted}: {request.submittedDate}</span>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-[var(--text-secondary)]/70 text-xs text-bold">
+                              <Calendar className="w-4 h-4" />
+                              <span>{t.submitted}: {request.submittedDate}</span>
+                            </div>
+                            {request.completedDate && (
+                              <div className="flex items-center gap-2 text-[var(--success)] text-xs font-black">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>{request.completedDate}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(request.status)}`}>
-                            {getStatusLabel(request.status)}
-                          </span>
-                          {request.completedDate && (
-                            <span className="text-[var(--text-secondary)]/70 text-xs">{request.completedDate}</span>
-                          )}
-                        </div>
+                        <span className={`inline-block px-5 py-2 rounded-2xl text-sm font-black border-2 ${getStatusColor(request.status)} shadow-sm`}>
+                          {getStatusLabel(request.status)}
+                        </span>
                       </div>
 
-                      {/* Rejection Reason */}
                       {request.status === 'rejected' && request.rejectionReason && (
-                        <div className="bg-red-500/10 border border-red-400/30 rounded-xl p-3 mb-3">
-                          <div className="flex items-start gap-2">
-                            <XCircle className="w-4 h-4 text-red-300 flex-shrink-0 mt-0.5" />
+                        <div className="alert-danger mb-6">
+                          <div className="flex items-start gap-3">
+                            <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                             <div>
-                              <div className="text-red-200 font-semibold text-xs mb-1">{t.rejectionReason}</div>
-                              <div className="text-red-200/80 text-xs">{request.rejectionReason}</div>
+                              <div className="font-black text-sm mb-1 uppercase tracking-wider">{t.rejectionReason}</div>
+                              <div className="text-sm font-medium">{request.rejectionReason}</div>
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {/* Mini Timeline */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-3 flex-wrap">
                         {request.timeline.map((step, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs ${step.status === 'completed'
-                              ? 'bg-green-100/50 text-green-700'
-                              : step.status === 'pending'
-                                ? 'bg-amber-100/50 text-amber-700'
-                                : step.status === 'rejected'
-                                  ? 'bg-red-100/50 text-red-700'
-                                  : 'bg-[var(--secondary)]/20 text-[var(--text-primary)]'
-                              }`}>
-                              {step.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
-                              {step.status === 'pending' && <Clock className="w-3 h-3" />}
-                              {step.status === 'rejected' && <XCircle className="w-3 h-3" />}
+                          <div key={index} className="flex items-center gap-3">
+                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black ${step.status === 'completed' ? 'status-success' :
+                              step.status === 'pending' ? 'status-warning' :
+                                step.status === 'rejected' ? 'status-danger' :
+                                  'bg-[var(--secondary)] text-[var(--text-secondary)]'
+                              } border border-transparent hover:border-current transition-all cursor-default`}>
                               <span>{step.step}</span>
                             </div>
                             {index < request.timeline.length - 1 && (
-                              <div className="w-2 h-0.5 bg-[var(--secondary)]"></div>
+                              <div className="w-4 h-0.5 bg-[var(--secondary)] rounded-full" />
                             )}
                           </div>
                         ))}
                       </div>
-
-                      {/* Detailed Timeline Expansion */}
-                      <details className="mt-3 group">
-                        <summary className="cursor-pointer text-[var(--accent)] text-sm hover:underline transition-colors list-none flex items-center gap-2">
-                          <span>{t.viewDetails}</span>
-                          <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </summary>
-                        <div className="mt-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--secondary)] p-4">
-                          <div className="space-y-3">
-                            {request.timeline.map((step, index) => (
-                              <div key={index} className="flex items-start gap-3 pb-3 border-b border-[var(--secondary)] last:border-0">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${step.status === 'completed'
-                                  ? 'bg-green-100/50 border border-green-200'
-                                  : step.status === 'pending'
-                                    ? 'bg-amber-100/50 border border-amber-200'
-                                    : step.status === 'rejected'
-                                      ? 'bg-red-100/50 border border-red-200'
-                                      : 'bg-[var(--secondary)]/20 border border-[var(--secondary)]'
-                                  }`}>
-                                  {step.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-green-600" />}
-                                  {step.status === 'pending' && <Clock className="w-3 h-3 text-amber-600" />}
-                                  {step.status === 'rejected' && <XCircle className="w-3 h-3 text-red-600" />}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-[var(--text-primary)] text-sm font-medium">{step.step}</div>
-                                  {step.date && (
-                                    <div className="text-[var(--text-secondary)] text-xs mt-1">{step.date}</div>
-                                  )}
-                                  {step.user && (
-                                    <div className="flex items-center gap-1 text-[var(--text-secondary)]/70 text-xs mt-1">
-                                      <UserIcon className="w-3 h-3" />
-                                      <span>{step.user}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </details>
                     </div>
                   </div>
                 );

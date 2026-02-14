@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Clock, AlertTriangle, TrendingUp, Ship, Anchor, BarChart3, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, TrendingUp, Ship, Anchor, BarChart3, RefreshCw, CheckCircle, ArrowRight } from 'lucide-react';
 import { executiveService, ExecutiveStats, PendingApproval, RecentDecision } from '../../services/executiveService';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
+import { StatCard } from '../ui/StatCard';
+import { PageHeader } from '../ui/PageHeader';
+import { StatusBadge } from '../ui/StatusBadge';
 
 interface ExecutiveDashboardProps {
   language: Language;
@@ -11,6 +14,7 @@ interface ExecutiveDashboardProps {
 
 export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardProps) {
   const t = translations[language]?.executive?.dashboard || translations.en.executive.dashboard;
+  const isRTL = language === 'ar';
 
   const [statsData, setStatsData] = useState<ExecutiveStats | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
@@ -44,50 +48,33 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
       label: t.pendingApprovals,
       value: statsData?.pending_approvals.toString() || '0',
       icon: Clock,
-      color: 'from-amber-500 to-orange-500',
-      bgColor: 'bg-amber-500/20',
-      borderColor: 'border-amber-400/30',
+      color: 'amber' as const,
       trend: ''
     },
     {
       label: t.blockedRequests,
       value: statsData?.blocked_requests.toString() || '0',
       icon: AlertTriangle,
-      color: 'from-red-500 to-rose-500',
-      bgColor: 'bg-red-500/20',
-      borderColor: 'border-red-400/30',
+      color: 'red' as const,
       trend: ''
     },
     {
       label: t.approvalRate,
       value: statsData?.approval_rate || '0%',
       icon: TrendingUp,
-      color: 'from-green-500 to-emerald-500',
-      bgColor: 'bg-green-500/20',
-      borderColor: 'border-green-400/30',
+      color: 'emerald' as const,
       trend: ''
     },
     {
       label: t.todayDecisions,
       value: statsData?.today_decisions.toString() || '0',
       icon: CheckCircle2,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'bg-blue-500/20',
-      borderColor: 'border-blue-400/30',
+      color: 'blue' as const,
       trend: ''
     },
   ];
 
-  const blockedRequests: any[] = []; // Mock empty for now as backend returns 0 count
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500/20 border-red-400/30 text-red-200';
-      case 'medium': return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
-      case 'low': return 'bg-blue-500/20 border-blue-400/30 text-blue-200';
-      default: return 'bg-gray-500/20 border-gray-400/30 text-gray-200';
-    }
-  };
+  const blockedRequests: any[] = [];
 
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -107,125 +94,140 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-500 p-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-          <p className="text-blue-200">{t.subtitle}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadData}
-            disabled={loading}
-            className="p-2 bg-blue-500/20 hover:bg-blue-500/30 rounded-lg text-blue-200 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <Clock className="w-5 h-5 text-blue-300" />
-          <span className="text-blue-200 text-sm">
-            {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
+      <PageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+        language={language}
+        actions={[
+          {
+            label: '',
+            icon: RefreshCw,
+            onClick: loadData,
+            loading: loading,
+            variant: 'secondary'
+          },
+          {
+            label: new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
               day: 'numeric'
-            })}
-          </span>
-        </div>
-      </div>
+            }),
+            icon: Clock,
+            onClick: () => { },
+            variant: 'ghost',
+            disabled: true
+          }
+        ]}
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className={`bg-white/10 backdrop-blur-xl rounded-2xl border ${stat.borderColor} p-6 hover:scale-[1.02] transition-transform`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-green-400 text-sm font-medium">{stat.trend}</span>
-              </div>
-              <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-              <div className="text-blue-200 text-sm">{stat.label}</div>
-            </div>
-          );
-        })}
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            color={stat.color}
+            language={language}
+          />
+        ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-        <h2 className="text-xl font-bold text-white mb-4">{t.quickApprovals}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="card-base p-8">
+        <h2 className="text-xl font-black text-[var(--text-primary)] mb-6">{t.quickApprovals}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <button
             onClick={() => onNavigate('arrivals')}
-            className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-400/30 rounded-xl transition-all transform hover:scale-[1.02]"
+            className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-2xl transition-all transform hover:-translate-y-1 group"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg">
-              <Ship className="w-6 h-6 text-white" />
+            <div className="p-4 bg-cyan-500/10 rounded-xl group-hover:bg-cyan-500/20 transition-colors">
+              <Ship className="w-8 h-8 text-cyan-500" />
             </div>
             <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
-              <div className="text-white font-semibold">{t.arrivalApprovals}</div>
-              <div className="text-blue-200 text-sm">8 {t.pending}</div>
+              <div className="text-[var(--text-primary)] font-bold text-lg">{t.arrivalApprovals}</div>
+              <div className="text-[var(--text-secondary)] font-medium text-sm mt-1">8 {t.pending}</div>
             </div>
+            <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => onNavigate('anchorage')}
-            className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-400/30 rounded-xl transition-all transform hover:scale-[1.02]"
+            className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-2xl transition-all transform hover:-translate-y-1 group"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center shadow-lg">
-              <Anchor className="w-6 h-6 text-white" />
+            <div className="p-4 bg-purple-500/10 rounded-xl group-hover:bg-purple-500/20 transition-colors">
+              <Anchor className="w-8 h-8 text-purple-500" />
             </div>
             <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
-              <div className="text-white font-semibold">{t.anchorageApprovals}</div>
-              <div className="text-blue-200 text-sm">4 {t.pending}</div>
+              <div className="text-[var(--text-primary)] font-bold text-lg">{t.anchorageApprovals}</div>
+              <div className="text-[var(--text-secondary)] font-medium text-sm mt-1">4 {t.pending}</div>
             </div>
+            <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             onClick={() => onNavigate('reports')}
-            className="flex items-center gap-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 border border-green-400/30 rounded-xl transition-all transform hover:scale-[1.02]"
+            className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-2xl transition-all transform hover:-translate-y-1 group"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
+            <div className="p-4 bg-emerald-500/10 rounded-xl group-hover:bg-emerald-500/20 transition-colors">
+              <BarChart3 className="w-8 h-8 text-emerald-500" />
             </div>
             <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
-              <div className="text-white font-semibold">{t.viewReports}</div>
-              <div className="text-blue-200 text-sm">{t.analytics}</div>
+              <div className="text-[var(--text-primary)] font-bold text-lg">{t.viewReports}</div>
+              <div className="text-[var(--text-secondary)] font-medium text-sm mt-1">{t.analytics}</div>
             </div>
+            <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Pending Approvals */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-4">{t.pendingApprovals}</h2>
-          <div className="space-y-3">
+        <div className="card-base p-6 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-[var(--border)]">
+            <h2 className="text-xl font-black text-[var(--text-primary)]">{t.pendingApprovals}</h2>
+            <span className="px-3 py-1 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full text-xs font-bold">
+              {pendingApprovals.length} {t.pending}
+            </span>
+          </div>
+
+          <div className="space-y-4 flex-1 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
             {pendingApprovals.map((approval) => (
-              <div key={approval.id} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors">
+              <div key={approval.id} className="p-4 bg-[var(--surface)] hover:bg-[var(--secondary)]/5 rounded-2xl border border-[var(--border)] transition-all group">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white font-bold">{approval.id}</span>
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs border ${getPriorityColor(approval.priority)}`}>
-                        {getPriorityLabel(approval.priority)}
-                      </span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[var(--text-primary)] font-bold text-lg">{approval.id}</span>
+                      <StatusBadge
+                        status={approval.priority}
+                        type={approval.priority === 'high' ? 'error' : approval.priority === 'medium' ? 'warning' : 'info'}
+                        label={getPriorityLabel(approval.priority)}
+                      />
                     </div>
-                    <div className="text-blue-200 text-sm">{approval.vessel}</div>
-                    <div className="text-blue-300/70 text-xs mt-1">{approval.agent}</div>
+                    <div className="text-[var(--text-secondary)] font-medium text-sm flex items-center gap-2">
+                      <Ship className="w-4 h-4" />
+                      {approval.vessel}
+                    </div>
+                    <div className="text-[var(--text-secondary)]/70 text-xs mt-1 font-medium">{approval.agent}</div>
                   </div>
-                  <span className="inline-block px-3 py-1 rounded-lg text-xs bg-blue-500/20 border border-blue-400/30 text-blue-200">
-                    {getTypeLabel(approval.type)}
-                  </span>
+                  <StatusBadge
+                    status={approval.type}
+                    type="info"
+                    label={getTypeLabel(approval.type)}
+                  />
                 </div>
-                <div className="flex gap-2">
-                  <button className="flex-1 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 rounded-lg text-green-200 text-sm transition-colors">
+                <div className="flex gap-3 mt-4">
+                  <button className="flex-1 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl text-emerald-600 font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
                     {t.approve}
                   </button>
-                  <button className="flex-1 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 rounded-lg text-red-200 text-sm transition-colors">
+                  <button className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-red-600 font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                    <XCircle className="w-4 h-4" />
                     {t.reject}
                   </button>
                 </div>
@@ -234,62 +236,74 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
           </div>
           <button
             onClick={() => onNavigate('arrivals')}
-            className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm transition-colors"
+            className="w-full mt-6 py-3 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] rounded-xl text-[var(--text-primary)] font-bold text-sm transition-colors uppercase tracking-wide"
           >
             {t.viewAll}
           </button>
         </div>
 
-        {/* Blocked Requests Alert */}
+        {/* Blocked Requests Alert & Decisions */}
         <div className="space-y-6">
-          <div className="bg-red-500/10 backdrop-blur-xl rounded-2xl border border-red-400/30 p-6">
+          <div className="bg-red-500/5 rounded-2xl border border-red-500/20 p-6 shadow-sm">
             <div className="flex items-start gap-4 mb-4">
-              <AlertTriangle className="w-6 h-6 text-red-300 flex-shrink-0" />
+              <div className="p-2 bg-red-500/10 rounded-lg">
+                <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0" />
+              </div>
               <div>
-                <h3 className="text-red-200 font-semibold mb-1">{t.blockedRequests}</h3>
-                <p className="text-red-200/80 text-sm">{t.blockedMessage}</p>
+                <h3 className="text-[var(--text-primary)] font-bold text-lg mb-1">{t.blockedRequests}</h3>
+                <p className="text-[var(--text-secondary)] text-sm">{t.blockedMessage}</p>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {blockedRequests.map((request) => (
-                <div key={request.id} className="bg-red-500/10 border border-red-400/20 rounded-lg p-3">
+                <div key={request.id} className="bg-white/50 dark:bg-black/20 border border-red-500/10 rounded-xl p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="text-red-200 font-medium text-sm">{request.id} - {request.vessel}</div>
-                      <div className="text-red-200/70 text-xs mt-1">{request.reason}</div>
+                      <div className="text-[var(--text-primary)] font-bold text-sm">{request.id} - {request.vessel}</div>
+                      <div className="text-red-500/80 text-xs mt-1 font-medium">{request.reason}</div>
                     </div>
-                    <button className="text-red-300 hover:text-white text-xs transition-colors">
+                    <button className="text-red-500 hover:text-red-600 text-xs font-bold underline transition-colors">
                       {t.review}
                     </button>
                   </div>
                 </div>
               ))}
+              {blockedRequests.length === 0 && (
+                <div className="text-center py-4 text-[var(--text-secondary)] text-sm font-medium italic">
+                  {isRTL ? 'لا توجد طلبات محظورة' : 'No blocked requests'}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Recent Decisions */}
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-            <h2 className="text-xl font-bold text-white mb-4">{t.recentDecisions}</h2>
-            <div className="space-y-2">
+          <div className="card-base p-6">
+            <h2 className="text-xl font-black text-[var(--text-primary)] mb-6 pb-4 border-b border-[var(--border)]">{t.recentDecisions}</h2>
+            <div className="space-y-3">
               {recentDecisions.map((decision) => (
-                <div key={decision.id} className="bg-white/5 border border-white/10 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="text-white text-sm font-medium">{decision.id} - {decision.vessel}</div>
-                      <div className="text-blue-300 text-xs mt-1">{decision.time}</div>
+                <div key={decision.id} className="p-4 bg-[var(--surface)] hover:bg-[var(--secondary)]/5 rounded-2xl border border-[var(--border)] transition-all flex items-center justify-between group">
+                  <div className="flex-1">
+                    <div className="text-[var(--text-primary)] text-sm font-bold">{decision.id} - {decision.vessel}</div>
+                    <div className="text-[var(--text-secondary)] text-xs mt-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {decision.time}
                     </div>
-                    {decision.decision === 'approved' ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-400" />
-                    ) : (
-                      <XCircle className="w-5 h-5 text-red-400" />
-                    )}
                   </div>
+                  {decision.decision === 'approved' ? (
+                    <div className="p-2 bg-emerald-500/10 rounded-full">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    </div>
+                  ) : (
+                    <div className="p-2 bg-red-500/10 rounded-full">
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
             <button
               onClick={() => onNavigate('logs')}
-              className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm transition-colors"
+              className="w-full mt-6 py-3 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] rounded-xl text-[var(--text-primary)] font-bold text-sm transition-colors uppercase tracking-wide"
             >
               {t.viewAllDecisions}
             </button>
