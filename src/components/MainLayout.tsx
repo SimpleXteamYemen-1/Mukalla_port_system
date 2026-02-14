@@ -47,11 +47,8 @@ export function MainLayout({
   };
 
   return (
-    <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[var(--primary)]/5 to-transparent opacity-50"></div>
-      </div>
+    <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--background)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
+
 
       {/* Sidebar */}
       <Sidebar

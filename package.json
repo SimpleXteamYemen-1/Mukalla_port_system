@@ -44,6 +44,7 @@
             "react-dom": "^18.3.1",
             "react-hook-form": "^7.55.0",
             "react-resizable-panels": "^2.1.7",
+            "react-toastify": "^11.0.5",
             "recharts": "^2.15.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
@@ -54,6 +55,11 @@
             "@types/react": "^19.2.14",
             "@types/react-dom": "^19.2.3",
             "@vitejs/plugin-react-swc": "^3.10.2",
+            "autoprefixer": "^10.4.17",
+            "postcss": "^8.4.35",
+            "tailwindcss": "^3.4.1",
+            "tailwindcss-animate": "^1.0.7",
+            "typescript": "^5.9.3",
             "vite": "6.3.5"
       },
       "scripts": {

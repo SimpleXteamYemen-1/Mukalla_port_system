@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { agentService } from '../../services/agentService';
-import { Ship, Plus, Search, Filter } from 'lucide-react';
+import { Ship, Plus, Search, Filter, Navigation, ChevronRight, Loader2 } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 
@@ -20,12 +20,6 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
     const fetchVessels = async () => {
       try {
         const data = await agentService.getVessels();
-        // Transform data to match UI expectations if necessary
-        // The backend returns: { id, name, type, flag, arrivalStatus (inferred?), status, ... }
-        // Actually backend returns generic Vessel model. We might need to map some fields or use them as is.
-        // For now assuming backend returns needed fields or we display what we have.
-        // Backend "status" is 'awaiting', 'active', etc.
-        // Frontend expects "arrivalStatus" too. Let's map "status" to both for now or handle it.
         const mapped = data.map((v: any) => ({
           ...v,
           arrivalStatus: v.status === 'active' ? 'approved' : (v.status === 'awaiting' ? 'pending' : v.status)
@@ -42,13 +36,25 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100/50 border-green-200 text-green-700';
-      case 'rejected': return 'bg-red-100/50 border-red-200 text-red-700';
+      case 'active':
+      case 'approved': return 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400';
+      case 'rejected': return 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400';
       case 'pending':
-      case 'awaiting': return 'bg-amber-100/50 border-amber-200 text-amber-700';
-      case 'active': return 'bg-blue-100/50 border-blue-200 text-blue-700';
-      case 'inactive': return 'bg-gray-100/50 border-gray-200 text-gray-700';
-      default: return 'bg-blue-100/50 border-blue-200 text-blue-700';
+      case 'awaiting': return 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400';
+      case 'inactive': return 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-500/10 dark:border-slate-500/20 dark:text-slate-400';
+      default: return 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-500/10 dark:border-blue-500/20 dark:text-blue-400';
+    }
+  };
+
+  const getAccentBorder = (status: string) => {
+    switch (status) {
+      case 'active':
+      case 'approved': return 'border-l-4 border-l-emerald-500';
+      case 'rejected': return 'border-l-4 border-l-rose-500';
+      case 'pending':
+      case 'awaiting': return 'border-l-4 border-l-amber-500';
+      case 'inactive': return 'border-l-4 border-l-slate-400';
+      default: return 'border-l-4 border-l-blue-500';
     }
   };
 
@@ -73,98 +79,112 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8 group">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">{t.title}</h1>
-          <p className="text-[var(--text-secondary)]">{t.subtitle}</p>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">{t.title}</h1>
+          <p className="text-[var(--text-secondary)] font-medium">{t.subtitle}</p>
         </div>
         <button
           onClick={() => onNavigate('arrivals')}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-lg hover:shadow-blue-500/20 rounded-xl text-white font-bold transition-all duration-300 transform hover:-translate-y-0.5"
+          className="btn-primary"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
           {t.addVessel}
         </button>
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)]`} />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex gap-3 flex-1">
+          <div className="relative flex-1 md:w-80 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)] group-focus-within:text-[var(--primary)] transition-colors" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t.searchPlaceholder}
-              className={`w-full ${language === 'ar' ? 'pr-11 text-right' : 'pl-11'} py-3 bg-transparent border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all`}
+              placeholder={language === 'ar' ? 'بحث عن سفينة...' : 'Search vessels...'}
+              className="w-full pl-12 pr-4 py-3 bg-[var(--surface)] border border-[var(--secondary)] rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all placeholder-[var(--text-secondary)]/50"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-[var(--text-secondary)]" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-3 bg-transparent border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
-            >
-              <option value="all" className="bg-[var(--bg-primary)]">{t.allVessels}</option>
-              <option value="active" className="bg-[var(--bg-primary)]">{t.active}</option>
-              <option value="inactive" className="bg-[var(--bg-primary)]">{t.inactive}</option>
-            </select>
-          </div>
+          <button className="p-3 bg-[var(--surface)] border border-[var(--secondary)] rounded-2xl text-[var(--text-primary)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-all shadow-sm hover:shadow-md">
+            <Filter className="w-6 h-6" />
+          </button>
         </div>
       </div>
 
       {/* Vessels Grid */}
-      {loading ? (
-        <div className="text-[var(--text-primary)] text-center py-10">Loading vessels...</div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredVessels.map((vessel) => (
-            <div key={vessel.id} className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 hover:border-[var(--primary)] transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                    <Ship className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-[var(--text-primary)] font-bold text-lg">{vessel.name}</h3>
-                    <p className="text-[var(--text-secondary)] text-sm">{vessel.imo_number}</p>
-                  </div>
-                </div>
-                <span className="text-2xl">{vessel.flag || '🏳️'}</span>
+      {
+        loading ? (
+          <div className="text-center py-20 flex flex-col items-center justify-center text-[var(--text-secondary)]">
+            <Loader2 className="w-12 h-12 animate-spin text-[var(--primary)] mb-4" />
+            <p className="font-bold">{language === 'ar' ? 'جاري التحميل...' : 'Loading vessels...'}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredVessels.length === 0 ? (
+              <div className="col-span-full text-center text-[var(--text-secondary)] py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--surface)]/50">
+                <Ship className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                <p className="text-lg font-bold">{language === 'ar' ? 'لا توجد سفن متطابقة.' : 'No matching vessels found.'}</p>
               </div>
+            ) : (
+              filteredVessels.map((vessel) => (
+                <div
+                  key={vessel.id}
+                  className={`card-base card-hover ${getAccentBorder(vessel.status)} p-6 group relative overflow-hidden`}
+                >
+                  {/* Glossy Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
-                  <div className="text-[var(--text-secondary)] text-xs mb-1">{t.vesselType}</div>
-                  <div className="text-[var(--text-primary)] font-medium">{vessel.type}</div>
-                </div>
-                <div className="border border-[var(--secondary)] rounded-xl p-3 bg-[var(--bg-card)]/30">
-                  <div className="text-[var(--text-secondary)] text-xs mb-1">ETA</div>
-                  <div className="text-[var(--text-primary)] font-medium">{vessel.eta}</div>
-                </div>
-              </div>
+                  <div className="flex justify-between items-start mb-6 relative">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
+                      <Ship className="w-8 h-8 text-white" />
+                    </div>
+                    <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border-2 shadow-sm ${getStatusColor(vessel.status)}`}>
+                      {getStatusLabel(vessel.status)}
+                    </span>
+                  </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(vessel.status)}`}>
-                    {getStatusLabel(vessel.status)}
-                  </span>
+                  <div className="relative">
+                    <h3 className="text-xl font-black text-[var(--text-primary)] mb-1 group-hover:text-[var(--primary)] transition-colors line-clamp-1" title={vessel.name}>{vessel.name}</h3>
+                    <p className="text-[var(--text-secondary)] text-sm font-bold mb-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[var(--primary)]" />
+                      IMO: {vessel.imo_number}
+                    </p>
+
+                    <div className="space-y-3 pt-4 border-t border-[var(--secondary)]/50">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--text-secondary)] font-bold">{language === 'ar' ? 'النوع' : 'Type'}</span>
+                        <span className="text-[var(--text-primary)] font-black truncate max-w-[50%]">{vessel.type}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--text-secondary)] font-bold">{language === 'ar' ? 'العلم' : 'Flag'}</span>
+                        <span className="text-[var(--text-primary)] font-black truncate max-w-[50%]">{vessel.flag}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--text-secondary)] font-bold">{language === 'ar' ? 'حمولة الساكنة' : 'DWT'}</span>
+                        <span className="text-[var(--text-primary)] font-black">{vessel.dwt || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-[var(--secondary)]/50 flex items-center justify-between">
+                      <div>
+                        <div className="text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-tighter mb-1">{language === 'ar' ? 'الموقع الحالي' : 'CURRENT POSITION'}</div>
+                        <div className="text-[var(--text-primary)] font-bold text-sm flex items-center gap-1.5">
+                          <Navigation className="w-3.5 h-3.5 text-[var(--primary)]" />
+                          {vessel.location || 'At Sea'}
+                        </div>
+                      </div>
+                      <button className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--secondary)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all shadow-sm group-hover:translate-x-1">
+                        <ChevronRight className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <button className="text-[var(--primary)] hover:text-[var(--accent)] text-sm font-medium transition-colors hover:underline">
-                  {t.viewDetails}
-                </button>
-              </div>
-            </div>
-          ))}
-          {filteredVessels.length === 0 && (
-            <div className="col-span-2 text-center text-[var(--text-secondary)] py-10 border border-dashed border-[var(--secondary)] rounded-md">
-              No vessels found.
-            </div>
-          )}
-        </div>
-      )}
+              ))
+            )}
+          </div>
+        )
+      }
     </div>
   );
 }

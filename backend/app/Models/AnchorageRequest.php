@@ -10,10 +10,15 @@ class AnchorageRequest extends Model
         'vessel_id',
         'agent_id',
         'status',
+        'docking_time',
         'duration',
         'location',
         'reason',
         'rejection_reason',
+    ];
+
+    protected $casts = [
+        'docking_time' => 'datetime',
     ];
 
     public function vessel()

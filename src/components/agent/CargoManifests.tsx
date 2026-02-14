@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Upload, CheckCircle2, XCircle, Clock, AlertCircle, Download, Eye, Loader2 } from 'lucide-react';
 import { agentService, CargoManifest, Vessel } from '../../services/agentService';
 import { Language } from '../../App';
+import { toast } from 'react-toastify';
 import { translations } from '../../utils/translations';
 
 interface CargoManifestsProps {
@@ -190,7 +191,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
               <button
                 onClick={async () => {
                   if (!selectedVessel || !selectedFile || !containerCount || !totalWeight) {
-                    alert("Please fill all fields");
+                    toast.warn("Please fill all fields");
                     return;
                   }
 
@@ -204,7 +205,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
 
                     await agentService.uploadManifest(formData);
 
-                    alert(language === 'ar' ? 'تم رفع البيان بنجاح!' : 'Manifest uploaded successfully!');
+                    toast.success(language === 'ar' ? 'تم رفع البيان بنجاح!' : 'Manifest uploaded successfully!');
                     setShowUploadModal(false);
                     setSelectedVessel('');
                     setSelectedFile(null);
@@ -213,7 +214,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                     loadData(); // Refresh list
                   } catch (error) {
                     console.error("Upload failed", error);
-                    alert("Upload failed");
+                    toast.error("Upload failed");
                   } finally {
                     setUploading(false);
                   }
