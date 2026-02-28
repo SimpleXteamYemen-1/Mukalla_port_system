@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Anchor, AlertCircle, CheckCircle2, XCircle, Clock, Plus, Ship, Loader2, Calendar } from 'lucide-react';
+import { Anchor, AlertCircle, CheckCircle2, XCircle, Clock, Plus, Loader2, Calendar } from 'lucide-react';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
 import { translations } from '../../utils/translations';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const anchorageSchema = z.object({
+  vesselId: z.string().min(1, { message: 'Please select a vessel' }),
+  duration: z.string().min(1, { message: 'Duration is required' }),
+  reason: z.string().min(1, { message: 'Reason is required' }),
+  preferredLocation: z.string().optional(),
+});
+
+type AnchorageFormData = z.infer<typeof anchorageSchema>;
 
 interface AnchorageRequestsProps {
   language: Language;
@@ -12,17 +24,24 @@ interface AnchorageRequestsProps {
 export function AnchorageRequests({ language }: AnchorageRequestsProps) {
   const t = translations[language]?.agent?.anchorage || translations.en.agent.anchorage;
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    vesselId: '',
-    duration: '',
-    reason: '',
-    preferredLocation: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
   const [approvedVessels, setApprovedVessels] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<AnchorageFormData>({
+    resolver: zodResolver(anchorageSchema),
+    defaultValues: {
+      vesselId: '',
+      duration: '',
+      reason: '',
+      preferredLocation: '',
+    },
+  });
 
   useEffect(() => {
     fetchData();
@@ -47,38 +66,26 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const newErrors: Record<string, string> = {};
-    if (!formData.vesselId) newErrors.vessel = t.errors.vesselRequired;
-    if (!formData.duration) newErrors.duration = t.errors.durationRequired;
-    if (!formData.reason) newErrors.reason = t.errors.reasonRequired;
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setSubmitting(true);
+  const onSubmit = async (data: AnchorageFormData) => {
     try {
       await agentService.submitAnchorageRequest({
-        vessel_id: formData.vesselId,
-        duration: formData.duration,
-        reason: formData.reason,
-        location: formData.preferredLocation
+        vessel_id: data.vesselId,
+        duration: data.duration,
+        reason: data.reason,
+        location: data.preferredLocation
       });
 
       toast.success(language === 'ar' ? 'تم إرسال طلب الرسو بنجاح!' : 'Anchorage request submitted successfully!');
       setShowForm(false);
-      setFormData({ vesselId: '', duration: '', reason: '', preferredLocation: '' });
-      setErrors({});
-      fetchData(); // Refresh list
-    } catch (error) {
+      reset();
+      fetchData();
+    } catch (error: any) {
       console.error("Submission failed", error);
-      toast.error(language === 'ar' ? 'فشل إرسال الطلب' : 'Submission failed');
-    } finally {
-      setSubmitting(false);
+      if (error.response?.data?.errors) {
+        Object.values(error.response.data.errors).forEach((err: any) => toast.error(err[0]));
+      } else {
+        toast.error(language === 'ar' ? 'فشل إرسال الطلب' : 'Submission failed');
+      }
     }
   };
 
@@ -152,14 +159,13 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.selectVessel}</label>
                 <select
-                  value={formData.vesselId}
-                  onChange={(e) => setFormData({ ...formData, vesselId: e.target.value })}
-                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vessel ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]`}
+                  {...register('vesselId')}
+                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vesselId ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]`}
                 >
                   <option value="">{t.selectVesselPlaceholder}</option>
                   {approvedVessels.map(v => (
@@ -168,14 +174,13 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                     </option>
                   ))}
                 </select>
-                {errors.vessel && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.vessel}</p>}
+                {errors.vesselId && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.vesselId.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.duration}</label>
                 <select
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  {...register('duration')}
                   className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.duration ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]`}
                 >
                   <option value="">{t.selectDuration}</option>
@@ -184,14 +189,13 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                   <option value="72">72 {t.hours}</option>
                   <option value="custom">{t.custom}</option>
                 </select>
-                {errors.duration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.duration}</p>}
+                {errors.duration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.duration.message}</p>}
               </div>
 
               <div className="space-y-2">
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.preferredLocation}</label>
                 <select
-                  value={formData.preferredLocation}
-                  onChange={(e) => setFormData({ ...formData, preferredLocation: e.target.value })}
+                  {...register('preferredLocation')}
                   className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]"
                 >
                   <option value="">{t.selectLocation}</option>
@@ -204,29 +208,28 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
               <div className="md:col-span-2 space-y-2">
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.reason}</label>
                 <textarea
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                  {...register('reason')}
                   placeholder={t.reasonPlaceholder}
                   rows={3}
                   className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.reason ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all resize-none`}
                 />
-                {errors.reason && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.reason}</p>}
+                {errors.reason && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.reason.message}</p>}
               </div>
             </div>
 
             <div className="flex gap-4 pt-6">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={isSubmitting}
                 className="btn-primary flex-1 py-4"
               >
-                {submitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t.submitButton}
+                {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t.submitButton}
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowForm(false);
-                  setErrors({});
+                  reset();
                 }}
                 className="btn-secondary px-8 py-4"
               >

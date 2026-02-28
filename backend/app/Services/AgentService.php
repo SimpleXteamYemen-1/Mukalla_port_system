@@ -16,7 +16,7 @@ class AgentService
         $vessel = Vessel::where('imo_number', $data['imo_number'])->first();
 
         if (!$vessel) {
-            return Vessel::create([
+            $newVessel = Vessel::create([
                 'imo_number' => $data['imo_number'],
                 'name' => $data['name'],
                 'type' => $data['type'],
@@ -25,12 +25,18 @@ class AgentService
                 'eta' => $data['eta'],
                 'status' => 'awaiting',
             ]);
+
+            \App\Events\VesselArrived::dispatch($newVessel);
+
+            return $newVessel;
         }
 
         $vessel->update([
             'eta' => $data['eta'],
             'status' => 'awaiting',
         ]);
+
+        \App\Events\VesselArrived::dispatch($vessel);
 
         return $vessel;
     }

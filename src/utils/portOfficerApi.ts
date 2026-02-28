@@ -6,8 +6,9 @@ export interface Vessel {
   name: string;
   type: string;
   arrival: string; // mapped from eta
+  departure?: string; // mapped from etd
   agent: string; // mapped from owner.name
-  status: 'awaiting' | 'assigned' | 'docked' | 'loading' | 'unloading' | 'ready'; // Backend status might need mapping
+  status: 'awaiting' | 'scheduled' | 'assigned' | 'docked' | 'loading' | 'unloading' | 'ready'; // Backend status might need mapping
   currentWharf?: string; // mapped from wharf.name
   clearanceStatus: 'none' | 'pending' | 'issued';
 }
@@ -63,6 +64,7 @@ export async function getVessels(): Promise<Vessel[]> {
       name: v.name,
       type: v.type,
       arrival: v.eta,
+      departure: v.etd,
       agent: v.owner ? v.owner.name : 'Unknown',
       status: v.status, // Ensure backend status matches frontend string literal or map it
       currentWharf: v.wharf ? v.wharf.name : undefined,
@@ -93,10 +95,12 @@ export async function getWharves(): Promise<Wharf[]> {
 }
 
 // Berth Assignment
-export async function assignBerth(vesselId: string, wharfId: string, officerName: string) {
+export async function assignBerth(vesselId: string, wharfId: string, eta: string, etd: string, officerName: string) {
   try {
     const response = await api.post(`/officer/vessels/${vesselId}/berth`, {
       wharf_id: wharfId,
+      eta,
+      etd,
     });
     return { success: true, data: response.data };
   } catch (error) {

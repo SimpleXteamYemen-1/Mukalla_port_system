@@ -13,17 +13,19 @@ class Container extends Model
         'weight',
         'trader_email',
         'status',
-        'location',
+        'block',
+        'row',
+        'tier',
     ];
 
     public function manifest()
     {
-        return $this->belongsTo(CargoManifest::class, 'manifest_id');
+        return $this->belongsTo(CargoManifest::class , 'manifest_id');
     }
 
     public function dischargeRequest()
     {
         return $this->hasOne(DischargeRequest::class);
     }
-    //
+//
 }

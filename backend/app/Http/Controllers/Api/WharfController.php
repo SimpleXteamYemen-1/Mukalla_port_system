@@ -51,14 +51,28 @@ class WharfController extends Controller
     public function assignContainer(Request $request)
     {
         $request->validate([
-            'containerId' => 'required',
-            'storageId' => 'required',
+            'containerId' => 'required|exists:containers,id',
+            'block' => 'required|string|max:10',
+            'row' => 'required|integer',
+            'tier' => 'required|integer',
         ]);
 
-        $container = Container::where('id', $request->containerId)->firstOrFail();
-        // In real app, validate storage capacity
+        // Check if the specific block/row/tier is already occupied by an active container
+        $conflict = Container::where('block', $request->block)
+            ->where('row', $request->row)
+            ->where('tier', $request->tier)
+            ->whereNotIn('status', ['discharged', 'cleared'])
+            ->exists();
+
+        if ($conflict) {
+            return response()->json(['message' => 'This yard location is already occupied'], 400);
+        }
+
+        $container = Container::findOrFail($request->containerId);
         $container->status = 'assigned';
-        $container->location = $request->storageId; // storing storage ID in location for now
+        $container->block = $request->block;
+        $container->row = $request->row;
+        $container->tier = $request->tier;
         $container->save();
 
         return response()->json(['success' => true, 'container' => $container]);
@@ -73,8 +87,10 @@ class WharfController extends Controller
         $container = Container::where('id', $id)->firstOrFail();
         // Update status or log history
         // For simple demo:
-        if ($request->action === 'load') $container->status = 'loaded';
-        if ($request->action === 'discharge') $container->status = 'discharged';
+        if ($request->action === 'load')
+            $container->status = 'loaded';
+        if ($request->action === 'discharge')
+            $container->status = 'discharged';
         $container->save();
 
         return response()->json(['success' => true, 'container' => $container]);

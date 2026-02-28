@@ -4,6 +4,23 @@ import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
 import { translations } from '../../utils/translations';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+// Define Zod schema matching the backend StoreVesselArrivalRequest
+const arrivalSchema = z.object({
+  imo: z.string().regex(/^IMO\d{7}$/, { message: 'IMO number must be exactly 9 characters starting with "IMO" followed by 7 digits' }),
+  vessel: z.string().min(1, { message: 'Vessel name is required' }),
+  type: z.string().min(1, { message: 'Vessel type is required' }),
+  flag: z.string().min(1, { message: 'Flag is required' }).optional().or(z.literal('')),
+  arrivalDate: z.string().min(1, { message: 'Arrival date is required' }),
+  arrivalTime: z.string().min(1, { message: 'Arrival time is required' }),
+  purpose: z.string().min(1, { message: 'Purpose is required' }),
+  cargo: z.string().optional(),
+});
+
+type ArrivalFormData = z.infer<typeof arrivalSchema>;
 
 interface ArrivalNotificationsProps {
   language: Language;
@@ -12,23 +29,35 @@ interface ArrivalNotificationsProps {
 export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const t = translations[language]?.agent?.arrivals || translations.en.agent.arrivals;
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    vessel: '',
-    imo: '',
-    imoVerified: false,
-    vesselId: null, // If found
-    type: '',
-    flag: '',
-    arrivalDate: '',
-    arrivalTime: '',
-    purpose: '',
-    cargo: '',
-  });
+  const [vesselId, setVesselId] = useState<number | null>(null);
+  const [imoVerified, setImoVerified] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingIMO, setCheckingIMO] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    getValues,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ArrivalFormData>({
+    resolver: zodResolver(arrivalSchema),
+    defaultValues: {
+      imo: '',
+      vessel: '',
+      type: '',
+      flag: '',
+      arrivalDate: '',
+      arrivalTime: '',
+      purpose: '',
+      cargo: '',
+    },
+  });
+
+  const watchImo = watch('imo');
 
   useEffect(() => {
     loadArrivals();
@@ -46,81 +75,62 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   };
 
   const handleCheckIMO = async () => {
-    if (!formData.imo || formData.imo.length !== 9) {
-      setErrors({ ...errors, imo: 'IMO number must be 9 digits' });
+    const currentImo = getValues('imo');
+    if (!currentImo || !/^IMO\d{7}$/.test(currentImo)) {
+      toast.error('IMO number must be exactly 9 characters starting with "IMO"');
       return;
     }
     setCheckingIMO(true);
-    setErrors({});
     try {
-      const result = await agentService.checkIMO(formData.imo);
+      const result = await agentService.checkIMO(currentImo);
       if (result.found) {
-        setFormData({
-          ...formData,
-          imoVerified: true,
-          vesselId: result.vessel.id,
-          vessel: result.vessel.name,
-          type: result.vessel.type,
-          flag: result.vessel.flag || '',
-        });
-        // alert or toast that vessel found
+        setImoVerified(true);
+        setVesselId(result.vessel.id);
+        setValue('vessel', result.vessel.name, { shouldValidate: true });
+        setValue('type', result.vessel.type, { shouldValidate: true });
+        setValue('flag', result.vessel.flag || '', { shouldValidate: true });
       } else {
-        setFormData({
-          ...formData,
-          imoVerified: true,
-          vesselId: null,
-          vessel: '', // clear to allow input
-          type: '',
-          flag: '',
-        });
+        setImoVerified(true);
+        setVesselId(null);
+        setValue('vessel', '');
+        setValue('type', '');
+        setValue('flag', '');
         toast.info(language === 'ar' ? 'السفينة غير موجودة في قاعدة البيانات. الرجاء إدخال البيانات.' : 'Vessel not found in database. Please enter details.');
       }
     } catch (error) {
       console.error("IMO check failed", error);
-      setErrors({ ...errors, imo: 'Failed to verify IMO number' });
+      toast.error('Failed to verify IMO number');
     } finally {
       setCheckingIMO(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validation
-    const newErrors: Record<string, string> = {};
-    if (!formData.vessel) newErrors.vessel = t.errors.vesselRequired;
-    if (!formData.arrivalDate) newErrors.arrivalDate = t.errors.dateRequired;
-    if (!formData.arrivalTime) newErrors.arrivalTime = t.errors.timeRequired;
-    // Type checking could be added
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setSubmitting(true);
+  const onSubmit = async (data: ArrivalFormData) => {
     try {
-      // Combine date and time for ETA
-      const eta = `${formData.arrivalDate}T${formData.arrivalTime}:00`;
+      const eta = `${data.arrivalDate}T${data.arrivalTime}:00`;
 
       await agentService.submitArrival({
-        imo_number: formData.imo,
-        name: formData.vessel,
-        type: formData.type || 'General Cargo',
-        flag: formData.flag || 'Unknown',
+        imo_number: data.imo,
+        name: data.vessel,
+        type: data.type || 'container',
+        flag: data.flag || 'Unknown',
         eta: eta
       });
 
       toast.success(language === 'ar' ? 'تم إرسال طلب الوصول بنجاح!' : 'Arrival notification submitted successfully!');
       setShowForm(false);
-      setFormData({ vessel: '', imo: '', imoVerified: false, vesselId: null, type: '', flag: '', arrivalDate: '', arrivalTime: '', purpose: '', cargo: '' });
-      setErrors({});
-      loadArrivals(); // Refresh list
-    } catch (error) {
+      reset();
+      setImoVerified(false);
+      setVesselId(null);
+      loadArrivals();
+    } catch (error: any) {
       console.error("Submission failed", error);
-      toast.error(language === 'ar' ? 'فشل إرسال الطلب' : 'Submission failed');
-    } finally {
-      setSubmitting(false);
+      if (error.response?.data?.errors) {
+        // Display Laravel validation errors
+        Object.values(error.response.data.errors).forEach((err: any) => toast.error(err[0]));
+      } else {
+        toast.error(language === 'ar' ? 'فشل إرسال الطلب' : 'Submission failed');
+      }
     }
   };
 
@@ -175,7 +185,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
         <div className="bg-[var(--surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--secondary)]/30 p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500 ring-1 ring-black/5">
           <h2 className="text-2xl font-black text-[var(--text-primary)] mb-6">{t.formTitle}</h2>
 
-          {!formData.imoVerified ? (
+          {!imoVerified ? (
             /* Step 1: IMO Check */
             <div className="space-y-4">
               <div>
@@ -183,30 +193,30 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                 <div className="flex gap-3">
                   <input
                     type="text"
-                    value={formData.imo}
-                    onChange={(e) => setFormData({ ...formData, imo: e.target.value })}
-                    maxLength={9}
-                    placeholder="9-digit IMO Number"
+                    {...register('imo')}
+                    maxLength={10}
+                    placeholder="e.g. IMO1234567"
                     className={`flex-1 px-4 py-3 bg-[var(--background)] border ${errors.imo ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
                   />
                   <button
                     type="button"
                     onClick={handleCheckIMO}
-                    disabled={checkingIMO || formData.imo.length !== 9}
+                    disabled={checkingIMO || !watchImo}
                     className="btn-primary min-w-[160px]"
                   >
                     {checkingIMO ? <Loader2 className="w-5 h-5 animate-spin" /> : (language === 'ar' ? 'تحقق من IMO' : 'Verify IMO')}
                   </button>
                 </div>
-                {errors.imo && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.imo}</p>}
+                {errors.imo && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.imo.message}</p>}
               </div>
               <div className="flex justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     setShowForm(false);
-                    setErrors({});
-                    setFormData({ vessel: '', imo: '', imoVerified: false, vesselId: null, type: '', flag: '', arrivalDate: '', arrivalTime: '', purpose: '', cargo: '' });
+                    reset();
+                    setImoVerified(false);
+                    setVesselId(null);
                   }}
                   className="btn-ghost"
                 >
@@ -216,10 +226,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
             </div>
           ) : (
             /* Step 2: Full Form */
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="alert-info">
                 <Ship className="w-5 h-5 flex-shrink-0" />
-                <div className="font-bold">IMO: {formData.imo}</div>
+                <div className="font-bold">IMO: {getValues('imo')}</div>
                 <CheckCircle2 className="w-5 h-5 text-[var(--success)] ml-auto" />
               </div>
 
@@ -229,13 +239,12 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.selectVessel}</label>
                   <input
                     type="text"
-                    value={formData.vessel}
-                    onChange={(e) => setFormData({ ...formData, vessel: e.target.value })}
+                    {...register('vessel')}
                     placeholder={language === 'ar' ? 'اسم السفينة' : 'Vessel Name'}
                     className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vessel ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
-                    readOnly={!!formData.vesselId} // Read-only if fetched from DB
+                    readOnly={!!vesselId} // Read-only if fetched from DB
                   />
-                  {errors.vessel && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.vessel}</p>}
+                  {errors.vessel && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.vessel.message}</p>}
                 </div>
 
                 {/* Purpose */}
@@ -243,40 +252,40 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.purpose}</label>
                   <input
                     type="text"
-                    value={formData.purpose}
-                    onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                    {...register('purpose')}
                     placeholder={t.purposePlaceholder}
                     className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.purpose ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
                   />
-                  {errors.purpose && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.purpose}</p>}
+                  {errors.purpose && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.purpose.message}</p>}
                 </div>
 
                 {/* Type & Flag (Visible if new vessel) */}
-                {!formData.vesselId && (
+                {!vesselId && (
                   <>
                     <div>
                       <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'نوع السفينة' : 'Vessel Type'}</label>
                       <select
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]"
+                        {...register('type')}
+                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]`}
                       >
                         <option value="">Select Type</option>
-                        <option value="General Cargo">General Cargo</option>
-                        <option value="Container Ship">Container Ship</option>
-                        <option value="Oil Tanker">Oil Tanker</option>
-                        <option value="Bulk Carrier">Bulk Carrier</option>
+                        <option value="general">General Cargo</option>
+                        <option value="container">Container Ship</option>
+                        <option value="tanker">Oil Tanker</option>
+                        <option value="bulk">Bulk Carrier</option>
+                        <option value="ro-ro">Ro-Ro</option>
                       </select>
+                      {errors.type && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.type.message}</p>}
                     </div>
                     <div>
                       <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'علم السفينة' : 'Flag'}</label>
                       <input
                         type="text"
-                        value={formData.flag}
-                        onChange={(e) => setFormData({ ...formData, flag: e.target.value })}
+                        {...register('flag')}
                         placeholder="e.g. Panama"
-                        className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all"
+                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.flag ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
                       />
+                      {errors.flag && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.flag.message}</p>}
                     </div>
                   </>
                 )}
@@ -286,11 +295,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.arrivalDate}</label>
                   <input
                     type="date"
-                    value={formData.arrivalDate}
-                    onChange={(e) => setFormData({ ...formData, arrivalDate: e.target.value })}
+                    {...register('arrivalDate')}
                     className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
                   />
-                  {errors.arrivalDate && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalDate}</p>}
+                  {errors.arrivalDate && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalDate.message}</p>}
                 </div>
 
                 {/* Arrival Time */}
@@ -298,19 +306,17 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.arrivalTime}</label>
                   <input
                     type="time"
-                    value={formData.arrivalTime}
-                    onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
+                    {...register('arrivalTime')}
                     className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
                   />
-                  {errors.arrivalTime && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalTime}</p>}
+                  {errors.arrivalTime && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalTime.message}</p>}
                 </div>
 
                 {/* Cargo Info */}
                 <div className="md:col-span-2">
                   <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.cargoInfo}</label>
                   <textarea
-                    value={formData.cargo}
-                    onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                    {...register('cargo')}
                     placeholder={t.cargoPlaceholder}
                     rows={3}
                     className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all resize-none"
@@ -321,17 +327,18 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={isSubmitting}
                   className="btn-primary flex-1 py-4 text-lg"
                 >
-                  {submitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t.submitButton}
+                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t.submitButton}
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setShowForm(false);
-                    setErrors({});
-                    setFormData({ vessel: '', imo: '', imoVerified: false, vesselId: null, type: '', flag: '', arrivalDate: '', arrivalTime: '', purpose: '', cargo: '' });
+                    reset();
+                    setImoVerified(false);
+                    setVesselId(null);
                   }}
                   className="btn-secondary px-10 py-4 font-bold"
                 >

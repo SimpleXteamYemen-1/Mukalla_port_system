@@ -14,21 +14,23 @@ class Vessel extends Model
         'owner_id',
         'status',
         'eta',
+        'etd',
         'current_wharf_id',
     ];
 
     protected $casts = [
         'eta' => 'datetime',
+        'etd' => 'datetime',
     ];
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(User::class , 'owner_id');
     }
 
     public function wharf()
     {
-        return $this->belongsTo(Wharf::class, 'current_wharf_id');
+        return $this->belongsTo(Wharf::class , 'current_wharf_id');
     }
 
     public function manifests()
