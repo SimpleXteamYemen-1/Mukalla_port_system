@@ -9,6 +9,8 @@ use App\Models\CargoManifest;
 use App\Models\AnchorageRequest;
 use App\Http\Requests\StoreArrivalNotificationRequest;
 use App\Http\Requests\StoreAnchorageRequest;
+use App\Http\Requests\StoreVesselArrivalRequest;
+use App\Http\Requests\UploadManifestRequest;
 use App\Services\AgentService;
 use Illuminate\Support\Facades\Storage;
 
@@ -31,22 +33,16 @@ class AgentController extends Controller
         ]);
     }
 
-    public function submitArrival(StoreArrivalNotificationRequest $request, AgentService $agentService)
+    public function submitArrival(StoreVesselArrivalRequest $request, AgentService $agentService)
     {
         $vessel = $agentService->processArrival($request->validated(), $request->user()->id);
 
         return response()->json($vessel, 201);
     }
 
-    public function uploadManifest(Request $request)
+    public function uploadManifest(UploadManifestRequest $request)
     {
-        $request->validate([
-            'vessel_id' => 'required|exists:vessels,id',
-            'file' => 'required|file', // storing file via Storage
-            'total_weight' => 'required|numeric',
-            'container_count' => 'required|integer',
-        ]);
-        
+
         // Ensure user owns vessel
         $vessel = Vessel::where('id', $request->vessel_id)
             ->where('owner_id', $request->user()->id)
@@ -104,7 +100,7 @@ class AgentController extends Controller
             ->with('vessel')
             ->latest()
             ->get();
-        
+
         return response()->json($requests);
     }
     public function getDashboardStats(Request $request)
@@ -139,56 +135,56 @@ class AgentController extends Controller
         // 1. Arrivals (Vessels)
         $arrivals = Vessel::where('owner_id', $userId)->get()->map(function ($v) use ($request) {
             return [
-                'id' => 'AN-' . $v->id,
-                'type' => 'arrival',
-                'vessel' => $v->name,
-                'title' => 'Arrival Notification',
-                'submittedDate' => $v->created_at->toDateTimeString(),
-                'status' => $v->status === 'awaiting' ? 'pending' : ($v->status === 'active' ? 'approved' : $v->status),
-                'completedDate' => $v->updated_at->toDateTimeString(),
-                // 'icon' => 'Ship', // Handled on frontend
-                'timeline' => [
-                    ['step' => 'Submitted', 'date' => $v->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
-                    ['step' => 'Under Review', 'date' => '', 'user' => 'Port Officer', 'status' => $v->status === 'awaiting' ? 'pending' : 'completed'],
-                    ['step' => 'Approved', 'date' => $v->status === 'active' ? $v->updated_at->toDateTimeString() : '', 'user' => 'Port Officer', 'status' => $v->status === 'active' ? 'completed' : 'pending'],
-                ]
+            'id' => 'AN-' . $v->id,
+            'type' => 'arrival',
+            'vessel' => $v->name,
+            'title' => 'Arrival Notification',
+            'submittedDate' => $v->created_at->toDateTimeString(),
+            'status' => $v->status === 'awaiting' ? 'pending' : ($v->status === 'active' ? 'approved' : $v->status),
+            'completedDate' => $v->updated_at->toDateTimeString(),
+            // 'icon' => 'Ship', // Handled on frontend
+            'timeline' => [
+            ['step' => 'Submitted', 'date' => $v->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
+            ['step' => 'Under Review', 'date' => '', 'user' => 'Port Officer', 'status' => $v->status === 'awaiting' ? 'pending' : 'completed'],
+            ['step' => 'Approved', 'date' => $v->status === 'active' ? $v->updated_at->toDateTimeString() : '', 'user' => 'Port Officer', 'status' => $v->status === 'active' ? 'completed' : 'pending'],
+            ]
             ];
         });
 
         // 2. Anchorage Requests
         $anchorage = AnchorageRequest::where('agent_id', $userId)->with('vessel')->get()->map(function ($a) {
             return [
-                'id' => 'AR-' . $a->id,
-                'type' => 'anchorage',
-                'vessel' => $a->vessel->name,
-                'title' => 'Anchorage Request',
-                'submittedDate' => $a->created_at->toDateTimeString(),
-                'status' => $a->status,
-                'completedDate' => $a->updated_at->toDateTimeString(),
-                'rejectionReason' => $a->rejection_reason ?? null,
-                'timeline' => [
-                    ['step' => 'Submitted', 'date' => $a->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
-                    ['step' => 'Executive Approval', 'date' => '', 'user' => 'Executive', 'status' => $a->status === 'pending' ? 'pending' : ($a->status === 'approved' ? 'completed' : 'rejected')],
-                    ['step' => 'Final Decision', 'date' => $a->status !== 'pending' ? $a->updated_at->toDateTimeString() : '', 'user' => 'Executive', 'status' => $a->status === 'pending' ? 'pending' : ($a->status === 'approved' ? 'completed' : 'rejected')],
-                ]
+            'id' => 'AR-' . $a->id,
+            'type' => 'anchorage',
+            'vessel' => $a->vessel->name,
+            'title' => 'Anchorage Request',
+            'submittedDate' => $a->created_at->toDateTimeString(),
+            'status' => $a->status,
+            'completedDate' => $a->updated_at->toDateTimeString(),
+            'rejectionReason' => $a->rejection_reason ?? null,
+            'timeline' => [
+            ['step' => 'Submitted', 'date' => $a->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
+            ['step' => 'Executive Approval', 'date' => '', 'user' => 'Executive', 'status' => $a->status === 'pending' ? 'pending' : ($a->status === 'approved' ? 'completed' : 'rejected')],
+            ['step' => 'Final Decision', 'date' => $a->status !== 'pending' ? $a->updated_at->toDateTimeString() : '', 'user' => 'Executive', 'status' => $a->status === 'pending' ? 'pending' : ($a->status === 'approved' ? 'completed' : 'rejected')],
+            ]
             ];
         });
 
         // 3. Manifests
         $manifests = CargoManifest::where('uploaded_by', $userId)->with('vessel')->get()->map(function ($m) {
             return [
-                'id' => 'CM-' . $m->id,
-                'type' => 'manifest',
-                'vessel' => $m->vessel->name,
-                'title' => 'Cargo Manifest',
-                'submittedDate' => $m->created_at->toDateTimeString(),
-                'status' => $m->status,
-                'completedDate' => $m->updated_at->toDateTimeString(),
-                'timeline' => [
-                    ['step' => 'Uploaded', 'date' => $m->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
-                    ['step' => 'Under Review', 'date' => '', 'user' => 'Port Officer', 'status' => $m->status === 'pending' ? 'pending' : 'completed'],
-                    ['step' => 'Approved', 'date' => $m->status === 'approved' ? $m->updated_at->toDateTimeString() : '', 'user' => 'Port Officer', 'status' => $m->status === 'approved' ? 'completed' : 'pending'],
-                ]
+            'id' => 'CM-' . $m->id,
+            'type' => 'manifest',
+            'vessel' => $m->vessel->name,
+            'title' => 'Cargo Manifest',
+            'submittedDate' => $m->created_at->toDateTimeString(),
+            'status' => $m->status,
+            'completedDate' => $m->updated_at->toDateTimeString(),
+            'timeline' => [
+            ['step' => 'Uploaded', 'date' => $m->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
+            ['step' => 'Under Review', 'date' => '', 'user' => 'Port Officer', 'status' => $m->status === 'pending' ? 'pending' : 'completed'],
+            ['step' => 'Approved', 'date' => $m->status === 'approved' ? $m->updated_at->toDateTimeString() : '', 'user' => 'Port Officer', 'status' => $m->status === 'approved' ? 'completed' : 'pending'],
+            ]
             ];
         });
 

@@ -77,9 +77,14 @@ export const wharfService = {
         }
     },
 
-    assignContainer: async (containerId: string, storageId: string) => {
+    assignContainer: async (containerId: string, block: string, row: number, tier: number) => {
         try {
-            const response = await api.post('/wharf/assign-container', { containerId, storageId });
+            const response = await api.post('/wharf/assign-container', {
+                container_id: containerId,
+                block,
+                row,
+                tier
+            });
             return response.data;
         } catch (error) {
             console.error('Error assigning container:', error);

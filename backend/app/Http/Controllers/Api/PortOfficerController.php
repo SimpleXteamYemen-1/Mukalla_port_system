@@ -17,7 +17,7 @@ class PortOfficerController extends Controller
             'active_vessels' => Vessel::whereIn('status', ['docked', 'loading', 'unloading', 'ready'])->count(),
             'awaiting_berth' => Vessel::where('status', 'awaiting')->count(),
             // Assuming 'pending' clearances mean requests, but here counting valid ones for now
-            'pending_clearances' => PortClearance::where('status', 'valid')->count(), 
+            'pending_clearances' => PortClearance::where('status', 'valid')->count(),
         ]);
     }
 
@@ -30,9 +30,9 @@ class PortOfficerController extends Controller
     {
         $vessel = Vessel::findOrFail($id);
         // Assuming workflow: awaiting -> approved -> assigned/docked
-        $vessel->status = 'approved'; 
+        $vessel->status = 'approved';
         $vessel->save();
-        
+
         Log::create([
             'user_id' => $request->user()->id,
             'action' => 'approve_arrival',
@@ -41,31 +41,40 @@ class PortOfficerController extends Controller
 
         return response()->json($vessel);
     }
-    
+
     public function assignBerth(Request $request, $id)
     {
         $request->validate([
             'wharf_id' => 'required|exists:wharves,id',
+            'eta' => 'required|date',
+            'etd' => 'required|date|after:eta',
         ]);
 
         $vessel = Vessel::findOrFail($id);
         $wharf = Wharf::findOrFail($request->wharf_id);
 
-        if ($wharf->status === 'occupied') {
-             return response()->json(['message' => 'Wharf occupied'], 400);
+        // Check for conflicting schedules
+        $conflict = Vessel::where('current_wharf_id', $wharf->id)
+            ->where('id', '!=', $vessel->id)
+            ->where(function ($query) use ($request) {
+            $query->where('eta', '<', $request->etd)
+                ->where('etd', '>', $request->eta);
+        })->exists();
+
+        if ($conflict) {
+            return response()->json(['message' => 'Wharf is already booked during this time window'], 400);
         }
 
         $vessel->current_wharf_id = $wharf->id;
-        $vessel->status = 'docked';
+        $vessel->eta = $request->eta;
+        $vessel->etd = $request->etd;
+        $vessel->status = 'scheduled';
         $vessel->save();
-
-        $wharf->status = 'occupied';
-        $wharf->save();
 
         Log::create([
             'user_id' => $request->user()->id,
             'action' => 'assign_berth',
-            'details' => "Assigned {$vessel->name} to {$wharf->name}",
+            'details' => "Scheduled {$vessel->name} to {$wharf->name} from {$vessel->eta} to {$vessel->etd}",
         ]);
 
         return response()->json($vessel);
@@ -112,13 +121,13 @@ class PortOfficerController extends Controller
     public function releaseBerth(Request $request, $id)
     {
         $vessel = Vessel::findOrFail($id);
-        
+
         if (!$vessel->current_wharf_id) {
-             return response()->json(['message' => 'Vessel is not docked'], 400);
+            return response()->json(['message' => 'Vessel is not docked'], 400);
         }
 
         $wharf = Wharf::find($vessel->current_wharf_id);
-        
+
         // Update Vessel
         $vessel->current_wharf_id = null;
         $vessel->status = 'ready'; // Ready to depart
