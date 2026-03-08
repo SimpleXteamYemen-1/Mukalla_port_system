@@ -29,6 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/anchorage', [AgentController::class, 'getAnchorageRequests']);
         Route::get('/agent/stats', [AgentController::class, 'getDashboardStats']);
         Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
+        Route::get('/agent/clearances', [AgentController::class, 'getClearances']);
+        Route::post('/agent/clearance', [AgentController::class, 'issueClearance']);
     });
 
     // Port Officer Routes
@@ -47,14 +49,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Wharf Routes
     Route::group(['middleware' => ['role:wharf']], function () {
         Route::get('/wharf/wharves', [WharfController::class, 'getWharves']);
-        Route::get('/wharf/wharves', [WharfController::class, 'getWharves']);
         Route::patch('/wharf/wharves/{id}', [WharfController::class, 'updateWharfStatus']);
         Route::get('/wharf/dashboard', [WharfController::class, 'getDashboardStats']);
         Route::get('/wharf/containers', [WharfController::class, 'getContainers']);
+        Route::get('/wharf/storage-areas', [WharfController::class, 'getStorageAreas']);
         Route::put('/wharf/{id}/status', [WharfController::class, 'updateWharfStatus']);
         Route::post('/wharf/assign-container', [WharfController::class, 'assignContainer']);
         Route::post('/wharf/containers/{id}/log', [WharfController::class, 'logContainerOperation']);
-        Route::get('/wharf/containers', [WharfController::class, 'getContainers']);
     });
 
     // Trader Routes
@@ -70,7 +71,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/executive/logs', [ExecutiveController::class, 'getLogs']);
         Route::get('/executive/reports', [ExecutiveController::class, 'getReports']);
         Route::get('/executive/dashboard', [ExecutiveController::class, 'getDashboardStats']);
+        Route::get('/executive/analytics', [ExecutiveController::class, 'getAnalytics']);
         Route::get('/executive/approvals', [ExecutiveController::class, 'getPendingApprovals']);
+        Route::post('/executive/arrivals/{id}/approve', [ExecutiveController::class, 'approveArrival']);
+        Route::post('/executive/arrivals/{id}/reject', [ExecutiveController::class, 'rejectArrival']);
         Route::get('/executive/anchorage/requests', [ExecutiveController::class, 'getAnchorageRequests']);
         Route::post('/executive/anchorage/{id}/approve', [ExecutiveController::class, 'approveAnchorage']);
         Route::post('/executive/anchorage/{id}/reject', [ExecutiveController::class, 'rejectAnchorage']);

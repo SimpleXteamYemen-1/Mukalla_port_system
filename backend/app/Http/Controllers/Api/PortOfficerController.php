@@ -83,22 +83,26 @@ class PortOfficerController extends Controller
     public function issueClearance(Request $request)
     {
         $request->validate([
-            'vessel_id' => 'required|exists:vessels,id',
+            'vessel_name' => 'required|string|exists:vessels,name',
+            'next_port' => 'required|string',
             'expiry_date' => 'required|date',
         ]);
 
+        $vessel = Vessel::where('name', $request->vessel_name)->firstOrFail();
+
         $clearance = PortClearance::create([
-            'vessel_id' => $request->vessel_id,
+            'vessel_id' => $vessel->id,
             'officer_id' => $request->user()->id,
             'issue_date' => now(),
             'expiry_date' => $request->expiry_date,
             'status' => 'valid',
+            'next_port' => $request->next_port,
         ]);
 
         Log::create([
             'user_id' => $request->user()->id,
             'action' => 'issue_clearance',
-            'details' => "Issued clearance for vessel ID {$request->vessel_id}",
+            'details' => "Issued clearance for vessel {$vessel->name} to {$request->next_port}",
         ]);
 
         return response()->json($clearance, 201);

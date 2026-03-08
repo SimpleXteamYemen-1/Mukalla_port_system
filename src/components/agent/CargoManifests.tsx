@@ -300,7 +300,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                   <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
                   <div>
                     <div className="text-red-200 font-semibold text-sm mb-1">{t.rejectionReason}</div>
-                    <div className="text-red-200/80 text-sm mb-1">Check logs for details</div>
+                    <div className="text-red-200/80 text-sm mb-1">{manifest.rejection_reason || 'Check logs for details'}</div>
                   </div>
                 </div>
               </div>

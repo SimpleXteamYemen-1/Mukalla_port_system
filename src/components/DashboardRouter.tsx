@@ -9,6 +9,7 @@ import { ArrivalNotifications } from './agent/ArrivalNotifications';
 import { AnchorageRequests } from './agent/AnchorageRequests';
 import { CargoManifests } from './agent/CargoManifests';
 import { RequestStatusTracker } from './agent/RequestStatusTracker';
+import { PortClearances as AgentPortClearances } from './agent/PortClearances';
 import { ExecutiveSidebar } from './executive/ExecutiveSidebar';
 import { ExecutiveDashboard } from './executive/ExecutiveDashboard';
 import { ArrivalApprovals } from './executive/ArrivalApprovals';
@@ -450,6 +451,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'arrivals' && <ArrivalNotifications language={language} />}
         {currentPage === 'anchorage' && <AnchorageRequests language={language} />}
         {currentPage === 'manifests' && <CargoManifests language={language} />}
+        {currentPage === 'clearances' && <AgentPortClearances language={language} />}
         {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
       </MainLayout>
     );

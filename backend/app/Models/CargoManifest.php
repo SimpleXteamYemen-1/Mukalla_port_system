@@ -10,6 +10,7 @@ class CargoManifest extends Model
         'vessel_id',
         'uploaded_by',
         'status',
+        'rejection_reason',
         'file_path',
         'total_weight',
         'container_count',

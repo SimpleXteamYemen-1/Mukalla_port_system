@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
         ]);
+
+        \App\Models\StorageArea::factory(4)->create();
     }
 
 }

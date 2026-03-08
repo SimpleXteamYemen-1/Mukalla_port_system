@@ -13,6 +13,7 @@ const anchorageSchema = z.object({
   duration: z.string().min(1, { message: 'Duration is required' }),
   reason: z.string().min(1, { message: 'Reason is required' }),
   preferredLocation: z.string().optional(),
+  dockingTime: z.string().min(1, { message: 'Docking time is required' }),
 });
 
 type AnchorageFormData = z.infer<typeof anchorageSchema>;
@@ -40,6 +41,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       duration: '',
       reason: '',
       preferredLocation: '',
+      dockingTime: '',
     },
   });
 
@@ -72,7 +74,8 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
         vessel_id: data.vesselId,
         duration: data.duration,
         reason: data.reason,
-        location: data.preferredLocation
+        location: data.preferredLocation,
+        docking_time: data.dockingTime
       });
 
       toast.success(language === 'ar' ? 'تم إرسال طلب الرسو بنجاح!' : 'Anchorage request submitted successfully!');
@@ -203,6 +206,16 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                   <option value="zone-b">{t.zoneB}</option>
                   <option value="zone-c">{t.zoneC}</option>
                 </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{language === 'ar' ? 'وقت الرسو' : 'Docking Time'}</label>
+                <input
+                  type="datetime-local"
+                  {...register('dockingTime')}
+                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.dockingTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all`}
+                />
+                {errors.dockingTime && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.dockingTime.message}</p>}
               </div>
 
               <div className="md:col-span-2 space-y-2">

@@ -211,9 +211,9 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
                     </div>
                     <div className="text-[var(--text-secondary)] font-medium text-sm flex items-center gap-2">
                       <Ship className="w-4 h-4" />
-                      {approval.vessel}
+                      {approval.vessel.name}
                     </div>
-                    <div className="text-[var(--text-secondary)]/70 text-xs mt-1 font-medium">{approval.agent}</div>
+                    <div className="text-[var(--text-secondary)]/70 text-xs mt-1 font-medium">{approval.agent.name}</div>
                   </div>
                   <StatusBadge
                     status={approval.type}

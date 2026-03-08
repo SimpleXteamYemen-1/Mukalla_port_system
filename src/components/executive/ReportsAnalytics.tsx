@@ -1,6 +1,8 @@
-import { BarChart3, Download, TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { BarChart3, Download, TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
+import { executiveService } from '../../services/executiveService';
 
 interface ReportsAnalyticsProps {
   language: Language;
@@ -9,112 +11,102 @@ interface ReportsAnalyticsProps {
 export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
   const t = translations[language]?.executive?.reports || translations.en.executive.reports;
 
-  const turnaroundData = [
-    { period: language === 'ar' ? 'الإثنين' : 'Mon', hours: 2.5 },
-    { period: language === 'ar' ? 'الثلاثاء' : 'Tue', hours: 3.2 },
-    { period: language === 'ar' ? 'الأربعاء' : 'Wed', hours: 2.1 },
-    { period: language === 'ar' ? 'الخميس' : 'Thu', hours: 2.8 },
-    { period: language === 'ar' ? 'الجمعة' : 'Fri', hours: 3.5 },
-    { period: language === 'ar' ? 'السبت' : 'Sat', hours: 2.3 },
-    { period: language === 'ar' ? 'الأحد' : 'Sun', hours: 2.0 },
-  ];
+  const [turnaroundData, setTurnaroundData] = useState<any[]>([]);
+  const [rejectionReasons, setRejectionReasons] = useState<any[]>([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState<any[]>([]);
+  const [recentReports, setRecentReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const rejectionReasons = [
-    { 
-      reason: language === 'ar' ? 'ازدحام الميناء' : 'Port Congestion', 
-      count: 12,
-      percentage: 35,
-      color: 'bg-red-500'
-    },
-    { 
-      reason: language === 'ar' ? 'مستندات ناقصة' : 'Incomplete Documents', 
-      count: 8,
-      percentage: 24,
-      color: 'bg-amber-500'
-    },
-    { 
-      reason: language === 'ar' ? 'فشل الفحص' : 'Inspection Failure', 
-      count: 7,
-      percentage: 21,
-      color: 'bg-orange-500'
-    },
-    { 
-      reason: language === 'ar' ? 'عدم توفر الموارد' : 'Resource Unavailable', 
-      count: 5,
-      percentage: 15,
-      color: 'bg-yellow-500'
-    },
-    { 
-      reason: language === 'ar' ? 'أخرى' : 'Other', 
-      count: 2,
-      percentage: 5,
-      color: 'bg-gray-500'
-    },
-  ];
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      const data = await executiveService.getAnalytics();
+      if (data) {
+        // Map backend turnAround data to frontend format
+        const mappedTurnaround = data.turnaroundData.map((item: any) => ({
+          period: item.name, // The backend sends 'Jan', 'Feb' etc. The UI previously used Days. We adapt.
+          hours: item.avg
+        }));
+        setTurnaroundData(mappedTurnaround);
 
-  const performanceMetrics = [
-    {
-      title: t.avgTurnaroundTime,
-      value: '2.6h',
-      change: '-12%',
-      trend: 'down',
-      good: true,
-      icon: Clock,
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      title: t.approvalRate,
-      value: '87%',
-      change: '+5%',
-      trend: 'up',
-      good: true,
-      icon: CheckCircle2,
-      color: 'from-green-500 to-emerald-500'
-    },
-    {
-      title: t.rejectionRate,
-      value: '13%',
-      change: '-3%',
-      trend: 'down',
-      good: true,
-      icon: XCircle,
-      color: 'from-red-500 to-rose-500'
-    },
-    {
-      title: t.dailyDecisions,
-      value: '28',
-      change: '+15%',
-      trend: 'up',
-      good: true,
-      icon: BarChart3,
-      color: 'from-purple-500 to-pink-500'
-    },
-  ];
+        // Map rejection reasons
+        setRejectionReasons(data.rejectionReasons.map((item: any) => ({
+          reason: item.name,
+          count: item.value,
+          percentage: item.value, // Simplification 
+          color: `bg-[${item.color}]` // Tailwind arbitrary values or pre-map
+        })));
 
-  const recentReports = [
-    {
-      name: language === 'ar' ? 'تقرير أداء فبراير' : 'February Performance Report',
-      date: '2026-02-07',
-      type: 'PDF',
-      size: '2.3 MB'
-    },
-    {
-      name: language === 'ar' ? 'تحليل القرارات الأسبوعية' : 'Weekly Decision Analysis',
-      date: '2026-02-06',
-      type: 'Excel',
-      size: '1.8 MB'
-    },
-    {
-      name: language === 'ar' ? 'سجل التدقيق الشهري' : 'Monthly Audit Log',
-      date: '2026-02-01',
-      type: 'PDF',
-      size: '4.1 MB'
-    },
-  ];
+        // Map performance metrics
+        setPerformanceMetrics([
+          {
+            title: t.avgTurnaroundTime,
+            value: data.performanceMetrics.avgTurnaround,
+            change: '-12%', // Mock trend for now 
+            trend: 'down',
+            good: true,
+            icon: Clock,
+            color: 'from-blue-500 to-cyan-500'
+          },
+          {
+            title: t.approvalRate,
+            value: data.performanceMetrics.approvalRate,
+            change: '+5%',
+            trend: 'up',
+            good: true,
+            icon: CheckCircle2,
+            color: 'from-green-500 to-emerald-500'
+          },
+          {
+            title: t.rejectionRate,
+            value: (100 - parseInt(data.performanceMetrics.approvalRate)) + '%',
+            change: '-3%',
+            trend: 'down',
+            good: true,
+            icon: XCircle,
+            color: 'from-red-500 to-rose-500'
+          },
+          {
+            title: t.dailyDecisions,
+            value: '28', // This could be fetched too
+            change: '+15%',
+            trend: 'up',
+            good: true,
+            icon: BarChart3,
+            color: 'from-purple-500 to-pink-500'
+          },
+        ]);
+
+        // Map recent reports
+        setRecentReports(data.recentReports.map((report: any) => ({
+          name: report.title,
+          date: report.date,
+          type: report.type,
+          size: report.size
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [language]);
 
   const exportReport = (format: string) => {
     alert(language === 'ar' ? `تصدير التقرير بصيغة ${format}...` : `Exporting report as ${format}...`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20">
+        <RefreshCw className="w-12 h-12 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -178,7 +170,7 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
                   <span className="text-white font-semibold">{data.hours}h</span>
                 </div>
                 <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
                     style={{ width: `${(data.hours / 4) * 100}%` }}
                   ></div>
@@ -206,7 +198,7 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
                   </div>
                 </div>
                 <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
-                  <div 
+                  <div
                     className={`h-full ${item.color} rounded-full transition-all duration-500`}
                     style={{ width: `${item.percentage}%` }}
                   ></div>
@@ -234,7 +226,7 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
                 const decisions = Math.floor(Math.random() * 10) + 5;
                 const intensity = Math.min(decisions / 15, 1);
                 return (
-                  <div 
+                  <div
                     key={dayIndex}
                     className="h-8 rounded transition-all hover:scale-110 cursor-pointer"
                     style={{

@@ -78,7 +78,7 @@ return new class extends Migration
         Schema::create('port_clearances', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('vessel_id');
-            $table->unsignedBigInteger('officer_id'); // User ID (Officer)
+            $table->unsignedBigInteger('officer_id')->nullable(); // User ID (Officer)
             $table->dateTime('issue_date');
             $table->dateTime('expiry_date');
             $table->string('status')->default('valid');

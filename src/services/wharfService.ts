@@ -112,5 +112,15 @@ export const wharfService = {
             console.error('Error logging container operation:', error);
             throw error;
         }
+    },
+
+    getStorageAreas: async () => {
+        try {
+            const response = await api.get('/wharf/storage-areas');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching storage areas:', error);
+            throw error;
+        }
     }
 };

@@ -12,6 +12,7 @@ class PortClearance extends Model
         'issue_date',
         'expiry_date',
         'status',
+        'next_port',
     ];
 
     protected $casts = [

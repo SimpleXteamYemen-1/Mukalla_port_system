@@ -160,5 +160,43 @@ export const agentService = {
             console.error('Error fetching vessels', error);
             return [];
         }
+    },
+
+    getClearances: async () => {
+        try {
+            const response = await api.get('/agent/clearances');
+            return response.data.map((c: any) => {
+                const expiry = new Date(c.expiry_date);
+                const now = new Date();
+                const hours = Math.round((expiry.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+                return {
+                    id: c.id.toString(),
+                    clearanceId: `CLR-${c.id}`,
+                    vessel: c.vessel ? c.vessel.name : 'Unknown',
+                    nextPort: c.next_port || 'Unknown',
+                    issueTime: c.issue_date,
+                    expiryTime: c.expiry_date,
+                    status: hours < 0 ? 'expired' : (hours < 24 ? 'expiring-soon' : 'valid'),
+                    hoursRemaining: hours
+                };
+            });
+        } catch (error) {
+            console.error('Error fetching clearances', error);
+            return [];
+        }
+    },
+
+    issueClearance: async (vesselName: string, nextPort: string) => {
+        try {
+            const response = await api.post('/agent/clearance', {
+                vessel_name: vesselName,
+                next_port: nextPort,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error issuing clearance', error);
+            throw error;
+        }
     }
 };

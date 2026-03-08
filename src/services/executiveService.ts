@@ -9,10 +9,24 @@ export interface ExecutiveStats {
 
 export interface PendingApproval {
     id: string;
+    vesselId: number;
     type: string;
-    vessel: string;
-    agent: string;
+    vessel: {
+        name: string;
+        imo: string;
+        flag: string;
+        type: string;
+    };
+    agent: {
+        name: string;
+        contact: string;
+    };
+    purpose: string;
     priority: string;
+    riskLevel: string;
+    cargoType: string;
+    containers: number;
+    documents: string[];
     submittedDate: string;
     eta: string;
 }
@@ -53,6 +67,66 @@ export const executiveService = {
         } catch (error) {
             console.error('Error fetching recent decisions:', error);
             return [];
+        }
+    },
+
+    approveArrival: async (id: number) => {
+        try {
+            const response = await api.post(`/executive/arrivals/${id}/approve`);
+            return response.data;
+        } catch (error) {
+            console.error('Error approving arrival:', error);
+            throw error;
+        }
+    },
+
+    rejectArrival: async (id: number, reason: string) => {
+        try {
+            const response = await api.post(`/executive/arrivals/${id}/reject`, { reason });
+            return response.data;
+        } catch (error) {
+            console.error('Error rejecting arrival:', error);
+            throw error;
+        }
+    },
+
+    getAnalytics: async () => {
+        try {
+            const response = await api.get('/executive/analytics');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching analytics:', error);
+            throw error;
+        }
+    },
+
+    getAnchorageRequests: async () => {
+        try {
+            const response = await api.get('/executive/anchorage/requests');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching anchorage requests:', error);
+            return [];
+        }
+    },
+
+    approveAnchorage: async (id: number) => {
+        try {
+            const response = await api.post(`/executive/anchorage/${id}/approve`);
+            return response.data;
+        } catch (error) {
+            console.error('Error approving anchorage:', error);
+            throw error;
+        }
+    },
+
+    rejectAnchorage: async (id: number, reason: string) => {
+        try {
+            const response = await api.post(`/executive/anchorage/${id}/reject`, { reason });
+            return response.data;
+        } catch (error) {
+            console.error('Error rejecting anchorage:', error);
+            throw error;
         }
     },
 

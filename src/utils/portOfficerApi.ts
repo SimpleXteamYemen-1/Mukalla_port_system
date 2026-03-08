@@ -136,7 +136,7 @@ export async function getClearances(): Promise<Clearance[]> {
         id: c.id.toString(),
         clearanceId: `CLR-${c.id}`,
         vessel: c.vessel ? c.vessel.name : 'Unknown',
-        nextPort: 'Unknown', // Backend doesn't store this yet
+        nextPort: c.next_port || 'Unknown',
         issueTime: c.issue_date,
         expiryTime: c.expiry_date,
         status: hours < 0 ? 'expired' : (hours < 24 ? 'expiring-soon' : 'valid'),
@@ -151,12 +151,10 @@ export async function getClearances(): Promise<Clearance[]> {
 
 export async function issueClearance(vessel: string, nextPort: string, officerName: string) {
   try {
-    // We need vessel ID, but frontend passes name? 
-    // existing Code in PortOfficerDashboard might be passing ID or name.
-    // Dashboard passes `selectedVessel` which is ID.
     const response = await api.post('/officer/clearance', {
-      vessel_id: vessel, // Assuming 'vessel' argument is ID
-      expiry_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Default 24h
+      vessel_name: vessel,
+      next_port: nextPort,
+      expiry_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     });
     return { success: true, data: response.data };
   } catch (error) {

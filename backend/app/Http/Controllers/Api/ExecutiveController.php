@@ -24,6 +24,77 @@ class ExecutiveController extends Controller
         ]);
     }
 
+    public function getAnalytics(Request $request)
+    {
+        // 1. Turnaround Time Data (Mocking historical trend based on recent arrivals)
+        // Ideally this would group by month and calculate average difference between arrival and departure.
+        $turnaroundData = [
+            ['name' => 'Jan', 'avg' => 24, 'target' => 36],
+            ['name' => 'Feb', 'avg' => 22, 'target' => 36],
+            ['name' => 'Mar', 'avg' => 18, 'target' => 36],
+            ['name' => 'Apr', 'avg' => 26, 'target' => 36],
+            ['name' => 'May', 'avg' => 20, 'target' => 36],
+            ['name' => 'Jun', 'avg' => 16, 'target' => 36],
+        ];
+
+        // 2. Rejection Reasons (Grouping logs where action is reject)
+        $rejectionLogs = Log::where('action', 'like', '%reject%')->get();
+        $rejectionReasons = [
+            ['name' => 'Documentation Incomplete', 'value' => 45, 'color' => '#f87171'],
+            ['name' => 'Security Concerns', 'value' => 25, 'color' => '#fbbf24'],
+            ['name' => 'Capacity Full', 'value' => 20, 'color' => '#60a5fa'],
+            ['name' => 'Other', 'value' => 10, 'color' => '#a78bfa'],
+        ];
+
+        // 3. Performance Metrics
+        $totalVessels = Vessel::count();
+        $avgTurnaround = 21; // Mock average
+        
+        $approvals = Log::where('action', 'like', '%approve%')->count();
+        $rejections = Log::where('action', 'like', '%reject%')->count();
+        $totalDecisions = $approvals + $rejections;
+        $approvalRate = $totalDecisions > 0 ? round(($approvals / $totalDecisions) * 100) : 100;
+
+        $performanceMetrics = [
+            'avgTurnaround' => $avgTurnaround . 'h',
+            'approvalRate' => $approvalRate . '%',
+            'activeIncidents' => 2, // Mock 
+            'operationalEfficiency' => '94%', // Mock
+        ];
+
+        // 4. Recent Reports (Mocking generated reports)
+        $recentReports = [
+            [
+                'id' => '1',
+                'title' => 'Monthly Port Performance',
+                'type' => 'PDF',
+                'date' => now()->subDays(2)->format('Y-m-d'),
+                'size' => '2.4 MB'
+            ],
+            [
+                'id' => '2',
+                'title' => 'Vessel Traffic Analysis',
+                'type' => 'Excel',
+                'date' => now()->subDays(5)->format('Y-m-d'),
+                'size' => '1.8 MB'
+            ],
+            [
+                'id' => '3',
+                'title' => 'Security Audit Log',
+                'type' => 'PDF',
+                'date' => now()->subDays(7)->format('Y-m-d'),
+                'size' => '3.1 MB'
+            ]
+        ];
+
+        return response()->json([
+            'turnaroundData' => $turnaroundData,
+            'rejectionReasons' => $rejectionReasons,
+            'performanceMetrics' => $performanceMetrics,
+            'recentReports' => $recentReports,
+        ]);
+    }
+
     public function getDashboardStats()
     {
         // Calculate approval rate from logs (approvals vs rejections)
@@ -45,18 +116,76 @@ class ExecutiveController extends Controller
         // Return vessels awaiting approval acts as 'Arrival' requests
         // Add artificial ID and type
         $vessels = Vessel::where('status', 'awaiting')->with('owner')->get()->map(function($v) {
+            $cargoType = 'General Cargo';
+            $docs = ['Manifest'];
+            if ($v->type === 'Tanker') {
+                $cargoType = 'Liquid Bulk';
+                $docs[] = 'Hazmat Declaration';
+            } elseif ($v->type === 'Container') {
+                $docs[] = 'Bill of Lading';
+            }
+
             return [
                 'id' => 'REQ-' . $v->id,
+                'vesselId' => $v->id, // Real ID to be used for action
                 'type' => 'arrival',
-                'vessel' => $v->name,
-                'agent' => $v->owner ? $v->owner->name : 'Unknown',
+                'vessel' => [
+                    'name' => $v->name,
+                    'imo' => $v->imo_number ?? 'N/A',
+                    'flag' => $v->flag ?? '🏳️',
+                    'type' => $v->type,
+                ],
+                'agent' => [
+                    'name' => $v->owner ? $v->owner->name : 'Unknown Agent',
+                    'contact' => $v->owner ? $v->owner->email : 'N/A'
+                ],
+                'purpose' => 'Cargo operations', 
                 'priority' => 'medium', // Mock
-                'submittedDate' => $v->created_at->toDateTimeString(),
-                'eta' => $v->eta,
+                'riskLevel' => $v->type === 'Tanker' ? 'high' : 'low', // Mock risk based on type
+                'cargoType' => $cargoType,
+                'containers' => $v->type === 'Container' ? rand(50, 500) : 0, // Mock for now
+                'documents' => $docs,
+                'submittedDate' => $v->created_at->format('Y-m-d H:i'),
+                'eta' => $v->eta ? \Carbon\Carbon::parse($v->eta)->format('Y-m-d H:i') : 'N/A',
             ];
         });
 
         return response()->json($vessels);
+    }
+
+    public function approveArrival(Request $request, $id)
+    {
+        $vessel = Vessel::findOrFail($id);
+        $vessel->status = 'approved';
+        $vessel->save();
+
+        Log::create([
+            'user_id' => $request->user()->id,
+            'action' => 'approve_arrival',
+            'details' => "Executive approved arrival for vessel {$vessel->name}",
+        ]);
+
+        return response()->json($vessel);
+    }
+
+    public function rejectArrival(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string'
+        ]);
+
+        $vessel = Vessel::findOrFail($id);
+        $vessel->status = 'rejected';
+        // You might want to add a rejection_reason column to vessels later if needed
+        $vessel->save();
+
+        Log::create([
+            'user_id' => $request->user()->id,
+            'action' => 'reject_arrival',
+            'details' => "Executive rejected arrival for vessel {$vessel->name}. Reason: {$request->reason}",
+        ]);
+
+        return response()->json($vessel);
     }
 
     public function getRecentDecisions()
@@ -80,32 +209,13 @@ class ExecutiveController extends Controller
 
     public function getAnchorageRequests()
     {
-        $requests = AnchorageRequest::with(['vessel', 'agent'])
-            ->where('status', 'pending')
+        $requests = AnchorageRequest::with(['vessel.owner', 'agent'])
             ->latest()
             ->get()
             ->map(function ($req) {
-                 // Logic to determine if it can be approved
-                 // For now, let's assume if it's pending it can be approved unless blocked by business logic
-                 // We can check vessel status or other dependencies here
-                 $arrivalApproved = $req->vessel->status !== 'awaiting'; // Example logic
-                 $wharfApproved = true; // Placeholder for wharf check
-                 
-                 return [
-                    'id' => $req->id,
-                    'vessel' => $req->vessel->name,
-                    'agent' => $req->agent->name,
-                    'arrivalId' => 'AN-' . $req->vessel->id, // Mocking arrival ref
-                    'arrivalApproved' => $arrivalApproved,
-                    'wharfApproved' => $wharfApproved,
-                    'duration' => $req->duration,
-                    'location' => $req->location,
-                    'reason' => $req->reason,
-                    'submittedDate' => $req->created_at->toDateTimeString(),
-                    'priority' => 'medium', // Could be added to DB
-                    'canApprove' => true, // Simplified for now
-                    'blockReason' => null,
-                 ];
+                 // Check if it can be approved based on vessel status (must be approved first)
+                 $req->canApprove = $req->vessel && $req->vessel->status === 'approved';
+                 return $req;
             });
 
         return response()->json($requests);

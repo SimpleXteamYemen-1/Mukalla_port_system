@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Language } from '../../App';
-import { Package, AlertTriangle, TrendingUp, RefreshCw, Database } from 'lucide-react';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { AlertTriangle, TrendingUp, RefreshCw, Database } from 'lucide-react';
+import { wharfService } from '../../services/wharfService';
 
 interface StorageManagementProps {
   language: Language;
@@ -24,14 +24,8 @@ export function StorageManagement({ language }: StorageManagementProps) {
   const loadStorageData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-85dcafc8/storage-areas`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`
-        }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
+      const data = await wharfService.getStorageAreas();
+      if (data && data.success) {
         setStorageAreas(data.areas);
       }
     } catch (error) {
@@ -117,19 +111,18 @@ export function StorageManagement({ language }: StorageManagementProps) {
           </div>
           <div className="text-right">
             <div className="text-5xl font-bold text-white mb-2">{overallPercentage.toFixed(1)}%</div>
-            <div className={`text-sm font-semibold ${
-              overallPercentage >= 90 ? 'text-red-400' :
+            <div className={`text-sm font-semibold ${overallPercentage >= 90 ? 'text-red-400' :
               overallPercentage >= 70 ? 'text-amber-400' :
-              'text-green-400'
-            }`}>
+                'text-green-400'
+              }`}>
               {overallPercentage >= 90 ? (isRTL ? 'ممتلئ' : 'FULL') :
-               overallPercentage >= 70 ? (isRTL ? 'قريب من الامتلاء' : 'NEAR FULL') :
-               (isRTL ? 'متاح' : 'AVAILABLE')}
+                overallPercentage >= 70 ? (isRTL ? 'قريب من الامتلاء' : 'NEAR FULL') :
+                  (isRTL ? 'متاح' : 'AVAILABLE')}
             </div>
           </div>
         </div>
         <div className="w-full bg-white/10 rounded-full h-6 overflow-hidden">
-          <div 
+          <div
             className={`h-6 bg-gradient-to-r ${getStorageColor(totalUsed, totalCapacity)} transition-all duration-500 flex items-center justify-center text-white text-sm font-bold`}
             style={{ width: `${overallPercentage}%` }}
           >
@@ -140,8 +133,8 @@ export function StorageManagement({ language }: StorageManagementProps) {
           <div className="mt-4 flex items-center gap-2 bg-amber-500/20 border border-amber-400/30 rounded-xl p-3">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
             <span className="text-amber-200 text-sm">
-              {isRTL 
-                ? 'تحذير: السعة الإجمالية تقترب من الحد الأقصى' 
+              {isRTL
+                ? 'تحذير: السعة الإجمالية تقترب من الحد الأقصى'
                 : 'Warning: Overall capacity approaching limit'}
             </span>
           </div>
@@ -189,7 +182,7 @@ export function StorageManagement({ language }: StorageManagementProps) {
                   {/* Capacity Bar */}
                   <div className="mb-4">
                     <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden mb-2">
-                      <div 
+                      <div
                         className={`h-4 bg-gradient-to-r ${getStorageColor(area.used, area.capacity)} transition-all duration-500`}
                         style={{ width: `${percentage}%` }}
                       />

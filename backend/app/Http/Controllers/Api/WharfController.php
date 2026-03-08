@@ -6,9 +6,19 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Wharf;
 use App\Models\Container;
+use App\Models\StorageArea;
 
 class WharfController extends Controller
 {
+    public function getStorageAreas()
+    {
+        $areas = StorageArea::all();
+        return response()->json([
+            'success' => true,
+            'areas' => $areas
+        ]);
+    }
+
     public function getWharves()
     {
         return response()->json(Wharf::with('vessels')->get());

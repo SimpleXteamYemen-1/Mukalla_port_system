@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Vessel;
 use App\Models\CargoManifest;
 use App\Models\AnchorageRequest;
+use App\Models\PortClearance;
 use App\Http\Requests\StoreArrivalNotificationRequest;
 use App\Http\Requests\StoreAnchorageRequest;
 use App\Http\Requests\StoreVesselArrivalRequest;
@@ -103,6 +104,36 @@ class AgentController extends Controller
 
         return response()->json($requests);
     }
+
+    public function getClearances(Request $request)
+    {
+        // Only return clearances for vessels owned by the agent
+        $vessels = Vessel::where('owner_id', $request->user()->id)->pluck('id');
+        return response()->json(PortClearance::whereIn('vessel_id', $vessels)->with('vessel', 'officer')->get());
+    }
+
+    public function issueClearance(Request $request)
+    {
+        $request->validate([
+            'vessel_name' => 'required|string',
+            'next_port' => 'nullable|string',
+        ]);
+
+        $vessel = Vessel::where('name', $request->vessel_name)
+            ->where('owner_id', $request->user()->id)
+            ->firstOrFail();
+
+        $clearance = PortClearance::create([
+            'vessel_id' => $vessel->id,
+            'officer_id' => null, // Issued by agent or system
+            'issue_date' => now(),
+            'expiry_date' => now()->addHours(24),
+            'status' => 'valid',
+        ]);
+
+        return response()->json($clearance, 201);
+    }
+
     public function getDashboardStats(Request $request)
     {
         $userId = $request->user()->id;
