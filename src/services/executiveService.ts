@@ -23,6 +23,8 @@ export interface PendingApproval {
     };
     purpose: string;
     priority: string;
+    priorityReason?: string;
+    priorityDocumentPath?: string;
     riskLevel: string;
     cargoType: string;
     containers: number;

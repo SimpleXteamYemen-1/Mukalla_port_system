@@ -27,7 +27,6 @@ class StoreAnchorageRequest extends FormRequest
             'vessel_id' => 'required|exists:vessels,id',
             'duration' => 'required|string|max:255',
             'reason' => 'required|string|max:1000',
-            'location' => 'nullable|string|max:255',
             'docking_time' => 'required|date|after_or_equal:today',
         ];
     }

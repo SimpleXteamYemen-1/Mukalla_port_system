@@ -261,7 +261,7 @@ export function DischargeRequests({ language, userEmail, userName }: DischargeRe
                 type="date"
                 value={requestedDate}
                 onChange={(e) => setRequestedDate(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400/50"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-400/50 transition-all dark-calendar-icon"
                 required
               />
             </div>

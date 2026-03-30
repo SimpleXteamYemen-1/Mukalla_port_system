@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Language, User } from '../../App';
-import { translations } from '../../utils/translations';
-import { Anchor, Ship, AlertTriangle, CheckCircle, X, Calendar, RefreshCw, Clock } from 'lucide-react';
-import { getVessels, getWharves, assignBerth, Vessel, Wharf } from '../../utils/portOfficerApi';
+import { useState, useEffect } from 'react';
+import { Language } from '../../App';
+import { Anchor, Ship, AlertTriangle, CheckCircle, Calendar, RefreshCw, Clock, Inbox } from 'lucide-react';
+import { getVessels, getWharves, assignBerth, Vessel, Wharf, getScheduledAnchorage, ScheduledAnchorage } from '../../utils/portOfficerApi';
 
 interface BerthingManagementProps {
   language: Language;
 }
 
 export function BerthingManagement({ language }: BerthingManagementProps) {
-  const t = translations[language].portOfficer;
   const isRTL = language === 'ar';
 
   const [vessels, setVessels] = useState<Vessel[]>([]);
   const [wharves, setWharves] = useState<Wharf[]>([]);
+  const [scheduledAnchorage, setScheduledAnchorage] = useState<ScheduledAnchorage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
   const [selectedWharf, setSelectedWharf] = useState<Wharf | null>(null);
@@ -29,12 +28,14 @@ export function BerthingManagement({ language }: BerthingManagementProps) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [vesselsData, wharvesData] = await Promise.all([
+      const [vesselsData, wharvesData, anchorageData] = await Promise.all([
         getVessels(),
-        getWharves()
+        getWharves(),
+        getScheduledAnchorage(),
       ]);
       setVessels(vesselsData);
       setWharves(wharvesData);
+      setScheduledAnchorage(anchorageData);
     } catch (error) {
       console.error('Error loading berthing data:', error);
     } finally {
@@ -164,6 +165,74 @@ export function BerthingManagement({ language }: BerthingManagementProps) {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             {isRTL ? 'تحديث' : 'Refresh'}
           </button>
+        </div>
+      </div>
+
+      {/* ─── Scheduled Anchorage Handoffs (from Wharf Worker) ─────────────────── */}
+      <div className="mb-8">
+        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-white/10">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+              <Inbox className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">
+                {isRTL ? 'إسناد طلبات الرسو المقررة' : 'Scheduled Anchorage Handoffs'}
+              </h2>
+              <p className="text-blue-300 text-xs">
+                {isRTL ? 'طلبات تم تعيين رصيف لها بواسطة مشرف الرصيف' : 'Approved by Wharf Officer — ready for entry'}
+              </p>
+            </div>
+            {scheduledAnchorage.length > 0 && (
+              <span className="ml-auto px-3 py-1 bg-cyan-500/20 text-cyan-300 text-xs font-bold rounded-full border border-cyan-500/30">
+                {scheduledAnchorage.length}
+              </span>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="py-10 text-center"><RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mx-auto" /></div>
+          ) : scheduledAnchorage.length === 0 ? (
+            <div className="py-10 text-center">
+              <CheckCircle className="w-10 h-10 text-green-400/30 mx-auto mb-2" />
+              <p className="text-gray-400 text-sm">{isRTL ? 'لا توجد إسنادات مجدولة حالياً' : 'No scheduled handoffs at the moment'}</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {scheduledAnchorage.map((item) => (
+                <div key={item.id} className="px-6 py-5 flex items-start justify-between gap-6 group hover:bg-white/5 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                      <Ship className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-white font-bold text-lg mb-1">{item.vessel?.name}</div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-blue-300">
+                        <span className="font-mono">IMO: {item.vessel?.imo_number}</span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1"><Anchor className="w-3 h-3" />{item.wharf?.name}</span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(item.docking_time).toLocaleString(isRTL ? 'ar-SA' : 'en-US')}</span>
+                        <span>·</span>
+                        <span>{item.duration}h</span>
+                      </div>
+                      {item.reason && (
+                        <p className="text-gray-400 text-xs mt-1 max-w-md line-clamp-1">{item.reason}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      {isRTL ? 'جاهز للدخول' : 'Ready for Entry'}
+                    </span>
+                    <p className="text-gray-500 text-[10px] mt-1">
+                      {isRTL ? 'أُسند بواسطة:' : 'Assigned:'} {new Date(item.wharf_assigned_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

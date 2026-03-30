@@ -1,0 +1,1 @@
+﻿id, vessel_id, agent_id, status, docking_time, duration, location, wharf_id, wharf_assigned_at, reason, rejection_reason, created_at, updated_at

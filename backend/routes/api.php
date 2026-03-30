@@ -31,6 +31,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
         Route::get('/agent/clearances', [AgentController::class, 'getClearances']);
         Route::post('/agent/clearance', [AgentController::class, 'issueClearance']);
+
+        // Edit endpoints
+        Route::put('/agent/vessels/{id}', [AgentController::class, 'updateArrival']);
+        Route::put('/agent/manifests/{id}', [AgentController::class, 'updateManifest']);
+        Route::put('/agent/anchorage/{id}', [AgentController::class, 'updateAnchorageRequest']);
+        Route::put('/agent/clearance/{id}', [AgentController::class, 'updateClearance']);
     });
 
     // Port Officer Routes
@@ -39,11 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/officer/vessels', [PortOfficerController::class, 'getVessels']);
         Route::post('/officer/vessels/{id}/approve', [PortOfficerController::class, 'approveArrival']);
         Route::post('/officer/vessels/{id}/berth', [PortOfficerController::class, 'assignBerth']);
-        Route::delete('/officer/vessels/{id}/berth', [PortOfficerController::class, 'releaseBerth']); // Release berth
+        Route::delete('/officer/vessels/{id}/berth', [PortOfficerController::class, 'releaseBerth']);
         Route::post('/officer/clearance', [PortOfficerController::class, 'issueClearance']);
         Route::get('/officer/clearances', [PortOfficerController::class, 'getClearances']);
         Route::get('/officer/logs', [PortOfficerController::class, 'getLogs']);
         Route::get('/officer/wharves', [PortOfficerController::class, 'getWharves']);
+        // NEW: Scheduled anchorage handoffs from Wharf worker
+        Route::get('/officer/scheduled-anchorage', [PortOfficerController::class, 'getScheduledAnchorage']);
     });
 
     // Wharf Routes
@@ -56,6 +64,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/wharf/{id}/status', [WharfController::class, 'updateWharfStatus']);
         Route::post('/wharf/assign-container', [WharfController::class, 'assignContainer']);
         Route::post('/wharf/containers/{id}/log', [WharfController::class, 'logContainerOperation']);
+        // NEW: Anchorage request workflow endpoints
+        Route::get('/wharf/anchorage-requests', [WharfController::class, 'getAnchorageRequests']);
+        Route::post('/wharf/anchorage-requests/{id}/approve', [WharfController::class, 'approveAnchorageRequest']);
+        Route::post('/wharf/anchorage-requests/{id}/waitlist', [WharfController::class, 'waitlistAnchorageRequest']);
     });
 
     // Trader Routes
@@ -81,4 +93,3 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/executive/decisions', [ExecutiveController::class, 'getRecentDecisions']);
     });
 });
-

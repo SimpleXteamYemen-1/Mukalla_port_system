@@ -139,10 +139,12 @@ class ExecutiveController extends Controller
                     'name' => $v->owner ? $v->owner->name : 'Unknown Agent',
                     'contact' => $v->owner ? $v->owner->email : 'N/A'
                 ],
-                'purpose' => 'Cargo operations', 
-                'priority' => 'medium', // Mock
-                'riskLevel' => $v->type === 'Tanker' ? 'high' : 'low', // Mock risk based on type
-                'cargoType' => $cargoType,
+                'purpose' => $v->purpose ?? 'Cargo operations', 
+                'priority' => strtolower($v->priority ?? 'low'),
+                'priorityReason' => $v->priority_reason,
+                'priorityDocumentPath' => $v->priority_document_path ? asset('storage/' . $v->priority_document_path) : null,
+                'riskLevel' => $v->type === 'Tanker' ? 'high' : 'low',
+                'cargoType' => current(array_filter([$v->cargo, $cargoType])) ?: $cargoType,
                 'containers' => $v->type === 'Container' ? rand(50, 500) : 0, // Mock for now
                 'documents' => $docs,
                 'submittedDate' => $v->created_at->format('Y-m-d H:i'),

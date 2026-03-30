@@ -86,14 +86,6 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
     }
   };
 
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'high': return 'bg-red-500/20 border-red-400/30 text-red-200';
-      case 'medium': return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
-      case 'low': return 'bg-green-500/20 border-green-400/30 text-green-200';
-      default: return 'bg-gray-500/20 border-gray-400/30 text-gray-200';
-    }
-  };
 
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -104,14 +96,6 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
     return labels[priority]?.[language] || priority;
   };
 
-  const getRiskLabel = (risk: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      high: { ar: 'مرتفع', en: 'High' },
-      medium: { ar: 'متوسط', en: 'Medium' },
-      low: { ar: 'منخفض', en: 'Low' },
-    };
-    return labels[risk]?.[language] || risk;
-  };
 
   return (
     <div className="space-y-6">
@@ -122,7 +106,7 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-amber-500/10 backdrop-blur-xl rounded-xl border border-amber-400/30 p-4">
           <div className="text-amber-300 text-sm mb-1">{t.pendingApprovals}</div>
           <div className="text-2xl font-bold text-white">{requests.length}</div>
@@ -130,13 +114,7 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
         <div className="bg-red-500/10 backdrop-blur-xl rounded-xl border border-red-400/30 p-4">
           <div className="text-red-300 text-sm mb-1">{t.highPriority}</div>
           <div className="text-2xl font-bold text-white">
-            {requests.filter(r => r.priority === 'high').length}
-          </div>
-        </div>
-        <div className="bg-amber-500/10 backdrop-blur-xl rounded-xl border border-amber-400/30 p-4">
-          <div className="text-amber-300 text-sm mb-1">{t.mediumRisk}</div>
-          <div className="text-2xl font-bold text-white">
-            {requests.filter(r => r.riskLevel === 'medium').length}
+            {requests.filter(r => r.priority.toLowerCase() === 'high').length}
           </div>
         </div>
         <div className="bg-blue-500/10 backdrop-blur-xl rounded-xl border border-blue-400/30 p-4">
@@ -191,31 +169,11 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <span className={`inline-block px-3 py-1 rounded-lg text-xs border font-medium ${getPriorityColor(request.priority)}`}>
-                    {t.priority}: {getPriorityLabel(request.priority)}
-                  </span>
-                  <span className={`inline-block px-3 py-1 rounded-lg text-xs border font-medium ${getRiskColor(request.riskLevel)}`}>
-                    {t.risk}: {getRiskLabel(request.riskLevel)}
+                  <span className={`inline-block px-3 py-1 rounded-lg text-xs border font-medium ${getPriorityColor(request.priority.toLowerCase())}`}>
+                    {t.priority}: {getPriorityLabel(request.priority.toLowerCase())}
                   </span>
                 </div>
               </div>
-
-              {/* Risk Warning */}
-              {request.riskLevel === 'medium' || request.riskLevel === 'high' ? (
-                <div className={`mb-4 p-3 rounded-xl border ${request.riskLevel === 'high' ? 'bg-red-500/10 border-red-400/30' : 'bg-amber-500/10 border-amber-400/30'}`}>
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${request.riskLevel === 'high' ? 'text-red-300' : 'text-amber-300'}`} />
-                    <div>
-                      <div className={`font-semibold text-sm ${request.riskLevel === 'high' ? 'text-red-200' : 'text-amber-200'}`}>
-                        {t.riskWarning}
-                      </div>
-                      <div className={`text-xs mt-1 ${request.riskLevel === 'high' ? 'text-red-200/80' : 'text-amber-200/80'}`}>
-                        {request.cargoType} - {t.requiresExtraReview}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
 
               {/* Details Grid */}
               <div className="grid md:grid-cols-3 gap-4 mb-4">
@@ -253,6 +211,37 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
                   )}
                 </div>
               </div>
+
+              {/* Conditional Agent Notes */}
+              {(request.priority.toLowerCase() === 'medium' && request.priorityReason) && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 text-amber-300 text-xs mb-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="font-bold uppercase tracking-wider">{(t as any).agentJustification || 'Agent Justification'}</span>
+                  </div>
+                  <div className="text-amber-100/90 text-sm italic leading-relaxed">"{request.priorityReason}"</div>
+                </div>
+              )}
+              {(request.priority.toLowerCase() === 'high' && request.priorityDocumentPath) && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 flex items-center justify-between group hover:bg-red-500/20 transition-all">
+                  <div>
+                    <div className="flex items-center gap-2 text-red-300 text-xs mb-1">
+                      <FileText className="w-4 h-4" />
+                      <span className="font-bold uppercase tracking-wider">{(t as any).priorityDocumentation || 'Priority Documentation'}</span>
+                    </div>
+                    <div className="text-red-100/70 text-xs">{(t as any).docRequiresReview || 'Review attached document before deciding.'}</div>
+                  </div>
+                  <a
+                    href={request.priorityDocumentPath}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-red-500/30 hover:bg-red-500/50 border border-red-500/30 rounded-lg text-red-100 text-xs font-semibold transition-all flex items-center gap-2"
+                  >
+                    {(t as any).viewDocument || 'View Document'}
+                    <span className="text-lg">→</span>
+                  </a>
+                </div>
+              )}
 
               {/* Documents */}
               <div className="bg-white/5 rounded-lg p-3 mb-4">

@@ -170,13 +170,38 @@ export async function getLogs(): Promise<LogEntry[]> {
     return response.data.map((l: any) => ({
       id: l.id.toString(),
       timestamp: l.created_at,
-      action: l.action, // backend uses snake_case, frontend expects same?
-      vessel: 'Vessel', // parsing from details?
+      action: l.action,
+      vessel: 'Vessel',
       details: l.details,
-      officer: 'Officer', // l.user_id resolve?
+      officer: 'Officer',
     }));
   } catch (error) {
     console.error('Error fetching logs:', error);
     return [];
   }
 }
+
+// ─── Scheduled Anchorage Handoffs ─────────────────────────────────────────────
+
+export interface ScheduledAnchorage {
+  id: number;
+  vessel: { id: number; name: string; type: string; imo_number: string; flag: string };
+  wharf: { id: number; name: string; capacity: number };
+  agent: { id: number; name: string; email: string };
+  docking_time: string;
+  duration: string;
+  reason: string;
+  wharf_assigned_at: string;
+  status: string;
+}
+
+export async function getScheduledAnchorage(): Promise<ScheduledAnchorage[]> {
+  try {
+    const response = await api.get('/officer/scheduled-anchorage');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching scheduled anchorage:', error);
+    return [];
+  }
+}
+

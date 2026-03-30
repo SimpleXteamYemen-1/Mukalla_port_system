@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Upload, CheckCircle2, XCircle, Clock, AlertCircle, Download, Eye, Loader2 } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, XCircle, Clock, AlertCircle, Download, Eye, Loader2, Edit2 } from 'lucide-react';
 import { agentService, CargoManifest, Vessel } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
@@ -24,6 +24,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [containerCount, setContainerCount] = useState('');
   const [totalWeight, setTotalWeight] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -90,7 +91,14 @@ export function CargoManifests({ language }: CargoManifestsProps) {
           <p className="text-[var(--text-secondary)]">{t.subtitle}</p>
         </div>
         <button
-          onClick={() => setShowUploadModal(true)}
+          onClick={() => {
+            setEditingId(null);
+            setSelectedVessel('');
+            setSelectedFile(null);
+            setContainerCount('');
+            setTotalWeight('');
+            setShowUploadModal(true);
+          }}
           className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] hover:shadow-lg hover:shadow-[var(--primary)]/20 rounded-xl text-white font-bold transition-all duration-300 transform hover:-translate-y-0.5"
         >
           <Upload className="w-5 h-5" />
@@ -128,7 +136,9 @@ export function CargoManifests({ language }: CargoManifestsProps) {
       {showUploadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
           <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)] p-6 max-w-md w-full shadow-2xl">
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">{t.uploadManifest}</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">
+              {editingId ? (language === 'ar' ? 'تعديل بيان الحمولة' : 'Edit Cargo Manifest') : t.uploadManifest}
+            </h2>
 
             <div className="space-y-4">
               <div>
@@ -158,7 +168,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                     }}
                   />
                   <Upload className="w-12 h-12 text-[var(--text-secondary)] mx-auto mb-3" />
-                  <p className="text-[var(--text-primary)] text-sm mb-1">{selectedFile ? selectedFile.name : t.dragDrop}</p>
+                  <p className="text-[var(--text-primary)] text-sm mb-1">{selectedFile ? selectedFile.name : (editingId ? 'Leave blank to keep current file' : t.dragDrop)}</p>
                   <p className="text-[var(--text-secondary)] text-xs">{t.fileFormats}</p>
                 </div>
               </div>
@@ -190,27 +200,39 @@ export function CargoManifests({ language }: CargoManifestsProps) {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={async () => {
-                  if (!selectedVessel || !selectedFile || !containerCount || !totalWeight) {
-                    toast.warn("Please fill all fields");
+                  if (!selectedVessel || !containerCount || !totalWeight) {
+                    toast.warn("Please fill all required fields");
+                    return;
+                  }
+                  if (!editingId && !selectedFile) {
+                    toast.warn("Please select a file to upload");
                     return;
                   }
 
                   setUploading(true);
                   try {
                     const formData = new FormData();
-                    formData.append('vessel_id', selectedVessel); // selectedVessel is ID or name? Form uses ID if option value is v.id
-                    formData.append('file', selectedFile);
+                    formData.append('vessel_id', selectedVessel);
+                    if (selectedFile) {
+                      formData.append('file', selectedFile);
+                    }
                     formData.append('total_weight', totalWeight);
                     formData.append('container_count', containerCount);
 
-                    await agentService.uploadManifest(formData);
+                    if (editingId) {
+                      await agentService.updateManifest(editingId, formData);
+                      toast.success(language === 'ar' ? 'تم تعديل البيان بنجاح!' : 'Manifest updated successfully!');
+                    } else {
+                      await agentService.uploadManifest(formData);
+                      toast.success(language === 'ar' ? 'تم رفع البيان بنجاح!' : 'Manifest uploaded successfully!');
+                    }
 
-                    toast.success(language === 'ar' ? 'تم رفع البيان بنجاح!' : 'Manifest uploaded successfully!');
                     setShowUploadModal(false);
                     setSelectedVessel('');
                     setSelectedFile(null);
                     setContainerCount('');
                     setTotalWeight('');
+                    setEditingId(null);
                     loadData(); // Refresh list
                   } catch (error) {
                     console.error("Upload failed", error);
@@ -222,7 +244,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                 disabled={!selectedVessel || uploading}
                 className="flex-1 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] hover:shadow-lg hover:shadow-[var(--primary)]/20 disabled:bg-gray-500 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-300"
               >
-                {uploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t.upload}
+                {uploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingId ? (language === 'ar' ? 'تحديث' : 'Update') : t.upload)}
               </button>
               <button
                 onClick={() => {
@@ -308,8 +330,22 @@ export function CargoManifests({ language }: CargoManifestsProps) {
 
             {/* Container Summary - Simplified as backend doesn't provide breakdown yet */}
 
-            {/* Actions */}
             <div className="flex gap-3">
+              {(manifest.status === 'pending' || manifest.status === 'awaiting') && (
+                <button
+                  onClick={() => {
+                    setEditingId(manifest.id);
+                    setSelectedVessel(manifest.vessel_id?.toString() || '');
+                    setSelectedFile(null);
+                    setContainerCount(manifest.container_count?.toString() || manifest.containers?.toString() || '');
+                    setTotalWeight(manifest.total_weight?.toString() || manifest.totalWeight?.toString() || '');
+                    setShowUploadModal(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card)] border border-[var(--primary)] rounded-xl text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white hover:shadow-md transition-all">
+                  <Edit2 className="w-4 h-4" />
+                  <span className="text-sm">{language === 'ar' ? 'تعديل' : 'Edit'}</span>
+                </button>
+              )}
               <button className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] hover:border-[var(--primary)] hover:shadow-md transition-all">
                 <Eye className="w-4 h-4" />
                 <span className="text-sm">{t.view}</span>

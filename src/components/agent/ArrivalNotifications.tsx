@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Ship, Calendar, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2 } from 'lucide-react';
+import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2 } from 'lucide-react';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
@@ -18,6 +18,35 @@ const arrivalSchema = z.object({
   arrivalTime: z.string().min(1, { message: 'Arrival time is required' }),
   purpose: z.string().min(1, { message: 'Purpose is required' }),
   cargo: z.string().optional(),
+  priority: z.enum(['Low', 'Medium', 'High']),
+  priority_reason: z.string().optional(),
+  priority_document: z.any().optional(),
+}).superRefine((data, ctx) => {
+  if (data.priority === 'Medium' && (!data.priority_reason || data.priority_reason.length < 20)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Reason must be at least 20 characters',
+      path: ['priority_reason'],
+    });
+  }
+  if (data.priority === 'High') {
+    if (!data.priority_document || data.priority_document.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Priority documentation is required for High priority',
+        path: ['priority_document'],
+      });
+    } else {
+      const file = data.priority_document[0] as File;
+      if (file && !['application/pdf', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Document must be PDF or JPEG format',
+          path: ['priority_document'],
+        });
+      }
+    }
+  }
 });
 
 type ArrivalFormData = z.infer<typeof arrivalSchema>;
@@ -34,6 +63,8 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingIMO, setCheckingIMO] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [highlightedImo, setHighlightedImo] = useState<string | null>(null);
 
   const {
     register,
@@ -54,14 +85,41 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       arrivalTime: '',
       purpose: '',
       cargo: '',
+      priority: 'Low',
+      priority_reason: '',
     },
   });
 
   const watchImo = watch('imo');
+  const watchPriority = watch('priority');
 
   useEffect(() => {
     loadArrivals();
   }, []);
+
+  useEffect(() => {
+    if (!loading && notifications.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const vesselId = urlParams.get('vesselId');
+      if (vesselId) {
+        setHighlightedImo(vesselId);
+        setTimeout(() => {
+          const element = document.getElementById(`arrival-notification-${vesselId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+        
+        const timeout = setTimeout(() => {
+          setHighlightedImo(null);
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('vesselId');
+          window.history.replaceState({}, '', newUrl);
+        }, 3000);
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [loading, notifications]);
 
   const loadArrivals = async () => {
     try {
@@ -109,19 +167,41 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     try {
       const eta = `${data.arrivalDate}T${data.arrivalTime}:00`;
 
-      await agentService.submitArrival({
-        imo_number: data.imo,
-        name: data.vessel,
-        type: data.type || 'container',
-        flag: data.flag || 'Unknown',
-        eta: eta
-      });
+      if (editingId) {
+        await agentService.updateArrival(editingId, {
+          imo_number: data.imo,
+          name: data.vessel,
+          type: data.type || 'container',
+          flag: data.flag || 'Unknown',
+          eta: eta,
+          purpose: data.purpose,
+          cargo: data.cargo,
+          priority: data.priority,
+          priority_reason: data.priority === 'Medium' ? data.priority_reason : undefined,
+          priority_document: data.priority === 'High' ? data.priority_document : undefined,
+        });
+        toast.success(language === 'ar' ? 'تم تعديل طلب الوصول بنجاح!' : 'Arrival notification updated successfully!');
+      } else {
+        await agentService.submitArrival({
+          imo_number: data.imo,
+          name: data.vessel,
+          type: data.type || 'container',
+          flag: data.flag || 'Unknown',
+          eta: eta,
+          purpose: data.purpose,
+          cargo: data.cargo,
+          priority: data.priority,
+          priority_reason: data.priority === 'Medium' ? data.priority_reason : undefined,
+          priority_document: data.priority === 'High' ? data.priority_document : undefined,
+        });
+        toast.success(language === 'ar' ? 'تم إرسال طلب الوصول بنجاح!' : 'Arrival notification submitted successfully!');
+      }
 
-      toast.success(language === 'ar' ? 'تم إرسال طلب الوصول بنجاح!' : 'Arrival notification submitted successfully!');
       setShowForm(false);
       reset();
       setImoVerified(false);
       setVesselId(null);
+      setEditingId(null);
       loadArrivals();
     } catch (error: any) {
       console.error("Submission failed", error);
@@ -132,6 +212,36 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
         toast.error(language === 'ar' ? 'فشل إرسال الطلب' : 'Submission failed');
       }
     }
+  };
+
+  const handleEdit = (notification: any) => {
+    setEditingId(notification.id);
+    setImoVerified(true);
+    setVesselId(notification.id);
+
+    setValue('imo', notification.imo_number, { shouldValidate: true });
+    setValue('vessel', notification.name, { shouldValidate: true });
+    setValue('type', notification.type || '', { shouldValidate: true });
+    setValue('flag', notification.flag || '', { shouldValidate: true });
+    setValue('purpose', notification.purpose || 'Loading/Unloading Cargo', { shouldValidate: true });
+    setValue('cargo', notification.cargo || '', { shouldValidate: true });
+    setValue('priority', notification.priority || 'Low', { shouldValidate: true });
+    setValue('priority_reason', notification.priority_reason || '', { shouldValidate: true });
+
+    // Parse ETA (handling both YYYY-MM-DD HH:mm:ss and ISO formats)
+    if (notification.eta) {
+      const etaStr = notification.eta.replace('T', ' ');
+      const parts = etaStr.split(' ');
+      if (parts.length >= 2) {
+        setValue('arrivalDate', parts[0], { shouldValidate: true });
+        setValue('arrivalTime', parts[1].substring(0, 5), { shouldValidate: true });
+      } else {
+        setValue('arrivalDate', notification.eta, { shouldValidate: true });
+      }
+    }
+
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getStatusIcon = (status: string) => {
@@ -182,8 +292,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
       {/* Submission Form - Glassmorphism */}
       {showForm && (
-        <div className="bg-[var(--surface)]/80 backdrop-blur-xl rounded-2xl border border-[var(--secondary)]/30 p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500 ring-1 ring-black/5">
-          <h2 className="text-2xl font-black text-[var(--text-primary)] mb-6">{t.formTitle}</h2>
+        <div className="bg-[var(--bg-primary)]/80 backdrop-blur-xl rounded-2xl border border-[var(--secondary)]/30 p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500 ring-1 ring-black/5">
+          <h2 className="text-2xl font-black text-[var(--text-primary)] mb-6">
+            {editingId ? (language === 'ar' ? 'تعديل طلب الوصول' : 'Edit Arrival Notification') : t.formTitle}
+          </h2>
 
           {!imoVerified ? (
             /* Step 1: IMO Check */
@@ -217,6 +329,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     reset();
                     setImoVerified(false);
                     setVesselId(null);
+                    setEditingId(null);
                   }}
                   className="btn-ghost"
                 >
@@ -266,7 +379,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'نوع السفينة' : 'Vessel Type'}</label>
                       <select
                         {...register('type')}
-                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--surface)]`}
+                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
                       >
                         <option value="">Select Type</option>
                         <option value="general">General Cargo</option>
@@ -296,7 +409,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <input
                     type="date"
                     {...register('arrivalDate')}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all dark-calendar-icon`}
                   />
                   {errors.arrivalDate && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalDate.message}</p>}
                 </div>
@@ -307,7 +420,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <input
                     type="time"
                     {...register('arrivalTime')}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all dark-calendar-icon`}
                   />
                   {errors.arrivalTime && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalTime.message}</p>}
                 </div>
@@ -321,6 +434,53 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     rows={3}
                     className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all resize-none"
                   />
+                </div>
+
+                {/* Priority Selection */}
+                <div className="md:col-span-2 bg-[var(--background)]/40 p-5 rounded-2xl border border-[var(--secondary)]/50">
+                  <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.priorityLevel}</label>
+                  <div className="flex flex-wrap gap-4 mb-4">
+                    {(['Low', 'Medium', 'High'] as const).map((level) => (
+                      <label key={level} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl border transition-all ${watchPriority === level ? 'bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]' : 'bg-[var(--background)] border-[var(--secondary)] text-[var(--text-secondary)] hover:border-[var(--primary)]/50'}`}>
+                        <input
+                          type="radio"
+                          value={level}
+                          {...register('priority')}
+                          className="hidden"
+                        />
+                        <span className="font-bold">{(t as any)[`priority${level}`]}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {/* Conditional UI based on Priority */}
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${watchPriority !== 'Low' ? 'mt-4 opacity-100 max-h-[500px]' : 'max-h-0 opacity-0'}`}>
+                    {watchPriority === 'Medium' && (
+                      <div className="animate-in fade-in slide-in-from-top-4 duration-300 pb-2">
+                        <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.priorityReason}</label>
+                        <textarea
+                          {...register('priority_reason')}
+                          placeholder={(t as any).priorityReasonPlaceholder}
+                          rows={2}
+                          className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.priority_reason ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all resize-none`}
+                        />
+                        {errors.priority_reason && <p className="text-[var(--danger)] text-xs font-bold mt-2 hover:text-[var(--danger)]/80 transition-colors">{(t.errors as any).priorityReasonRequired}</p>}
+                      </div>
+                    )}
+                    {watchPriority === 'High' && (
+                      <div className="animate-in fade-in slide-in-from-top-4 duration-300 pb-2">
+                        <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.priorityDoc}</label>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpeg,.jpg"
+                          {...register('priority_document')}
+                          className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.priority_document ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-[var(--primary)]/10 file:text-[var(--primary)] hover:file:bg-[var(--primary)]/20 transition-all cursor-pointer`}
+                        />
+                        <p className="text-xs text-[var(--text-secondary)] mt-2 font-medium">{(t as any).priorityDocNote}</p>
+                        {errors.priority_document && <p className="text-[var(--danger)] text-xs font-bold mt-2 hover:text-[var(--danger)]/80 transition-colors">{(errors.priority_document?.message as string)?.includes('format') ? (t.errors as any).priorityDocFormat : (t.errors as any).priorityDocRequired}</p>}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -339,6 +499,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     reset();
                     setImoVerified(false);
                     setVesselId(null);
+                    setEditingId(null);
                   }}
                   className="btn-secondary px-10 py-4 font-bold"
                 >
@@ -352,19 +513,23 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center text-[var(--text-secondary)] py-20 bg-[var(--surface)] border border-[var(--secondary)] rounded-3xl">
+          <div className="text-center text-[var(--text-secondary)] py-20 bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-3xl">
             <Loader2 className="w-12 h-12 animate-spin text-[var(--primary)] mx-auto mb-4" />
             <p className="font-bold">{language === 'ar' ? 'جاري التحميل...' : 'Synchronizing Data...'}</p>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center text-[var(--text-secondary)] py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--surface)]/50">
+          <div className="text-center text-[var(--text-secondary)] py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--bg-primary)]/50">
             <Ship className="w-12 h-12 mx-auto mb-4 opacity-20" />
             <p className="text-lg font-bold">{language === 'ar' ? 'لا توجد إشعارات وصول.' : 'No arrival notifications found.'}</p>
           </div>
         ) : notifications.map((notification) => {
           const hasManifest = notification.manifests && notification.manifests.length > 0;
           return (
-            <div key={notification.id} className="card-base card-hover p-6 group relative overflow-hidden">
+            <div 
+              key={notification.id} 
+              id={`arrival-notification-${notification.imo_number}`}
+              className={`card-base card-hover p-6 group relative overflow-hidden transition-all duration-500 ${highlightedImo === notification.imo_number ? 'ring-4 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--background)] scale-[1.02] bg-[var(--surface-highlight)]' : ''}`}
+            >
               <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-6">
                 <div className="flex items-start gap-4">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110 ${getStatusColor(notification.status)}`}>
@@ -387,7 +552,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     {getStatusLabel(notification.status)}
                   </span>
                   {/* Manifest Status Badge */}
-                  <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--surface)] border-[var(--secondary)] text-[var(--text-secondary)]'}`}>
+                  <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--bg-primary)] border-[var(--secondary)] text-[var(--text-secondary)]'}`}>
                     {hasManifest ? (
                       <span className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Manifest Submitted
@@ -396,6 +561,15 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <span>Manifest Pending</span>
                     )}
                   </span>
+                  {notification.status === 'awaiting' || notification.status === 'pending' ? (
+                    <button
+                      onClick={() => handleEdit(notification)}
+                      className="btn-ghost p-2"
+                      title={language === 'ar' ? 'تعديل' : 'Edit'}
+                    >
+                      <Edit2 className="w-5 h-5 text-[var(--primary)]" />
+                    </button>
+                  ) : null}
                 </div>
               </div>
 

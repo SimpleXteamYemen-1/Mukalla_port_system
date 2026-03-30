@@ -16,6 +16,11 @@ class Vessel extends Model
         'eta',
         'etd',
         'current_wharf_id',
+        'purpose',
+        'cargo',
+        'priority',
+        'priority_reason',
+        'priority_document_path',
     ];
 
     protected $casts = [

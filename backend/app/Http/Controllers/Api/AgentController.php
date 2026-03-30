@@ -14,6 +14,8 @@ use App\Http\Requests\StoreVesselArrivalRequest;
 use App\Http\Requests\UploadManifestRequest;
 use App\Services\AgentService;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Notification;
+use App\Models\User;
 
 class AgentController extends Controller
 {
@@ -36,7 +38,11 @@ class AgentController extends Controller
 
     public function submitArrival(StoreVesselArrivalRequest $request, AgentService $agentService)
     {
-        $vessel = $agentService->processArrival($request->validated(), $request->user()->id);
+        $data = $request->validated();
+        if ($request->hasFile('priority_document')) {
+            $data['priority_document_path'] = $request->file('priority_document')->store('priority_documents', 'public');
+        }
+        $vessel = $agentService->processArrival($data, $request->user()->id);
 
         return response()->json($vessel, 201);
     }
@@ -129,6 +135,7 @@ class AgentController extends Controller
             'issue_date' => now(),
             'expiry_date' => now()->addHours(24),
             'status' => 'valid',
+            'next_port' => $request->next_port,
         ]);
 
         return response()->json($clearance, 201);
@@ -183,20 +190,29 @@ class AgentController extends Controller
         });
 
         // 2. Anchorage Requests
-        $anchorage = AnchorageRequest::where('agent_id', $userId)->with('vessel')->get()->map(function ($a) {
+        $anchorage = AnchorageRequest::with(['vessel', 'wharf'])->where('agent_id', $userId)->get()->map(function ($a) {
+            $statusMapping = [
+                'pending' => 'pending',
+                'wharf_assigned' => 'approved',
+                'waiting' => 'pending', // Waitlisted is still pending assignment
+                'approved' => 'approved',
+                'rejected' => 'rejected',
+                'completed' => 'completed',
+            ];
+
             return [
             'id' => 'AR-' . $a->id,
             'type' => 'anchorage',
             'vessel' => $a->vessel->name,
             'title' => 'Anchorage Request',
             'submittedDate' => $a->created_at->toDateTimeString(),
-            'status' => $a->status,
-            'completedDate' => $a->updated_at->toDateTimeString(),
+            'status' => $statusMapping[$a->status] ?? $a->status,
+            'completedDate' => $a->wharf_assigned_at ? $a->wharf_assigned_at->toDateTimeString() : $a->updated_at->toDateTimeString(),
             'rejectionReason' => $a->rejection_reason ?? null,
             'timeline' => [
             ['step' => 'Submitted', 'date' => $a->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
-            ['step' => 'Executive Approval', 'date' => '', 'user' => 'Executive', 'status' => $a->status === 'pending' ? 'pending' : ($a->status === 'approved' ? 'completed' : 'rejected')],
-            ['step' => 'Final Decision', 'date' => $a->status !== 'pending' ? $a->updated_at->toDateTimeString() : '', 'user' => 'Executive', 'status' => $a->status === 'pending' ? 'pending' : ($a->status === 'approved' ? 'completed' : 'rejected')],
+            ['step' => 'Wharf Review', 'date' => $a->status !== 'pending' ? $a->updated_at->toDateTimeString() : '', 'user' => 'Wharf Officer', 'status' => $a->status === 'pending' ? 'pending' : 'completed'],
+            ['step' => 'Slot Allocation', 'date' => $a->wharf_assigned_at ? $a->wharf_assigned_at->toDateTimeString() : '', 'user' => 'Wharf Officer', 'status' => $a->status === 'wharf_assigned' ? 'completed' : ($a->status === 'waiting' ? 'pending' : 'pending')],
             ]
             ];
         });
@@ -223,5 +239,112 @@ class AgentController extends Controller
         $all = $arrivals->concat($anchorage)->concat($manifests)->sortByDesc('submittedDate')->values();
 
         return response()->json($all);
+    }
+
+    private function notifyUsers(array $roles, string $title, string $message)
+    {
+        $users = User::role($roles)->get();
+        foreach ($users as $user) {
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => $title,
+                'message' => $message,
+            ]);
+        }
+    }
+
+    public function updateArrival(Request $request, $id)
+    {
+        $vessel = Vessel::where('id', $id)->where('owner_id', $request->user()->id)->firstOrFail();
+        
+        $request->validate([
+            'eta' => 'required|date',
+            'type' => 'nullable|string',
+            'flag' => 'nullable|string',
+            'name' => 'nullable|string',
+            'imo_number' => 'nullable|string',
+            'purpose' => 'nullable|string',
+            'cargo' => 'nullable|string',
+            'priority' => 'nullable|string|in:Low,Medium,High',
+            'priority_reason' => 'nullable|required_if:priority,Medium|string|min:20',
+            'priority_document' => 'nullable|required_if:priority,High|file|mimes:pdf,jpeg,jpg|max:10240',
+        ]);
+
+        $data = $request->only(['eta', 'type', 'flag', 'name', 'imo_number', 'purpose', 'cargo', 'priority', 'priority_reason']);
+        if ($request->hasFile('priority_document')) {
+            $data['priority_document_path'] = $request->file('priority_document')->store('priority_documents', 'public');
+        }
+
+        $vessel->update($data);
+
+        $this->notifyUsers(['officer', 'executive'], 'Arrival Updated', "Agent has updated arrival details for vessel {$vessel->name}.");
+
+        return response()->json($vessel);
+    }
+
+    public function updateManifest(Request $request, $id)
+    {
+        $manifest = CargoManifest::where('id', $id)->where('uploaded_by', $request->user()->id)->firstOrFail();
+
+        $request->validate([
+            'total_weight' => 'required|numeric',
+            'container_count' => 'required|integer',
+            'file' => 'nullable|file',
+        ]);
+
+        $data = [
+            'total_weight' => $request->total_weight,
+            'container_count' => $request->container_count,
+        ];
+
+        if ($request->hasFile('file')) {
+            $data['file_path'] = $request->file('file')->store('manifests');
+        }
+
+        $manifest->update($data);
+
+        $this->notifyUsers(['officer'], 'Manifest Updated', "Agent has updated cargo manifest for vessel {$manifest->vessel->name}.");
+
+        return response()->json($manifest);
+    }
+
+    public function updateAnchorageRequest(Request $request, $id)
+    {
+        $anchorage = AnchorageRequest::where('id', $id)->where('agent_id', $request->user()->id)->firstOrFail();
+
+        $request->validate([
+            'duration' => 'required|integer',
+            'reason' => 'required|string',
+            'docking_time' => 'required|date',
+        ]);
+
+        $anchorage->update([
+            'duration' => $request->duration,
+            'reason' => $request->reason,
+            'docking_time' => $request->docking_time,
+        ]);
+
+        $this->notifyUsers(['executive'], 'Anchorage Request Updated', "Agent has updated anchorage request for vessel {$anchorage->vessel->name}.");
+
+        return response()->json($anchorage);
+    }
+
+    public function updateClearance(Request $request, $id)
+    {
+        // For agent, owner check via vessels:
+        $vessels = Vessel::where('owner_id', $request->user()->id)->pluck('id');
+        $clearance = PortClearance::where('id', $id)->whereIn('vessel_id', $vessels)->firstOrFail();
+
+        $request->validate([
+            'next_port' => 'required|string',
+        ]);
+
+        $clearance->update([
+            'next_port' => $request->next_port,
+        ]);
+
+        $this->notifyUsers(['officer'], 'Clearance Updated', "Agent has updated port clearance request for vessel {$clearance->vessel->name}.");
+
+        return response()->json($clearance);
     }
 }

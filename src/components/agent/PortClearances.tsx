@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
-import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw } from 'lucide-react';
+import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Edit2 } from 'lucide-react';
 import { Clearance } from '../../utils/portOfficerApi';
 import { agentService, Vessel } from '../../services/agentService';
 
@@ -22,6 +22,7 @@ export function PortClearances({ language }: PortClearancesProps) {
     const [availableVessels, setAvailableVessels] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [issuing, setIssuing] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     const loadData = async () => {
         setLoading(true);
@@ -46,17 +47,24 @@ export function PortClearances({ language }: PortClearancesProps) {
     }, []);
 
     const handleIssueClearance = async () => {
-        if (!selectedVessel || !nextPort || issuing) return;
+        if ((!selectedVessel && !editingId) || !nextPort || issuing) return;
 
         setIssuing(true);
         try {
-            await agentService.issueClearance(selectedVessel, nextPort);
+            if (editingId) {
+                await agentService.updateClearance(editingId, nextPort);
+                alert(isRTL ? 'تم تعديل التصريح بنجاح!' : 'Clearance updated successfully!');
+            } else {
+                await agentService.issueClearance(selectedVessel, nextPort);
+                alert(isRTL ? 'تم طلب التصريح بنجاح!' : 'Clearance requested successfully!');
+            }
 
             await loadData();
 
             setShowIssueForm(false);
             setSelectedVessel('');
             setNextPort('');
+            setEditingId(null);
         } catch (error: any) {
             console.error('Error issuing clearance:', error);
             alert(error.message || 'Failed to request clearance');
@@ -118,7 +126,12 @@ export function PortClearances({ language }: PortClearancesProps) {
                         {isRTL ? 'تحديث' : 'Refresh'}
                     </button>
                     <button
-                        onClick={() => setShowIssueForm(true)}
+                        onClick={() => {
+                            setEditingId(null);
+                            setSelectedVessel('');
+                            setNextPort('');
+                            setShowIssueForm(true);
+                        }}
                         className="flex items-center justify-center gap-2 px-6 py-2 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl shadow-lg shadow-[var(--primary)]/20 transition-all font-bold"
                     >
                         <FileCheck className="w-5 h-5" />
@@ -233,13 +246,27 @@ export function PortClearances({ language }: PortClearancesProps) {
 
                         <div className="pt-4 border-t border-[var(--border)] flex justify-between items-center">
                             <p className="text-sm font-medium text-[var(--text-secondary)]">Destination: {clearance.nextPort}</p>
-                            <button
-                                onClick={() => viewQRCode(clearance)}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-[var(--secondary)]/20 hover:bg-[var(--secondary)]/40 rounded-lg text-[var(--text-primary)] transition-all text-sm font-semibold"
-                            >
-                                <QrCode className="w-4 h-4" />
-                                QR Code
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => {
+                                        setEditingId(parseInt(clearance.id));
+                                        setSelectedVessel(clearance.vessel);
+                                        setNextPort(clearance.nextPort);
+                                        setShowIssueForm(true);
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-lg text-[var(--primary)] transition-all text-sm font-semibold"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                    {isRTL ? 'تعديل' : 'Edit'}
+                                </button>
+                                <button
+                                    onClick={() => viewQRCode(clearance)}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-[var(--secondary)]/20 hover:bg-[var(--secondary)]/40 rounded-lg text-[var(--text-primary)] transition-all text-sm font-semibold"
+                                >
+                                    <QrCode className="w-4 h-4" />
+                                    QR Code
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -267,7 +294,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                     <FileCheck className="w-5 h-5 text-[var(--primary)]" />
                                 </div>
                                 <h3 className="text-xl font-black text-[var(--text-primary)]">
-                                    {t?.formTitle || 'New Port Clearance Request'}
+                                    {editingId ? (isRTL ? 'تعديل التصريح' : 'Edit Port Clearance') : (t?.formTitle || 'New Port Clearance Request')}
                                 </h3>
                             </div>
                             <button
@@ -286,11 +313,15 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 <select
                                     value={selectedVessel}
                                     onChange={(e) => setSelectedVessel(e.target.value)}
-                                    className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                                    disabled={editingId !== null}
+                                    className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-60"
                                 >
                                     <option value="">
                                         {t?.selectVesselPlaceholder || 'Select a vessel...'}
                                     </option>
+                                    {editingId && !availableVessels.includes(selectedVessel) && (
+                                        <option value={selectedVessel}>{selectedVessel}</option>
+                                    )}
                                     {availableVessels.map((vessel) => (
                                         <option key={vessel} value={vessel}>
                                             {vessel}
@@ -322,14 +353,17 @@ export function PortClearances({ language }: PortClearancesProps) {
 
                         <div className="p-6 border-t border-[var(--border)] bg-[var(--surface)] flex gap-3">
                             <button
-                                onClick={() => setShowIssueForm(false)}
+                                onClick={() => {
+                                    setShowIssueForm(false);
+                                    setEditingId(null);
+                                }}
                                 className="flex-1 px-4 py-3 bg-[var(--secondary)]/20 hover:bg-[var(--secondary)]/40 text-[var(--text-primary)] font-bold rounded-xl transition-colors"
                             >
                                 {t?.cancel || 'Cancel'}
                             </button>
                             <button
                                 onClick={handleIssueClearance}
-                                disabled={!selectedVessel || !nextPort || issuing}
+                                disabled={(!selectedVessel && !editingId) || !nextPort || issuing}
                                 className="flex-1 px-4 py-3 bg-[var(--primary)] hover:bg-[var(--primary)]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20"
                             >
                                 {issuing ? (
@@ -340,7 +374,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 ) : (
                                     <>
                                         <FileCheck className="w-5 h-5" />
-                                        {t?.submitRequest || 'Submit Request'}
+                                        {editingId ? (isRTL ? 'تحديث' : 'Update') : (t?.submitRequest || 'Submit Request')}
                                     </>
                                 )}
                             </button>

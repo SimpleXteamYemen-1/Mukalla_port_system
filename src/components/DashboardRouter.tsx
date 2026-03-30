@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, LogOut, Shield, Ship, Package, BarChart3, Anchor, Bell, Globe, User as UserIcon, ChevronDown, Settings, Sun, Moon } from 'lucide-react';
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
@@ -28,6 +28,7 @@ import { WharfAvailability } from './wharf/WharfAvailability';
 import { StorageManagement } from './wharf/StorageManagement';
 import { ContainerAssignment } from './wharf/ContainerAssignment';
 import { CapacityOverview } from './wharf/CapacityOverview';
+import { wharfService } from '../services/wharfService';
 import { TraderSidebar } from './trader/TraderSidebar';
 import { TraderDashboard } from './trader/TraderDashboard';
 import { MyContainers } from './trader/MyContainers';
@@ -238,6 +239,33 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
   if (user.role === 'wharf') {
     const t = translations[language].dashboard;
     const isRTL = language === 'ar';
+    const [waitlistAlert, setWaitlistAlert] = useState<{ count: number; wharves: number } | null>(null);
+
+    // Reactive Waitlist Monitoring
+    const checkWaitlistStatus = async () => {
+      try {
+        const [wharvesData, anchorageData] = await Promise.all([
+          wharfService.getWharves(),
+          wharfService.getAnchorageRequests(),
+        ]);
+        const waitlistedCount = (anchorageData.requests || []).filter((r: any) => r.status === 'waiting').length;
+        const availableCount = (wharvesData || []).filter((w: any) => w.status === 'available').length;
+
+        if (waitlistedCount > 0 && availableCount > 0) {
+          setWaitlistAlert({ count: waitlistedCount, wharves: availableCount });
+        } else {
+          setWaitlistAlert(null);
+        }
+      } catch (error) {
+        console.error('Error monitoring waitlist:', error);
+      }
+    };
+
+    useEffect(() => {
+      checkWaitlistStatus();
+      const interval = setInterval(checkWaitlistStatus, 60000); // Check every minute
+      return () => clearInterval(interval);
+    }, []);
 
     return (
       <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -289,9 +317,26 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Notifications */}
-                <button className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]">
+                <button 
+                  onClick={() => setCurrentPage('availability')}
+                  className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)] group"
+                >
                   <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                  {waitlistAlert && (
+                    <>
+                      <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-[var(--bg-primary)]"></span>
+                      <div className="absolute top-full mt-2 right-0 w-64 p-3 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                        <p className="text-xs text-white font-medium leading-relaxed">
+                          {isRTL 
+                            ? `السعة متاحة: ${waitlistAlert.wharves} أرصفة شاغرة للسفن في قائمة الانتظار (${waitlistAlert.count}).` 
+                            : `Capacity available: ${waitlistAlert.wharves} wharves are free for waitlisted vessels (${waitlistAlert.count}).`}
+                        </p>
+                        <p className="text-[10px] text-blue-400 mt-2 font-bold uppercase tracking-tighter">
+                          {isRTL ? 'انقر للمراجعة' : 'Click to review'}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </button>
 
                 {/* Profile Menu */}

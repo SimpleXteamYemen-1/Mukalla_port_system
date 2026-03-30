@@ -8,7 +8,6 @@ class Wharf extends Model
 {
     protected $fillable = [
         'name',
-        'capacity',
         'status',
     ];
 

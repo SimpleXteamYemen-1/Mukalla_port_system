@@ -174,7 +174,15 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
                           {vessel.location || 'At Sea'}
                         </div>
                       </div>
-                      <button className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--secondary)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all shadow-sm group-hover:translate-x-1">
+                      <button 
+                        onClick={() => {
+                          const url = new URL(window.location.href);
+                          url.searchParams.set('vesselId', vessel.imo_number);
+                          window.history.pushState({}, '', url);
+                          onNavigate('arrivals');
+                        }}
+                        className="w-10 h-10 rounded-xl bg-[var(--background)] border border-[var(--secondary)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all shadow-sm group-hover:translate-x-1"
+                      >
                         <ChevronRight className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
                       </button>
                     </div>

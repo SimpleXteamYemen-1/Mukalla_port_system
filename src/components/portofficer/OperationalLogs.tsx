@@ -136,7 +136,7 @@ export function OperationalLogs({ language }: OperationalLogsProps) {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as any)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full px-4 py-3 bg-white/5 border border-[var(--border)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary)] transition-all"
             >
               <option value="all" className="bg-gray-800">
                 {isRTL ? 'جميع الإجراءات' : 'All Actions'}
@@ -161,7 +161,7 @@ export function OperationalLogs({ language }: OperationalLogsProps) {
                 type="date"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+                className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 dark-calendar-icon`}
               />
             </div>
           </div>
@@ -187,7 +187,7 @@ export function OperationalLogs({ language }: OperationalLogsProps) {
         {(filterType !== 'all' || filterDate || searchVessel) && (
           <div className="mt-4 flex items-center justify-between bg-cyan-500/10 border border-cyan-400/30 rounded-xl p-3">
             <p className="text-cyan-300 text-sm">
-              {isRTL 
+              {isRTL
                 ? `عرض ${filteredLogs.length} من ${logs.length} سجل`
                 : `Showing ${filteredLogs.length} of ${logs.length} logs`
               }

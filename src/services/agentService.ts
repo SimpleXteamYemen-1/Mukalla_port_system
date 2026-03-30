@@ -87,12 +87,47 @@ export const agentService = {
         }
     },
 
-    submitArrival: async (data: { imo_number: string; name: string; type: string; flag?: string; eta: string }) => {
+    submitArrival: async (data: { imo_number: string; name: string; type: string; flag?: string; eta: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
         try {
-            const response = await api.post('/agent/vessels', data);
+            const formData = new FormData();
+            Object.entries(data).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                    if (key === 'priority_document' && value instanceof FileList && value.length > 0) {
+                        formData.append(key, value[0]);
+                    } else if (key !== 'priority_document') {
+                        formData.append(key, value as string);
+                    }
+                }
+            });
+            const response = await api.post('/agent/vessels', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             return response.data;
         } catch (error) {
             console.error('Error submitting arrival', error);
+            throw error;
+        }
+    },
+
+    updateArrival: async (id: number, data: { eta: string; type?: string; flag?: string; name?: string; imo_number?: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
+        try {
+            const formData = new FormData();
+            formData.append('_method', 'PUT'); // Laravel required for PUT with FormData
+            Object.entries(data).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                    if (key === 'priority_document' && value instanceof FileList && value.length > 0) {
+                        formData.append(key, value[0]);
+                    } else if (key !== 'priority_document') {
+                        formData.append(key, value as string);
+                    }
+                }
+            });
+            const response = await api.post(`/agent/vessels/${id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating arrival', error);
             throw error;
         }
     },
@@ -113,6 +148,16 @@ export const agentService = {
             return response.data;
         } catch (error) {
             console.error('Error submitting anchorage request', error);
+            throw error;
+        }
+    },
+
+    updateAnchorageRequest: async (id: number, data: any) => {
+        try {
+            const response = await api.put(`/agent/anchorage/${id}`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating anchorage request', error);
             throw error;
         }
     },
@@ -147,6 +192,22 @@ export const agentService = {
             return response.data;
         } catch (error) {
             console.error('Error uploading manifest', error);
+            throw error;
+        }
+    },
+
+    updateManifest: async (id: number, formData: FormData) => {
+        try {
+            // Need to use POST with _method=PUT to handle multipart/form-data with file upload in Laravel
+            formData.append('_method', 'PUT');
+            const response = await api.post(`/agent/manifests/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating manifest', error);
             throw error;
         }
     },
@@ -196,6 +257,18 @@ export const agentService = {
             return response.data;
         } catch (error) {
             console.error('Error issuing clearance', error);
+            throw error;
+        }
+    },
+
+    updateClearance: async (id: number, nextPort: string) => {
+        try {
+            const response = await api.put(`/agent/clearance/${id}`, {
+                next_port: nextPort,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error updating clearance', error);
             throw error;
         }
     }

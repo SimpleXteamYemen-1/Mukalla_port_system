@@ -15,10 +15,13 @@ class AnchorageRequest extends Model
         'location',
         'reason',
         'rejection_reason',
+        'wharf_id',
+        'wharf_assigned_at',
     ];
 
     protected $casts = [
         'docking_time' => 'datetime',
+        'wharf_assigned_at' => 'datetime',
     ];
 
     public function vessel()
@@ -29,5 +32,10 @@ class AnchorageRequest extends Model
     public function agent()
     {
         return $this->belongsTo(User::class, 'agent_id');
+    }
+
+    public function wharf()
+    {
+        return $this->belongsTo(Wharf::class);
     }
 }

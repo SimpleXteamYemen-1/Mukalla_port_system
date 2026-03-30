@@ -8,9 +8,25 @@ use App\Models\Vessel;
 use App\Models\Wharf;
 use App\Models\PortClearance;
 use App\Models\Log;
+use App\Models\AnchorageRequest;
 
 class PortOfficerController extends Controller
 {
+    /**
+     * Returns all anchorage requests that have been approved and assigned by
+     * the Wharf worker (status = wharf_assigned). Port Officers use this to
+     * have exact visibility on scheduled vessel entries.
+     */
+    public function getScheduledAnchorage()
+    {
+        $requests = AnchorageRequest::with(['vessel', 'wharf', 'agent'])
+            ->where('status', 'wharf_assigned')
+            ->orderBy('docking_time')
+            ->get();
+
+        return response()->json($requests);
+    }
+
     public function getDashboardStats()
     {
         return response()->json([

@@ -108,6 +108,41 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Force OS Color Scheme Recognition on elements directly */
+  :root, input, select, textarea {
+    color-scheme: dark;
+  }
+
+  .light, .light input, .light select, .light textarea {
+    color-scheme: light;
+  }
+
+  /* Fix native select options in dark mode fallback */
+  select option {
+    background-color: #1e293b;
+    color: #ffffff;
+  }
+
+  .light select option {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  /* Force Webkit icons to white via invert if color-scheme fails */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  .dark-calendar-icon::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(100) !important;
+    opacity: 1 !important;
+  }
+
+  .light input[type="date"]::-webkit-calendar-picker-indicator,
+  .light input[type="time"]::-webkit-calendar-picker-indicator,
+  .light .dark-calendar-icon::-webkit-calendar-picker-indicator {
+    filter: none !important;
+    opacity: 1 !important;
+  }
 }
 
 @layer utilities {

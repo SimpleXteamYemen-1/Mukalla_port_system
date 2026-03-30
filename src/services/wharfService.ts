@@ -122,5 +122,38 @@ export const wharfService = {
             console.error('Error fetching storage areas:', error);
             throw error;
         }
-    }
+    },
+
+    // ─── Anchorage Workflow ───────────────────────────────────────────────────
+
+    getAnchorageRequests: async () => {
+        try {
+            const response = await api.get('/wharf/anchorage-requests');
+            return response.data; // { requests: [], wharves: [] }
+        } catch (error) {
+            console.error('Error fetching anchorage requests for wharf:', error);
+            return { requests: [], wharves: [] };
+        }
+    },
+
+    approveAnchorageRequest: async (requestId: number, wharfId: number) => {
+        try {
+            const response = await api.post(`/wharf/anchorage-requests/${requestId}/approve`, { wharf_id: wharfId });
+            return response.data;
+        } catch (error) {
+            console.error('Error approving anchorage request:', error);
+            throw error;
+        }
+    },
+
+    waitlistAnchorageRequest: async (requestId: number, reason?: string) => {
+        try {
+            const response = await api.post(`/wharf/anchorage-requests/${requestId}/waitlist`, { reason });
+            return response.data;
+        } catch (error) {
+            console.error('Error waitlisting anchorage request:', error);
+            throw error;
+        }
+    },
 };
+
