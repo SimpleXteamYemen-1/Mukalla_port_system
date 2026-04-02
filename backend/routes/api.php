@@ -18,6 +18,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
+    // User Profile Routes
+    Route::get('/user/profile', [AuthController::class, 'getProfile']);
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::post('/user/avatar', [AuthController::class, 'updateAvatar']);
+    Route::put('/user/preferences', [AuthController::class, 'updatePreferences']);
+    Route::put('/user/password', [AuthController::class, 'updatePassword']);
+
     // Agent Routes
     Route::group(['middleware' => ['role:agent']], function () {
         Route::post('/agent/vessels', [AgentController::class, 'submitArrival']);

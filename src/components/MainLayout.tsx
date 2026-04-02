@@ -158,11 +158,23 @@ export function MainLayout({
                       </div>
                     </div>
                     <div className="p-2">
-                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors">
+                      <button 
+                        onClick={() => {
+                          onNavigate('settings');
+                          setShowProfileMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
+                      >
                         <UserIcon className="w-4 h-4" />
                         <span className="text-sm">{t.profile}</span>
                       </button>
-                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors">
+                      <button 
+                        onClick={() => {
+                          onNavigate('settings');
+                          setShowProfileMenu(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
+                      >
                         <Settings className="w-4 h-4" />
                         <span className="text-sm">{t.settings}</span>
                       </button>

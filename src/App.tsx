@@ -19,6 +19,8 @@ export interface User {
   email: string;
   role: UserRole;
   verified: boolean;
+  phone?: string;
+  avatar_url?: string;
 }
 
 function App() {
