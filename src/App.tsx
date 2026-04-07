@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { DashboardRouter } from './components/DashboardRouter';
@@ -8,6 +8,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { echo } from './utils/echo';
 import api from './services/api';
+import { useIdleTimer } from './hooks/useIdleTimer';
 
 export type Language = 'ar' | 'en';
 export type UserRole = 'agent' | 'executive' | 'officer' | 'trader' | 'wharf';
@@ -62,10 +63,16 @@ function App() {
     setCurrentPage('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
+    api.post('/logout').catch(console.error);
     setUser(null);
+    localStorage.removeItem('token');
+    sessionStorage.clear(); // Clears any saved drafts/persistence
     setCurrentPage('login');
-  };
+  }, []);
+
+  // Deploy Idle Timer (300,000 ms = 5 minutes) that only monitors when user is logged in
+  useIdleTimer(handleLogout, 300000, !!user);
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'ar' ? 'en' : 'ar');
