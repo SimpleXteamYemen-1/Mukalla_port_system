@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { echo } from './utils/echo';
+import api from './services/api';
 
 export type Language = 'ar' | 'en';
 export type UserRole = 'agent' | 'executive' | 'officer' | 'trader' | 'wharf';
@@ -28,6 +29,28 @@ function App() {
   const [language, setLanguage] = useState<Language>('ar');
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsLoadingAuth(false);
+      return;
+    }
+
+    api.get('/me')
+      .then((res) => {
+        setUser(res.data);
+        setCurrentPage('dashboard');
+      })
+      .catch(() => {
+        setUser(null);
+        localStorage.removeItem('token');
+      })
+      .finally(() => {
+        setIsLoadingAuth(false);
+      });
+  }, []);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -77,6 +100,14 @@ function App() {
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
+
+  if (isLoadingAuth) {
+    return (
+      <div className={`flex h-screen w-screen items-center justify-center ${theme === 'dark' ? 'bg-gray-900 border-white' : 'bg-gray-100 border-black'}`}>
+        <div className={`animate-spin rounded-full h-16 w-16 border-b-4 ${theme === 'dark' ? 'border-white' : 'border-black'}`}></div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

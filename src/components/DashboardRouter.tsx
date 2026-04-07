@@ -48,9 +48,24 @@ interface DashboardRouterProps {
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  
+  const [currentPage, setCurrentPage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'dashboard';
+  });
+  
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (currentPage === 'dashboard') {
+      url.searchParams.delete('tab');
+    } else {
+      url.searchParams.set('tab', currentPage);
+    }
+    window.history.replaceState({}, '', url);
+  }, [currentPage]);
 
   // Executive Management Interface
   if (user.role === 'executive') {
