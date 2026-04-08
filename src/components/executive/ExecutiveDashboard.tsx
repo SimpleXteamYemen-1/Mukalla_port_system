@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Clock, AlertTriangle, TrendingUp, Ship, Anchor, BarChart3, RefreshCw, CheckCircle, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, TrendingUp, Ship, Anchor, BarChart3, RefreshCw, ArrowRight, Users } from 'lucide-react';
 import { executiveService, ExecutiveStats, PendingApproval, RecentDecision } from '../../services/executiveService';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
@@ -49,6 +49,13 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
       value: statsData?.pending_approvals.toString() || '0',
       icon: Clock,
       color: 'amber' as const,
+      trend: ''
+    },
+    {
+      label: language === 'ar' ? 'طلبات تسجيل معلقة' : 'Pending Registrations',
+      value: statsData?.pending_users.toString() || '0',
+      icon: Users,
+      color: 'purple' as const,
       trend: ''
     },
     {
@@ -179,6 +186,20 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
             <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
               <div className="text-[var(--text-primary)] font-bold text-lg">{t.viewReports}</div>
               <div className="text-[var(--text-secondary)] font-medium text-sm mt-1">{t.analytics}</div>
+            </div>
+            <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
+          </button>
+
+          <button
+            onClick={() => onNavigate('user-directory')}
+            className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-2xl transition-all transform hover:-translate-y-1 group"
+          >
+            <div className="p-4 bg-orange-500/10 rounded-xl group-hover:bg-orange-500/20 transition-colors">
+              <Users className="w-8 h-8 text-orange-500" />
+            </div>
+            <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1`}>
+              <div className="text-[var(--text-primary)] font-bold text-lg">{language === 'ar' ? 'دليل المستخدمين' : 'User Directory'}</div>
+              <div className="text-[var(--text-secondary)] font-medium text-sm mt-1">{language === 'ar' ? 'إدراة الحسابات والأدوار' : 'Manage accounts and roles'}</div>
             </div>
             <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
           </button>

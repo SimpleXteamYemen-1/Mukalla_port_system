@@ -2,6 +2,7 @@ import api from './api';
 
 export interface ExecutiveStats {
     pending_approvals: number;
+    pending_users: number;
     blocked_requests: number;
     approval_rate: string;
     today_decisions: number;
@@ -128,6 +129,36 @@ export const executiveService = {
             return response.data;
         } catch (error) {
             console.error('Error rejecting anchorage:', error);
+            throw error;
+        }
+    },
+
+    getPendingUsers: async () => {
+        try {
+            const response = await api.get('/executive/users/pending');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching pending users:', error);
+            return [];
+        }
+    },
+
+    approveUser: async (id: number | string) => {
+        try {
+            const response = await api.post(`/executive/users/${id}/approve`);
+            return response.data;
+        } catch (error) {
+            console.error('Error approving user:', error);
+            throw error;
+        }
+    },
+
+    rejectUser: async (id: number | string, reason: string) => {
+        try {
+            const response = await api.post(`/executive/users/${id}/reject`, { reason });
+            return response.data;
+        } catch (error) {
+            console.error('Error rejecting user:', error);
             throw error;
         }
     },

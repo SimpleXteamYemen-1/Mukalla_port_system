@@ -62,7 +62,19 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
       onLogin(user);
     } catch (error: any) {
       console.error('Login error:', error);
-      if (error.response && error.response.data && error.response.data.message) {
+      
+      if (error.response && error.response.status === 403) {
+        const { status, rejection_reason, message } = error.response.data;
+        
+        if (status === 'pending') {
+          setErrors({ general: t.errors.pending || 'Your account is still under review.' });
+        } else if (status === 'rejected') {
+          const reason = rejection_reason ? ` ${rejection_reason}` : '';
+          setErrors({ general: (t.errors.rejected || 'Account rejected:') + reason });
+        } else {
+          setErrors({ general: message || t.errors.general });
+        }
+      } else if (error.response && error.response.data && error.response.data.message) {
         setErrors({ general: error.response.data.message });
       } else if (error.response && error.response.data && error.response.data.errors) {
         // Handle validation errors if any
