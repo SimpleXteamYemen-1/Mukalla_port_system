@@ -17,6 +17,8 @@ import { ArrivalApprovals } from './executive/ArrivalApprovals';
 import { AnchorageApprovals } from './executive/AnchorageApprovals';
 import { DecisionLogs } from './executive/DecisionLogs';
 import { ReportsAnalytics } from './executive/ReportsAnalytics';
+import { UserApprovals } from './executive/UserApprovals';
+import { UserDirectory } from './executive/UserDirectory';
 import { PortOfficerSidebar } from './portofficer/PortOfficerSidebar';
 import { PortOfficerDashboard } from './portofficer/PortOfficerDashboard';
 import { BerthingManagement } from './portofficer/BerthingManagement';
@@ -48,14 +50,7 @@ interface DashboardRouterProps {
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
-  
-  const [currentPage, setCurrentPage] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('tab') || 'dashboard';
-  });
-  
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -164,6 +159,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={setCurrentPage} />}
             {currentPage === 'arrivals' && <ArrivalApprovals language={language} />}
             {currentPage === 'anchorage' && <AnchorageApprovals language={language} />}
+            {currentPage === 'user-approvals' && <UserApprovals language={language} />}
+            {currentPage === 'user-directory' && <UserDirectory language={language} />}
             {currentPage === 'logs' && <DecisionLogs language={language} />}
             {currentPage === 'reports' && <ReportsAnalytics language={language} />}
             {currentPage === 'settings' && (

@@ -21,6 +21,8 @@ export interface User {
   email: string;
   role: UserRole;
   verified: boolean;
+  status?: 'pending' | 'active' | 'rejected';
+  rejection_reason?: string;
   phone?: string;
   avatar_url?: string;
 }

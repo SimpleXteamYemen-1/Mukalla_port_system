@@ -26,6 +26,7 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const getPasswordStrength = (password: string): { strength: number; label: string; color: string } => {
@@ -101,17 +102,18 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
         organization: formData.organization,
       });
 
-      const { access_token, user } = response.data;
+      const { user } = response.data;
 
-      localStorage.setItem('token', access_token);
-
-      setIsLoading(false);
       setShowSuccess(true);
-
-      setTimeout(() => {
-        onRegister(user);
-      }, 2000);
-
+      
+      if (response.status === 202) {
+        setIsPendingApproval(true);
+        setIsLoading(false);
+      } else {
+        setTimeout(() => {
+          onRegister(user);
+        }, 2000);
+      }
     } catch (error: any) {
       console.error('Register error:', error);
       setIsLoading(false);
@@ -157,9 +159,35 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
       {/* Register Card */}
       <div className="relative w-full max-w-2xl z-10 animate-in fade-in zoom-in duration-500">
         <div className="glass-panel p-8 md:p-10 relative overflow-hidden">
-
-          {/* Decorative Corner Glow */}
-          <div className="absolute -top-10 -right-10 w-24 h-24 bg-[var(--accent)]/30 blur-2xl rounded-full"></div>
+          {showSuccess ? (
+            <div className="text-center py-6 animate-in fade-in zoom-in duration-500">
+              <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-black text-[var(--text-primary)] mb-4">
+                {isPendingApproval ? t.success.pendingTitle : t.success.title}
+              </h2>
+              <p className="text-[var(--text-secondary)] font-medium mb-8">
+                {isPendingApproval ? t.success.pendingMessage : t.success.message}
+              </p>
+              {!isPendingApproval && (
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl mb-8">
+                  <p className="text-blue-500 text-sm font-bold">
+                    {t.success.verificationNote}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onNavigateToLogin}
+                className="w-full py-4 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-1"
+              >
+                {t.loginLink}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Decorative Corner Glow */}
+              <div className="absolute -top-10 -right-10 w-24 h-24 bg-[var(--accent)]/30 blur-2xl rounded-full"></div>
 
           {/* Logo & Title */}
           <div className="text-center mb-8">
@@ -434,20 +462,20 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
             </form>
           )}
 
-          {/* Login Link */}
-          {!showSuccess && (
-            <div className="mt-8 text-center pt-6 border-t border-[var(--border)]">
-              <p className="text-[var(--text-secondary)] text-sm font-medium">
-                {t.haveAccount}{' '}
-                <button
-                  onClick={onNavigateToLogin}
-                  className="text-[var(--primary)] font-bold hover:text-[var(--accent)] ml-1 transition-colors relative group"
-                >
-                  {t.loginLink}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[var(--primary)] transition-all group-hover:w-full"></span>
-                </button>
-              </p>
-            </div>
+              {/* Login Link */}
+              <div className="mt-8 text-center pt-6 border-t border-[var(--border)]">
+                <p className="text-[var(--text-secondary)] text-sm font-medium">
+                  {t.haveAccount}{' '}
+                  <button
+                    onClick={onNavigateToLogin}
+                    className="text-[var(--primary)] font-bold hover:text-[var(--accent)] ml-1 transition-colors relative group"
+                  >
+                    {t.loginLink}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[var(--primary)] transition-all group-hover:w-full"></span>
+                  </button>
+                </p>
+              </div>
+            </>
           )}
         </div>
 

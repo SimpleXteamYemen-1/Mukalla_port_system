@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 
@@ -14,7 +15,12 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasRoles, HasApiTokens;
+    use HasFactory, Notifiable, HasRoles, HasApiTokens, SoftDeletes;
+    
+    const STATUS_PENDING   = 'pending';
+    const STATUS_ACTIVE    = 'active';
+    const STATUS_REJECTED  = 'rejected';
+    const STATUS_SUSPENDED = 'suspended';
 
 
     /**
@@ -27,6 +33,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'organization',
+        'status',
+        'rejection_reason',
         'verified',
         'phone',
         'avatar_url',

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Log;
 use App\Models\Vessel;
 use App\Models\AnchorageRequest;
+use App\Models\User;
 
 class ExecutiveController extends Controller
 {
@@ -105,6 +106,7 @@ class ExecutiveController extends Controller
 
         return response()->json([
             'pending_approvals' => Vessel::where('status', 'awaiting')->count(),
+            'pending_users' => User::where('status', User::STATUS_PENDING)->count(),
             'blocked_requests' => 0, // Mock logic
             'approval_rate' => $approvalRate,
             'today_decisions' => Log::whereDate('created_at', today())->count(),
@@ -256,6 +258,53 @@ class ExecutiveController extends Controller
         ]);
 
         return response()->json($anchorage);
-        
-}
+    }
+
+    public function getPendingUsers(Request $request)
+    {
+        return response()->json(User::where('status', User::STATUS_PENDING)->get());
+    }
+
+    public function approveUser(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = User::STATUS_ACTIVE;
+        // Optionally mark verified as true if that's still being used
+        $user->verified = true; 
+        $user->save();
+
+        Log::create([
+            'user_id' => $request->user()->id,
+            'action' => 'approve_user',
+            'details' => "Executive approved account for {$user->name} ({$user->email})",
+        ]);
+
+        return response()->json([
+            'message' => 'User account approved successfully.',
+            'user' => $user
+        ]);
+    }
+
+    public function rejectUser(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string'
+        ]);
+
+        $user = User::findOrFail($id);
+        $user->status = User::STATUS_REJECTED;
+        $user->rejection_reason = $request->reason;
+        $user->save();
+
+        Log::create([
+            'user_id' => $request->user()->id,
+            'action' => 'reject_user',
+            'details' => "Executive rejected account for {$user->name} ({$user->email}). Reason: {$request->reason}",
+        ]);
+
+        return response()->json([
+            'message' => 'User account rejected successfully.',
+            'user' => $user
+        ]);
+    }
 }

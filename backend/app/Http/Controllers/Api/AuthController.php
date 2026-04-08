@@ -26,18 +26,16 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'verified' => false, // Default to unverified
+            'status' => User::STATUS_PENDING,
+            'verified' => false,
         ]);
 
         $user->assignRole($request->role);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
+            'message' => 'Registration request submitted. Your account is under Executive Management review.',
             'user' => $user,
-        ]);
+        ], 202);
     }
 
     public function login(Request $request)
@@ -53,6 +51,27 @@ class AuthController extends Controller
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials'],
             ]);
+        }
+
+        // Only apply status checks to publicly-registered roles (trader, agent).
+        // System-created accounts (executive, officer, wharf) always bypass this check.
+        $publicRoles = ['trader', 'agent'];
+
+        if (in_array($user->role, $publicRoles)) {
+            if ($user->status === User::STATUS_PENDING) {
+                return response()->json([
+                    'status'  => 'pending',
+                    'message' => 'Account is under Executive Management review.',
+                ], 403);
+            }
+
+            if ($user->status === User::STATUS_REJECTED) {
+                return response()->json([
+                    'status'           => 'rejected',
+                    'message'          => 'Account request rejected.',
+                    'rejection_reason' => $user->rejection_reason,
+                ], 403);
+            }
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

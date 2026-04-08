@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PortOfficerController;
 use App\Http\Controllers\Api\WharfController;
 use App\Http\Controllers\Api\TraderController;
 use App\Http\Controllers\Api\ExecutiveController;
+use App\Http\Controllers\Api\AdminController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -92,11 +93,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/executive/dashboard', [ExecutiveController::class, 'getDashboardStats']);
         Route::get('/executive/analytics', [ExecutiveController::class, 'getAnalytics']);
         Route::get('/executive/approvals', [ExecutiveController::class, 'getPendingApprovals']);
+        Route::get('/executive/users/pending', [ExecutiveController::class, 'getPendingUsers']);
+        Route::post('/executive/users/{id}/approve', [ExecutiveController::class, 'approveUser']);
+        Route::post('/executive/users/{id}/reject', [ExecutiveController::class, 'rejectUser']);
         Route::post('/executive/arrivals/{id}/approve', [ExecutiveController::class, 'approveArrival']);
         Route::post('/executive/arrivals/{id}/reject', [ExecutiveController::class, 'rejectArrival']);
         Route::get('/executive/anchorage/requests', [ExecutiveController::class, 'getAnchorageRequests']);
         Route::post('/executive/anchorage/{id}/approve', [ExecutiveController::class, 'approveAnchorage']);
         Route::post('/executive/anchorage/{id}/reject', [ExecutiveController::class, 'rejectAnchorage']);
         Route::get('/executive/decisions', [ExecutiveController::class, 'getRecentDecisions']);
+
+        // ── Admin: User Management ────────────────────────────────────────────
+        Route::get('/admin/users',                [AdminController::class, 'index']);    // list + filter
+        Route::post('/admin/users',               [AdminController::class, 'store']);    // direct create
+        Route::put('/admin/users/{id}',           [AdminController::class, 'update']);   // modify
+        Route::patch('/admin/users/{id}',         [AdminController::class, 'update']);   // modify (alias)
+        Route::delete('/admin/users/{id}',        [AdminController::class, 'destroy']); // soft-delete
+        Route::post('/admin/users/{id}/restore',  [AdminController::class, 'restore']); // restore
     });
 });

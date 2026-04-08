@@ -1,4 +1,4 @@
-import { LayoutDashboard, Ship, Anchor, FileText, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Ship, Anchor, FileText, BarChart3, Users, ShieldCheck } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 
@@ -12,11 +12,13 @@ export function ExecutiveSidebar({ currentPage, onNavigate, language }: Executiv
   const t = translations[language]?.executive || translations.en.executive;
 
   const menuItems = [
-    { id: 'dashboard', label: t.menu.dashboard, icon: LayoutDashboard },
-    { id: 'arrivals', label: t.menu.arrivalApprovals, icon: Ship },
-    { id: 'anchorage', label: t.menu.anchorageApprovals, icon: Anchor },
-    { id: 'logs', label: t.menu.decisionLogs, icon: FileText },
-    { id: 'reports', label: t.menu.reportsAnalytics, icon: BarChart3 },
+    { id: 'dashboard',      label: t.menu.dashboard,         icon: LayoutDashboard },
+    { id: 'arrivals',       label: t.menu.arrivalApprovals,  icon: Ship },
+    { id: 'anchorage',      label: t.menu.anchorageApprovals,icon: Anchor },
+    { id: 'user-approvals', label: t.menu.userApprovals,     icon: Users, highlight: true },
+    { id: 'user-directory', label: t.menu.userDirectory,     icon: ShieldCheck },
+    { id: 'logs',           label: t.menu.decisionLogs,      icon: FileText },
+    { id: 'reports',        label: t.menu.reportsAnalytics,  icon: BarChart3 },
   ];
 
   return (
@@ -53,6 +55,9 @@ export function ExecutiveSidebar({ currentPage, onNavigate, language }: Executiv
                 >
                   <Icon className="w-5 h-5" />
                   <span className="font-medium text-sm">{item.label}</span>
+                  {(item as any).highlight && (
+                    <span className="ml-auto w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  )}
                 </button>
               </li>
             );
