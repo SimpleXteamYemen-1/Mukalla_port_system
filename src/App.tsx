@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { DashboardRouter } from './components/DashboardRouter';
@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { echo } from './utils/echo';
+import api from './services/api';
+import { useIdleTimer } from './hooks/useIdleTimer';
 
 export type Language = 'ar' | 'en';
 export type UserRole = 'agent' | 'executive' | 'officer' | 'trader' | 'wharf';
@@ -19,6 +21,8 @@ export interface User {
   email: string;
   role: UserRole;
   verified: boolean;
+  phone?: string;
+  avatar_url?: string;
 }
 
 function App() {
@@ -26,6 +30,28 @@ function App() {
   const [language, setLanguage] = useState<Language>('ar');
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsLoadingAuth(false);
+      return;
+    }
+
+    api.get('/me')
+      .then((res) => {
+        setUser(res.data);
+        setCurrentPage('dashboard');
+      })
+      .catch(() => {
+        setUser(null);
+        localStorage.removeItem('token');
+      })
+      .finally(() => {
+        setIsLoadingAuth(false);
+      });
+  }, []);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -37,10 +63,16 @@ function App() {
     setCurrentPage('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
+    api.post('/logout').catch(console.error);
     setUser(null);
+    localStorage.removeItem('token');
+    sessionStorage.clear(); // Clears any saved drafts/persistence
     setCurrentPage('login');
-  };
+  }, []);
+
+  // Deploy Idle Timer (300,000 ms = 5 minutes) that only monitors when user is logged in
+  useIdleTimer(handleLogout, 300000, !!user);
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'ar' ? 'en' : 'ar');
@@ -75,6 +107,14 @@ function App() {
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
+
+  if (isLoadingAuth) {
+    return (
+      <div className={`flex h-screen w-screen items-center justify-center ${theme === 'dark' ? 'bg-gray-900 border-white' : 'bg-gray-100 border-black'}`}>
+        <div className={`animate-spin rounded-full h-16 w-16 border-b-4 ${theme === 'dark' ? 'border-white' : 'border-black'}`}></div>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

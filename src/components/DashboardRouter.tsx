@@ -3,6 +3,7 @@ import { AlertCircle, LogOut, Shield, Ship, Package, BarChart3, Anchor, Bell, Gl
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
 import { MainLayout } from './MainLayout';
+import { AccountSettings } from './AccountSettings';
 import { AgentDashboard } from './agent/AgentDashboard';
 import { MyVessels } from './agent/MyVessels';
 import { ArrivalNotifications } from './agent/ArrivalNotifications';
@@ -47,9 +48,24 @@ interface DashboardRouterProps {
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  
+  const [currentPage, setCurrentPage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'dashboard';
+  });
+  
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (currentPage === 'dashboard') {
+      url.searchParams.delete('tab');
+    } else {
+      url.searchParams.set('tab', currentPage);
+    }
+    window.history.replaceState({}, '', url);
+  }, [currentPage]);
 
   // Executive Management Interface
   if (user.role === 'executive') {
@@ -101,7 +117,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Profile Menu */}
-                <div className="relative">
+                <div className="relative group">
                   <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
                     <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-[var(--primary)]" />
@@ -110,8 +126,25 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                       <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
                       <div className="text-[var(--text-secondary)] text-xs">{t.roles.executive}</div>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
+                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
                   </button>
+
+                  {/* Profile Dropdown */}
+                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
+                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
+                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
+                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
+                    </div>
+                    <div className="p-2">
+                       <button 
+                        onClick={() => setCurrentPage('settings')}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logout */}
@@ -133,6 +166,15 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'anchorage' && <AnchorageApprovals language={language} />}
             {currentPage === 'logs' && <DecisionLogs language={language} />}
             {currentPage === 'reports' && <ReportsAnalytics language={language} />}
+            {currentPage === 'settings' && (
+              <AccountSettings 
+                user={user} 
+                language={language} 
+                theme={theme} 
+                onToggleTheme={onToggleTheme} 
+                onToggleLanguage={onToggleLanguage} 
+              />
+            )}
           </main>
         </div>
       </div>
@@ -197,7 +239,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Profile Menu */}
-                <div className="relative">
+                <div className="relative group">
                   <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
                     <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-[var(--primary)]" />
@@ -206,8 +248,25 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                       <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
                       <div className="text-[var(--text-secondary)] text-xs">{t.roles.officer}</div>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
+                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
                   </button>
+
+                  {/* Profile Dropdown */}
+                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
+                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
+                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
+                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
+                    </div>
+                    <div className="p-2">
+                       <button 
+                        onClick={() => setCurrentPage('settings')}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logout */}
@@ -229,6 +288,15 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'vessels' && <ActiveVessels language={language} onNavigate={setCurrentPage} />}
             {currentPage === 'clearances' && <PortClearances language={language} />}
             {currentPage === 'logs' && <OperationalLogs language={language} />}
+            {currentPage === 'settings' && (
+              <AccountSettings 
+                user={user} 
+                language={language} 
+                theme={theme} 
+                onToggleTheme={onToggleTheme} 
+                onToggleLanguage={onToggleLanguage} 
+              />
+            )}
           </main>
         </div>
       </div>
@@ -340,7 +408,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Profile Menu */}
-                <div className="relative">
+                <div className="relative group">
                   <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
                     <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-[var(--primary)]" />
@@ -349,8 +417,25 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                       <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
                       <div className="text-[var(--text-secondary)] text-xs">{t.roles.wharf}</div>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
+                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
                   </button>
+
+                  {/* Profile Dropdown */}
+                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
+                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
+                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
+                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
+                    </div>
+                    <div className="p-2">
+                       <button 
+                        onClick={() => setCurrentPage('settings')}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logout */}
@@ -372,6 +457,15 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'storage' && <StorageManagement language={language} />}
             {currentPage === 'containers' && <ContainerAssignment language={language} />}
             {currentPage === 'capacity' && <CapacityOverview language={language} />}
+            {currentPage === 'settings' && (
+              <AccountSettings 
+                user={user} 
+                language={language} 
+                theme={theme} 
+                onToggleTheme={onToggleTheme} 
+                onToggleLanguage={onToggleLanguage} 
+              />
+            )}
           </main>
         </div>
       </div>
@@ -441,7 +535,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Profile Menu */}
-                <div className="relative">
+                <div className="relative group">
                   <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
                     <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
                       <UserIcon className="w-4 h-4 text-[var(--primary)]" />
@@ -450,8 +544,25 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                       <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
                       <div className="text-[var(--text-secondary)] text-xs">{t.roles.trader}</div>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
+                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
                   </button>
+
+                  {/* Profile Dropdown */}
+                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
+                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
+                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
+                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
+                    </div>
+                    <div className="p-2">
+                       <button 
+                        onClick={() => setCurrentPage('settings')}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logout */}
@@ -472,6 +583,15 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'containers' && <MyContainers language={language} userEmail={user.email} />}
             {currentPage === 'discharge' && <DischargeRequests language={language} userEmail={user.email} userName={user.name} />}
             {currentPage === 'notifications' && <TraderNotifications language={language} userEmail={user.email} />}
+            {currentPage === 'settings' && (
+              <AccountSettings 
+                user={user} 
+                language={language} 
+                theme={theme} 
+                onToggleTheme={onToggleTheme} 
+                onToggleLanguage={onToggleLanguage} 
+              />
+            )}
           </main>
         </div>
       </div>
@@ -498,6 +618,15 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'manifests' && <CargoManifests language={language} />}
         {currentPage === 'clearances' && <AgentPortClearances language={language} />}
         {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
+        {currentPage === 'settings' && (
+          <AccountSettings 
+            user={user} 
+            language={language} 
+            theme={theme} 
+            onToggleTheme={onToggleTheme} 
+            onToggleLanguage={onToggleLanguage} 
+          />
+        )}
       </MainLayout>
     );
   }
@@ -561,87 +690,102 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Verification Warning Banner */}
-        {!user.verified && (
-          <div className="mb-8 bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-lg p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
-                <AlertCircle className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <h3 className="text-amber-500 font-semibold mb-1">{t.pendingVerification}</h3>
-                <p className="text-amber-500/80 text-sm">{t.verificationMessage}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Welcome Card */}
-        <div className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)]/50 shadow-xl p-8 md:p-12 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-          <div className="text-center relative z-10">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-white rounded-2xl mb-6 shadow-lg shadow-[var(--primary)]/20">
-              {getRoleIcon()}
-            </div>
-            <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
-              {t.welcome}, {user.name}
-            </h2>
-            <p className="text-[var(--text-secondary)] mb-8">{getRoleDashboardTitle()}</p>
-
-            {/* Role-specific Dashboard Content */}
-            <div className="grid md:grid-cols-3 gap-6 mt-8">
-              <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="text-[var(--text-secondary)] text-sm mb-2">Status</div>
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${user.verified
-                  ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                  : 'bg-amber-500/10 border border-amber-500/20 text-amber-500'
-                  }`}>
-                  <div className={`w-2 h-2 rounded-full ${user.verified ? 'bg-green-500' : 'bg-amber-500'} animate-pulse`}></div>
-                  <span className="text-sm font-medium">{user.verified ? 'Verified' : 'Pending'}</span>
+        {currentPage === 'settings' ? (
+          <AccountSettings 
+            user={user} 
+            language={language} 
+            theme={theme} 
+            onToggleTheme={onToggleTheme} 
+            onToggleLanguage={onToggleLanguage} 
+          />
+        ) : (
+          <>
+            {/* Verification Warning Banner */}
+            {!user.verified && (
+              <div className="mb-8 bg-amber-500/10 backdrop-blur-xl border border-amber-500/20 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-amber-500 font-semibold mb-1">{t.pendingVerification}</h3>
+                    <p className="text-amber-500/80 text-sm">{t.verificationMessage}</p>
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="text-[var(--text-secondary)] text-sm mb-2">Role</div>
-                <div className="text-[var(--text-primary)] font-semibold capitalize">{(user.role as string).replace('_', ' ')}</div>
-              </div>
+            {/* Welcome Card */}
+            <div className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)]/50 shadow-xl p-8 md:p-12 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+              <div className="text-center relative z-10">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-white rounded-2xl mb-6 shadow-lg shadow-[var(--primary)]/20">
+                  {getRoleIcon()}
+                </div>
+                <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
+                  {t.welcome}, {user.name}
+                </h2>
+                <p className="text-[var(--text-secondary)] mb-8">{getRoleDashboardTitle()}</p>
 
-              <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="text-[var(--text-secondary)] text-sm mb-2">Access Level</div>
-                <div className="text-[var(--text-primary)] font-semibold">{user.verified ? 'Full Access' : 'Limited'}</div>
+                {/* Role-specific Dashboard Content */}
+                <div className="grid md:grid-cols-3 gap-6 mt-8">
+                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div className="text-[var(--text-secondary)] text-sm mb-2">Status</div>
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${user.verified
+                      ? 'bg-green-500/10 border border-green-500/20 text-green-500'
+                      : 'bg-amber-500/10 border border-amber-500/20 text-amber-500'
+                      }`}>
+                      <div className={`w-2 h-2 rounded-full ${user.verified ? 'bg-green-500' : 'bg-amber-500'} animate-pulse`}></div>
+                      <span className="text-sm font-medium">{user.verified ? 'Verified' : 'Pending'}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div className="text-[var(--text-secondary)] text-sm mb-2">Role</div>
+                    <div className="text-[var(--text-primary)] font-semibold capitalize">{(user.role as string).replace('_', ' ')}</div>
+                  </div>
+
+                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div className="text-[var(--text-secondary)] text-sm mb-2">Access Level</div>
+                    <div className="text-[var(--text-primary)] font-semibold">{user.verified ? 'Full Access' : 'Limited'}</div>
+                  </div>
+                </div>
+
+                {/* Mock Dashboard Content */}
+                <div className="mt-12 text-left">
+                  <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-6">Quick Actions</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--primary)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
+                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--primary)] transition-colors">View Reports</h4>
+                      <p className="text-[var(--text-secondary)] text-sm">Access system reports and analytics</p>
+                    </button>
+
+                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--accent)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
+                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--accent)] transition-colors">Manage Operations</h4>
+                      <p className="text-[var(--text-secondary)] text-sm">Handle daily operations and tasks</p>
+                    </button>
+
+                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-amber-500 rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]" disabled={!user.verified}>
+                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-amber-500 transition-colors">Submit Requests</h4>
+                      <p className="text-[var(--text-secondary)] text-sm">Create new operational requests</p>
+                      {!user.verified && (
+                        <span className="inline-block mt-2 text-xs text-amber-500">⚠️ Requires verification</span>
+                      )}
+                    </button>
+
+                    <button 
+                      onClick={() => setCurrentPage('settings')}
+                      className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--secondary)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]"
+                    >
+                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--text-primary)] transition-colors">Settings</h4>
+                      <p className="text-[var(--text-secondary)] text-sm">Manage your account settings</p>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Mock Dashboard Content */}
-            <div className="mt-12 text-left">
-              <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-6">Quick Actions</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--primary)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
-                  <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--primary)] transition-colors">View Reports</h4>
-                  <p className="text-[var(--text-secondary)] text-sm">Access system reports and analytics</p>
-                </button>
-
-                <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--accent)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
-                  <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--accent)] transition-colors">Manage Operations</h4>
-                  <p className="text-[var(--text-secondary)] text-sm">Handle daily operations and tasks</p>
-                </button>
-
-                <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-amber-500 rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]" disabled={!user.verified}>
-                  <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-amber-500 transition-colors">Submit Requests</h4>
-                  <p className="text-[var(--text-secondary)] text-sm">Create new operational requests</p>
-                  {!user.verified && (
-                    <span className="inline-block mt-2 text-xs text-amber-500">⚠️ Requires verification</span>
-                  )}
-                </button>
-
-                <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--secondary)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
-                  <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--text-primary)] transition-colors">Settings</h4>
-                  <p className="text-[var(--text-secondary)] text-sm">Manage your account settings</p>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

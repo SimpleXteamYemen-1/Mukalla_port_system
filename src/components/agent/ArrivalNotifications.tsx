@@ -57,9 +57,26 @@ interface ArrivalNotificationsProps {
 
 export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const t = translations[language]?.agent?.arrivals || translations.en.agent.arrivals;
-  const [showForm, setShowForm] = useState(false);
+  
+  const SESSION_KEY = 'arrival_notification_draft';
+  const savedDraft = sessionStorage.getItem(SESSION_KEY);
+  const hasDraft = !!savedDraft;
+  const initialValues = savedDraft ? JSON.parse(savedDraft) : {
+    imo: '',
+    vessel: '',
+    type: '',
+    flag: '',
+    arrivalDate: '',
+    arrivalTime: '',
+    purpose: '',
+    cargo: '',
+    priority: 'Low',
+    priority_reason: '',
+  };
+
+  const [showForm, setShowForm] = useState(hasDraft);
   const [vesselId, setVesselId] = useState<number | null>(null);
-  const [imoVerified, setImoVerified] = useState(false);
+  const [imoVerified, setImoVerified] = useState(hasDraft && !!initialValues.vessel); // Optionally auto-verify if vessel data exists
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingIMO, setCheckingIMO] = useState(false);
@@ -76,19 +93,15 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     formState: { errors, isSubmitting },
   } = useForm<ArrivalFormData>({
     resolver: zodResolver(arrivalSchema),
-    defaultValues: {
-      imo: '',
-      vessel: '',
-      type: '',
-      flag: '',
-      arrivalDate: '',
-      arrivalTime: '',
-      purpose: '',
-      cargo: '',
-      priority: 'Low',
-      priority_reason: '',
-    },
+    defaultValues: initialValues,
   });
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(value));
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const watchImo = watch('imo');
   const watchPriority = watch('priority');
@@ -197,8 +210,20 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
         toast.success(language === 'ar' ? 'تم إرسال طلب الوصول بنجاح!' : 'Arrival notification submitted successfully!');
       }
 
+      sessionStorage.removeItem(SESSION_KEY);
       setShowForm(false);
-      reset();
+      reset({
+        imo: '',
+        vessel: '',
+        type: '',
+        flag: '',
+        arrivalDate: '',
+        arrivalTime: '',
+        purpose: '',
+        cargo: '',
+        priority: 'Low',
+        priority_reason: '',
+      });
       setImoVerified(false);
       setVesselId(null);
       setEditingId(null);
@@ -325,8 +350,12 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                 <button
                   type="button"
                   onClick={() => {
+                    sessionStorage.removeItem(SESSION_KEY);
                     setShowForm(false);
-                    reset();
+                    reset({
+                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '', 
+                      arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
+                    });
                     setImoVerified(false);
                     setVesselId(null);
                     setEditingId(null);
@@ -495,8 +524,12 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                 <button
                   type="button"
                   onClick={() => {
+                    sessionStorage.removeItem(SESSION_KEY);
                     setShowForm(false);
-                    reset();
+                    reset({
+                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '', 
+                      arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
+                    });
                     setImoVerified(false);
                     setVesselId(null);
                     setEditingId(null);

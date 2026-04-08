@@ -28,6 +28,10 @@ class User extends Authenticatable
         'password',
         'role',
         'verified',
+        'phone',
+        'avatar_url',
+        'theme',
+        'language',
     ];
 
     /**
