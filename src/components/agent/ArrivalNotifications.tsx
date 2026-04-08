@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2 } from 'lucide-react';
+import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, Download } from 'lucide-react';
+import { exportArrivalPdf } from '../../utils/exportPdf';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
@@ -570,6 +571,26 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <Edit2 className="w-5 h-5 text-[var(--primary)]" />
                     </button>
                   ) : null}
+                  <button
+                    onClick={() => exportArrivalPdf({
+                      vessel_name: notification.name || notification.vessel_name || 'Unknown Vessel',
+                      imo_number: notification.imo_number || '—',
+                      type: notification.type,
+                      flag: notification.flag,
+                      eta: notification.eta,
+                      status: notification.status,
+                      purpose: notification.purpose,
+                      cargo: notification.cargo,
+                      priority: notification.priority,
+                      rejection_reason: notification.rejection_reason,
+                      created_at: notification.created_at,
+                    })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-xs font-bold transition-all"
+                    title={language === 'ar' ? 'تصدير PDF' : 'Export PDF'}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    PDF
+                  </button>
                 </div>
               </div>
 
@@ -591,12 +612,14 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
               </div>
 
               {/* Rejection Reason */}
-              {notification.status === 'rejected' && notification.rejectionReason && (
-                <div className="alert-danger mb-0">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              {notification.status === 'rejected' && notification.rejection_reason && (
+                <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-black text-sm mb-1 uppercase tracking-wider">{t.rejectionReason}</div>
-                    <div className="text-sm font-medium">{notification.rejectionReason}</div>
+                    <div className="text-red-500 font-bold text-sm mb-1 uppercase tracking-wider">
+                      {language === 'ar' ? 'ملاحظات الإدارة' : 'Executive Feedback'}
+                    </div>
+                    <div className="text-red-400 text-sm font-medium">{notification.rejection_reason}</div>
                   </div>
                 </div>
               )}

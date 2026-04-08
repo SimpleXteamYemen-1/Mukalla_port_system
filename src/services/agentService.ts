@@ -23,6 +23,7 @@ export interface Arrival {
     imo_number: string;
     status: string;
     eta: string;
+    rejection_reason?: string | null;
 }
 
 export interface Vessel {
@@ -46,6 +47,55 @@ export interface CargoManifest {
     container_count: number;
     created_at: string;
 }
+
+export interface ReportArrival {
+    id: number;
+    vessel_name: string;
+    imo_number: string;
+    type: string;
+    flag: string;
+    eta: string;
+    etd: string | null;
+    status: string;
+    purpose: string | null;
+    cargo: string | null;
+    priority: string | null;
+    priority_reason: string | null;
+    created_at: string;
+}
+
+export interface ReportAnchorage {
+    id: number;
+    status: string;
+    docking_time: string;
+    duration: number;
+    location: string | null;
+    reason: string | null;
+    rejection_reason: string | null;
+    wharf: { id: number; name: string; status: string } | null;
+    wharf_assigned_at: string | null;
+    created_at: string;
+}
+
+export interface ReportClearance {
+    id: number;
+    clearance_id: string;
+    status: string;
+    issue_date: string;
+    expiry_date: string;
+    next_port: string | null;
+    officer: { id: number; name: string; email: string } | null;
+    created_at: string;
+}
+
+export interface VesselActivityReport {
+    vessel: { id: number; name: string; imo: string };
+    date: string;
+    arrival: ReportArrival | null;
+    anchorage: ReportAnchorage | null;
+    clearance: ReportClearance | null;
+}
+
 
 export const agentService = {
     getStats: async () => {
@@ -235,6 +285,14 @@ export const agentService = {
                     id: c.id.toString(),
                     clearanceId: `CLR-${c.id}`,
                     vessel: c.vessel ? c.vessel.name : 'Unknown',
+                    // Full vessel object for PDF export
+                    vesselData: c.vessel ? {
+                        name: c.vessel.name,
+                        imo_number: c.vessel.imo_number,
+                        type: c.vessel.type,
+                        flag: c.vessel.flag,
+                    } : null,
+                    officer: c.officer ? { name: c.officer.name } : null,
                     nextPort: c.next_port || 'Unknown',
                     issueTime: c.issue_date,
                     expiryTime: c.expiry_date,
@@ -271,5 +329,17 @@ export const agentService = {
             console.error('Error updating clearance', error);
             throw error;
         }
-    }
+    },
+
+    getVesselActivityReport: async (vesselId: number, date: string): Promise<import('./agentService').VesselActivityReport | null> => {
+        try {
+            const response = await api.get('/agent/vessel-report', {
+                params: { vessel_id: vesselId, date },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching vessel activity report', error);
+            return null;
+        }
+    },
 };

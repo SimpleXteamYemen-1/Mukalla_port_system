@@ -84,7 +84,11 @@ export const executiveService = {
 
     rejectArrival: async (id: number, reason: string) => {
         try {
-            const response = await api.post(`/executive/arrivals/${id}/reject`, { reason });
+            const response = await api.post(`/executive/arrivals/${id}/reject`, { 
+                status: 'rejected', 
+                requestId: `REQ-${id}`, 
+                reason: reason 
+            });
             return response.data;
         } catch (error) {
             console.error('Error rejecting arrival:', error);
@@ -135,5 +139,25 @@ export const executiveService = {
     initializeData: async () => {
         // No-op
         return { success: true };
+    },
+
+    generateCustomReport: async (params: { dateRange: string; reportType: string; format: string }) => {
+        try {
+            const response = await api.post('/executive/reports/generate', params);
+            return response.data;
+        } catch (error) {
+            console.error('Error generating custom report:', error);
+            throw error;
+        }
+    },
+
+    getVesselHistory: async (vesselId: string | number, page: number = 1) => {
+        try {
+            const response = await api.get(`/executive/vessels/${vesselId}/history?page=${page}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error loading vessel history:', error);
+            throw error;
+        }
     }
 };

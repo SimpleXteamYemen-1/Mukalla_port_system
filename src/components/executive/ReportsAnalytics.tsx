@@ -16,6 +16,11 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
   const [performanceMetrics, setPerformanceMetrics] = useState<any[]>([]);
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState('Last 7 Days');
+  const [reportType, setReportType] = useState('Performance');
+  const [format, setFormat] = useState('PDF');
 
   const loadAnalytics = async () => {
     setLoading(true);
@@ -82,7 +87,8 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
           name: report.title,
           date: report.date,
           type: report.type,
-          size: report.size
+          size: report.size,
+          file_url: report.file_url || '#'
         })));
       }
     } catch (error) {
@@ -96,9 +102,59 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
     loadAnalytics();
   }, [language]);
 
-  const exportReport = (format: string) => {
-    alert(language === 'ar' ? `تصدير التقرير بصيغة ${format}...` : `Exporting report as ${format}...`);
+  const handleGenerate = async (paramsOverride?: { dateRange: string, reportType: string, format: string }) => {
+    setIsGenerating(true);
+    setError(null);
+    try {
+      const response = await executiveService.generateCustomReport({
+        dateRange: paramsOverride?.dateRange || dateRange,
+        reportType: paramsOverride?.reportType || reportType,
+        format: paramsOverride?.format || format
+      });
+
+      if (response && response.report) {
+        // Prepend to recent reports
+        const newReport = {
+          name: response.report.title,
+          date: response.report.date,
+          type: response.report.type,
+          size: response.report.size,
+          file_url: response.report.file_url
+        };
+        setRecentReports((prev) => [newReport, ...prev].slice(0, 3));
+        
+        // Auto download
+        const a = document.createElement('a');
+        a.href = response.report.file_url;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+         setError('Error: Unexpected response format from server.');
+      }
+    } catch (error: any) {
+      console.error('Error generating report:', error);
+      if (error.response?.status === 500) {
+         setError('Error: Unable to connect to reporting service (Server Error).');
+      } else if (error.response?.status === 400 || error.response?.status === 422) {
+         setError('Error: Invalid data parameters submitted.');
+      } else {
+         setError(error.message || 'Failed to generate report due to a network or connection error.');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  const exportReport = (expFormat: string) => {
+    handleGenerate({
+      dateRange: 'Last 30 Days',
+      reportType: 'Comprehensive',
+      format: expFormat
+    });
+  };
+
 
   if (loading) {
     return (
@@ -272,9 +328,9 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
                   </div>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-lg text-blue-200 hover:text-white text-sm transition-all">
+              <a href={report.file_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-lg text-blue-200 hover:text-white text-sm transition-all flex items-center justify-center">
                 {t.download}
-              </button>
+              </a>
             </div>
           ))}
         </div>
@@ -283,36 +339,65 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
       {/* Export Options */}
       <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
         <h2 className="text-xl font-bold text-white mb-4">{t.customExport}</h2>
+        
+        {error && (
+          <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl flex items-center gap-3 text-red-200">
+            <XCircle className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-3 gap-4">
           <div>
             <label className="block text-white text-sm font-medium mb-2">{t.dateRange}</label>
-            <select className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all">
-              <option>{t.last7Days}</option>
-              <option>{t.last30Days}</option>
-              <option>{t.lastMonth}</option>
-              <option>{t.custom}</option>
+            <select 
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all"
+            >
+              <option value="Last 7 Days">{t.last7Days}</option>
+              <option value="Last 30 Days">{t.last30Days}</option>
+              <option value="Last Month">{t.lastMonth}</option>
+              <option value="Custom">{t.custom}</option>
             </select>
           </div>
           <div>
             <label className="block text-white text-sm font-medium mb-2">{t.reportType}</label>
-            <select className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all">
-              <option>{t.performance}</option>
-              <option>{t.decisions}</option>
-              <option>{t.rejections}</option>
-              <option>{t.comprehensive}</option>
+            <select 
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all"
+            >
+              <option value="Performance">{t.performance}</option>
+              <option value="Decisions">{t.decisions}</option>
+              <option value="Rejections">{t.rejections}</option>
+              <option value="Comprehensive">{t.comprehensive}</option>
             </select>
           </div>
           <div>
             <label className="block text-white text-sm font-medium mb-2">{t.format}</label>
-            <select className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all">
-              <option>PDF</option>
-              <option>Excel</option>
-              <option>CSV</option>
+            <select 
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all"
+            >
+              <option value="PDF">PDF</option>
+              <option value="Excel">Excel</option>
+              <option value="CSV">CSV</option>
             </select>
           </div>
         </div>
-        <button className="mt-4 w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-xl text-white font-semibold transition-all">
-          {t.generateReport}
+        <button 
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          className={`mt-4 w-full py-3 bg-gradient-to-r ${isGenerating ? 'from-gray-500 to-gray-600 cursor-not-allowed' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'} rounded-xl text-white font-semibold transition-all flex items-center justify-center gap-2`}
+        >
+          {isGenerating ? (
+            <>
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              {language === 'ar' ? 'جاري الإنشاء...' : 'Generating...'}
+            </>
+          ) : t.generateReport}
         </button>
       </div>
     </div>

@@ -10,18 +10,21 @@ import { AnchorageRequests } from './agent/AnchorageRequests';
 import { CargoManifests } from './agent/CargoManifests';
 import { RequestStatusTracker } from './agent/RequestStatusTracker';
 import { PortClearances as AgentPortClearances } from './agent/PortClearances';
+import { VesselActivityReport } from './agent/VesselActivityReport';
 import { ExecutiveSidebar } from './executive/ExecutiveSidebar';
 import { ExecutiveDashboard } from './executive/ExecutiveDashboard';
 import { ArrivalApprovals } from './executive/ArrivalApprovals';
 import { AnchorageApprovals } from './executive/AnchorageApprovals';
 import { DecisionLogs } from './executive/DecisionLogs';
 import { ReportsAnalytics } from './executive/ReportsAnalytics';
+import { VesselHistory } from './executive/VesselHistory';
 import { PortOfficerSidebar } from './portofficer/PortOfficerSidebar';
 import { PortOfficerDashboard } from './portofficer/PortOfficerDashboard';
 import { BerthingManagement } from './portofficer/BerthingManagement';
 import { ActiveVessels } from './portofficer/ActiveVessels';
 import { PortClearances } from './portofficer/PortClearances';
 import { OperationalLogs } from './portofficer/OperationalLogs';
+import { PortReport } from './portofficer/PortReport';
 import { WharfSidebar } from './wharf/WharfSidebar';
 import { WharfDashboard } from './wharf/WharfDashboard';
 import { WharfAvailability } from './wharf/WharfAvailability';
@@ -48,6 +51,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentVesselId, setCurrentVesselId] = useState<string | number | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -128,11 +132,21 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
           {/* Page Content */}
           <main className="p-6">
-            {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={setCurrentPage} />}
-            {currentPage === 'arrivals' && <ArrivalApprovals language={language} />}
-            {currentPage === 'anchorage' && <AnchorageApprovals language={language} />}
+            {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={(page, params) => {
+              setCurrentPage(page);
+              if (params?.vesselId) setCurrentVesselId(params.vesselId);
+            }} />}
+            {currentPage === 'arrivals' && <ArrivalApprovals language={language} onNavigate={(page, params) => {
+              setCurrentPage(page);
+              if (params?.vesselId) setCurrentVesselId(params.vesselId);
+            }} />}
+            {currentPage === 'anchorage' && <AnchorageApprovals language={language} onNavigate={(page, params) => {
+              setCurrentPage(page);
+              if (params?.vesselId) setCurrentVesselId(params.vesselId);
+            }} />}
             {currentPage === 'logs' && <DecisionLogs language={language} />}
             {currentPage === 'reports' && <ReportsAnalytics language={language} />}
+            {currentPage === 'vessel-history' && currentVesselId && <VesselHistory language={language} vesselId={currentVesselId} onNavigate={setCurrentPage} />}
           </main>
         </div>
       </div>
@@ -229,6 +243,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'vessels' && <ActiveVessels language={language} onNavigate={setCurrentPage} />}
             {currentPage === 'clearances' && <PortClearances language={language} />}
             {currentPage === 'logs' && <OperationalLogs language={language} />}
+            {currentPage === 'report' && <PortReport language={language} />}
           </main>
         </div>
       </div>
@@ -498,6 +513,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'manifests' && <CargoManifests language={language} />}
         {currentPage === 'clearances' && <AgentPortClearances language={language} />}
         {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
+        {currentPage === 'report' && <VesselActivityReport language={language} />}
       </MainLayout>
     );
   }

@@ -43,6 +43,12 @@ export function PortOfficerSidebar({ language, currentPage, onNavigate }: PortOf
       label: isRTL ? 'السجلات التشغيلية' : 'Operational Logs',
       icon: FileText,
       description: isRTL ? 'سجل التدقيق' : 'Audit trail'
+    },
+    {
+      id: 'report',
+      label: isRTL ? 'تقرير التنظيمي' : 'Regulatory Report',
+      icon: FileText,
+      description: isRTL ? 'استخراج PDF معتمد' : 'Extract official PDF'
     }
   ];
 

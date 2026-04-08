@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
         Route::get('/agent/clearances', [AgentController::class, 'getClearances']);
         Route::post('/agent/clearance', [AgentController::class, 'issueClearance']);
+        Route::get('/agent/vessel-report', [AgentController::class, 'getVesselActivityReport']);
 
         // Edit endpoints
         Route::put('/agent/vessels/{id}', [AgentController::class, 'updateArrival']);
@@ -52,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/officer/wharves', [PortOfficerController::class, 'getWharves']);
         // NEW: Scheduled anchorage handoffs from Wharf worker
         Route::get('/officer/scheduled-anchorage', [PortOfficerController::class, 'getScheduledAnchorage']);
+        Route::get('/officer/report', [PortOfficerController::class, 'getPortReport']);
     });
 
     // Wharf Routes
@@ -84,6 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/executive/reports', [ExecutiveController::class, 'getReports']);
         Route::get('/executive/dashboard', [ExecutiveController::class, 'getDashboardStats']);
         Route::get('/executive/analytics', [ExecutiveController::class, 'getAnalytics']);
+        Route::post('/executive/reports/generate', [ExecutiveController::class, 'generateReport']);
+        Route::get('/executive/vessels/{id}/history', [ExecutiveController::class, 'getVesselHistory']);
         Route::get('/executive/approvals', [ExecutiveController::class, 'getPendingApprovals']);
         Route::post('/executive/arrivals/{id}/approve', [ExecutiveController::class, 'approveArrival']);
         Route::post('/executive/arrivals/{id}/reject', [ExecutiveController::class, 'rejectArrival']);

@@ -6,9 +6,10 @@ import { executiveService, PendingApproval } from '../../services/executiveServi
 
 interface ArrivalApprovalsProps {
   language: Language;
+  onNavigate: (page: string, params?: { vesselId?: number | string }) => void;
 }
 
-export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
+export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps) {
   const t = translations[language]?.executive?.arrivals || translations.en.executive.arrivals;
   const [requests, setRequests] = useState<PendingApproval[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -259,7 +260,7 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
               </div>
 
               {/* Decision Actions */}
-              <div className="flex gap-3 pt-4 border-t border-white/10">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
                 <button
                   onClick={() => handleApprove(request.vesselId)}
                   disabled={isProcessing}
@@ -275,6 +276,14 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
                 >
                   <XCircle className="w-5 h-5" />
                   {t.reject}
+                </button>
+                <button
+                  onClick={() => onNavigate('vessel-history', { vesselId: request.vesselId })}
+                  className="flex-1 sm:flex-none sm:px-6 flex items-center justify-center gap-2 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-xl text-blue-200 hover:text-white font-semibold transition-all transform hover:scale-[1.02]"
+                  title={language === 'ar' ? 'عرض السجل الكامل للسفينة' : 'View full history of the vessel'}
+                >
+                  <Clock className="w-5 h-5" />
+                  <span className="sm:hidden md:inline">{language === 'ar' ? 'السجل' : 'History'}</span>
                 </button>
               </div>
             </div>
@@ -303,7 +312,7 @@ export function ArrivalApprovals({ language }: ArrivalApprovalsProps) {
             <div className="flex gap-3">
               <button
                 onClick={confirmReject}
-                disabled={isProcessing}
+                disabled={isProcessing || !rejectionReason.trim()}
                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 rounded-xl text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : null}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Anchor, AlertCircle, CheckCircle2, XCircle, Clock, Plus, Loader2, Calendar, Edit2 } from 'lucide-react';
+import { Anchor, AlertCircle, CheckCircle2, XCircle, Clock, Plus, Loader2, Calendar, Edit2, Download } from 'lucide-react';
+import { exportAnchoragePdf } from '../../utils/exportPdf';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
@@ -343,6 +344,14 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                         <Edit2 className="w-5 h-5 text-[var(--primary)]" />
                       </button>
                     )}
+                    <button
+                      onClick={() => exportAnchoragePdf(request)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 text-xs font-bold transition-all"
+                      title={language === 'ar' ? 'تصدير PDF' : 'Export PDF'}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      PDF
+                    </button>
                   </div>
                 </div>
 

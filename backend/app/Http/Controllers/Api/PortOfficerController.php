@@ -167,4 +167,71 @@ class PortOfficerController extends Controller
 
         return response()->json($vessel);
     }
+
+    public function getPortReport(Request $request)
+    {
+        $request->validate([
+            'vessel_name' => 'required|string',
+            'target_date' => 'required|date',
+        ]);
+
+        $vessel = Vessel::where('name', $request->vessel_name)->first();
+
+        if (!$vessel) {
+            return response()->json(['message' => 'Vessel not found'], 404);
+        }
+
+        $date = $request->target_date;
+
+        // 1. Port Clearance Data (for that date)
+        $clearance = PortClearance::where('vessel_id', $vessel->id)
+            ->whereDate('issue_date', $date)
+            ->with('officer')
+            ->first();
+
+        // 2. Wharfage Logs
+        $wharfage = AnchorageRequest::where('vessel_id', $vessel->id)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('docking_time', $date);
+            })
+            ->where('status', 'wharf_assigned')
+            ->with('wharf')
+            ->get()
+            ->map(function ($log) {
+                $timeIn = \Carbon\Carbon::parse($log->docking_time);
+                $timeOut = (clone $timeIn)->addHours((int)$log->duration);
+                return [
+                    'wharf' => $log->wharf ? $log->wharf->name : 'N/A',
+                    'time_in' => $timeIn->toDateTimeString(),
+                    'time_out' => $timeOut->toDateTimeString(),
+                    'duration' => $log->duration . ' hours',
+                ];
+            });
+
+        // 3. Security Hash
+        $securityHash = 'TRANS-' . strtoupper(substr(md5($vessel->name . $date . now()), 0, 8));
+
+        return response()->json([
+            'vessel' => [
+                'id' => $vessel->id,
+                'name' => $vessel->name,
+                'imo' => $vessel->imo_number,
+                'type' => $vessel->type,
+            ],
+            'date' => $date,
+            'clearance' => $clearance ? [
+                'id' => $clearance->id,
+                'clearance_id' => 'CLR-' . $clearance->id,
+                'status' => $clearance->status,
+                'issue_date' => \Carbon\Carbon::parse($clearance->issue_date)->toDateTimeString(),
+                'expiry_date' => \Carbon\Carbon::parse($clearance->expiry_date)->toDateTimeString(),
+                'next_port' => $clearance->next_port ?? 'Unknown',
+                'officer' => $clearance->officer ? $clearance->officer->name : 'System',
+            ] : null,
+            'wharfage' => $wharfage,
+            'officer_name' => $request->user()->name,
+            'security_hash' => $securityHash,
+            'timestamp' => now()->format('Y-m-d H:i:s'),
+        ]);
+    }
 }
