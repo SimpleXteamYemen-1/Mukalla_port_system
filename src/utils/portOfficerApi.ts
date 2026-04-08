@@ -205,3 +205,47 @@ export async function getScheduledAnchorage(): Promise<ScheduledAnchorage[]> {
   }
 }
 
+// ─── Regulatory Report ────────────────────────────────────────────────────────
+
+export interface ReportWharfage {
+  wharf: string;
+  time_in: string;
+  time_out: string;
+  duration: string;
+}
+
+export interface PortReportData {
+  vessel: {
+    id: number;
+    name: string;
+    imo: string;
+    type: string;
+  };
+  date: string;
+  clearance: {
+    id: number;
+    clearance_id: string;
+    status: string;
+    issue_date: string;
+    expiry_date: string;
+    next_port: string;
+    officer: string;
+  } | null;
+  wharfage: ReportWharfage[];
+  officer_name: string;
+  security_hash: string;
+  timestamp: string;
+}
+
+export async function getPortReport(vesselName: string, date: string): Promise<PortReportData | null> {
+  try {
+    const response = await api.get('/officer/report', {
+      params: { vessel_name: vesselName, target_date: date }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching port report:', error);
+    return null;
+  }
+}
+

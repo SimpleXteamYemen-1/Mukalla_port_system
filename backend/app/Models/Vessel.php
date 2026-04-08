@@ -21,6 +21,7 @@ class Vessel extends Model
         'priority',
         'priority_reason',
         'priority_document_path',
+        'rejection_reason',
     ];
 
     protected $casts = [

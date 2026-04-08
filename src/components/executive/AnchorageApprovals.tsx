@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Anchor, CheckCircle2, XCircle, AlertTriangle, Ship, Lock, Unlock, Loader2, Calendar } from 'lucide-react';
+import { Anchor, CheckCircle2, XCircle, AlertTriangle, Lock, Unlock, Loader2, Calendar, Clock } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
@@ -7,9 +7,10 @@ import { toast } from 'react-toastify';
 
 interface AnchorageApprovalsProps {
   language: Language;
+  onNavigate: (page: string, params?: { vesselId?: number | string }) => void;
 }
 
-export function AnchorageApprovals({ language }: AnchorageApprovalsProps) {
+export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsProps) {
   const t = translations[language]?.executive?.anchorage || translations.en.executive.anchorage;
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -298,7 +299,7 @@ export function AnchorageApprovals({ language }: AnchorageApprovalsProps) {
 
                 {/* Decision Actions */}
                 {request.status === 'pending' && (
-                  <div className="flex gap-3 pt-4 border-t border-white/10">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
                     <button
                       onClick={() => handleApprove(request.id)}
                       disabled={!isVesselApproved}
@@ -316,6 +317,14 @@ export function AnchorageApprovals({ language }: AnchorageApprovalsProps) {
                     >
                       <XCircle className="w-5 h-5" />
                       {t.reject}
+                    </button>
+                    <button
+                      onClick={() => onNavigate('vessel-history', { vesselId: request.vessel_id || request.vessel?.id })}
+                      className="flex-1 sm:flex-none sm:px-6 flex items-center justify-center gap-2 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-xl text-blue-200 hover:text-white font-semibold transition-all transform hover:scale-[1.02]"
+                      title={language === 'ar' ? 'عرض السجل الكامل للسفينة' : 'View full history of the vessel'}
+                    >
+                      <Clock className="w-5 h-5" />
+                      <span className="sm:hidden md:inline">{language === 'ar' ? 'السجل' : 'History'}</span>
                     </button>
                   </div>
                 )}

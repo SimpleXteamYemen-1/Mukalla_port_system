@@ -63,36 +63,127 @@ class ExecutiveController extends Controller
             'operationalEfficiency' => '94%', // Mock
         ];
 
-        // 4. Recent Reports (Mocking generated reports)
-        $recentReports = [
-            [
-                'id' => '1',
-                'title' => 'Monthly Port Performance',
-                'type' => 'PDF',
-                'date' => now()->subDays(2)->format('Y-m-d'),
-                'size' => '2.4 MB'
-            ],
-            [
-                'id' => '2',
-                'title' => 'Vessel Traffic Analysis',
-                'type' => 'Excel',
-                'date' => now()->subDays(5)->format('Y-m-d'),
-                'size' => '1.8 MB'
-            ],
-            [
-                'id' => '3',
-                'title' => 'Security Audit Log',
-                'type' => 'PDF',
-                'date' => now()->subDays(7)->format('Y-m-d'),
-                'size' => '3.1 MB'
-            ]
-        ];
+        // 4. Recent Reports (From Database)
+        $recentReports = \App\Models\Report::latest()->take(3)->get()->map(function($r) {
+            return [
+                'id' => $r->id,
+                'title' => $r->title,
+                'type' => $r->type,
+                'date' => $r->created_at->format('Y-m-d'),
+                'size' => $r->size,
+                'file_url' => asset('storage/' . $r->file_path)
+            ];
+        });
 
         return response()->json([
             'turnaroundData' => $turnaroundData,
             'rejectionReasons' => $rejectionReasons,
             'performanceMetrics' => $performanceMetrics,
             'recentReports' => $recentReports,
+        ]);
+    }
+
+    public function generateReport(Request $request)
+    {
+        $request->validate([
+            'dateRange' => 'required|string',
+            'reportType' => 'required|string',
+            'format' => 'required|in:PDF,Excel,CSV',
+        ]);
+
+        $dateRangeStr = $request->dateRange;
+        // Map date range to timestamps
+        $endDate = now();
+        if (str_contains(strtolower($dateRangeStr), 'last 7')) {
+            $startDate = now()->subDays(7);
+        } elseif (str_contains(strtolower($dateRangeStr), '30')) {
+            $startDate = now()->subDays(30);
+        } elseif (str_contains(strtolower($dateRangeStr), 'last month')) {
+            $startDate = now()->subMonth()->startOfMonth();
+            $endDate = now()->subMonth()->endOfMonth();
+        } else {
+            $startDate = now()->subDays(7);
+        }
+
+        // Aggregate Data
+        $approvals = Log::where('action', 'like', '%approve%')
+            ->whereBetween('created_at', [$startDate, $endDate])->count();
+            
+        $rejections = Log::where('action', 'like', '%reject%')
+            ->whereBetween('created_at', [$startDate, $endDate])->count();
+
+        $vessels = Vessel::whereBetween('created_at', [$startDate, $endDate])->count();
+
+        $totalActivity = $approvals + $rejections + $vessels;
+        $isEmpty = $totalActivity === 0;
+
+        $requestFormat = $request->input('format', 'pdf');
+        $reportType = $request->input('reportType', 'Custom');
+
+        // Generate filename
+        $ext = strtolower($requestFormat) === 'excel' ? 'csv' : strtolower($requestFormat);
+        $fileName = 'Report_' . time() . '_' . rand(100,999) . '.' . $ext;
+        $path = 'reports/' . $fileName;
+
+        if ($ext === 'pdf') {
+            // Use DOMPDF
+            $html = "
+                <h1>Mukalla Port Authority - {$reportType} Report</h1>
+                <p><strong>Date Range:</strong> {$startDate->format('Y-m-d')} to {$endDate->format('Y-m-d')}</p>
+                <hr>
+                " . ($isEmpty ? "<h2>No Operational Data for Selected Period</h2>" : "
+                <h3>Operational Activity Summary</h3>
+                <ul>
+                    <li>Total Vessels Registered: {$vessels}</li>
+                    <li>Approvals Granted: {$approvals}</li>
+                    <li>Rejections Issued: {$rejections}</li>
+                </ul>
+                <p>Report generated securely by Executive Dashboard System.</p>
+                ");
+            
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $pdf->output());
+        } else {
+            // CSV
+            $csvContent = "Mukalla Port Authority - {$reportType} Report\n";
+            $csvContent .= "Date Range:,{$startDate->format('Y-m-d')},to,{$endDate->format('Y-m-d')}\n\n";
+            
+            if ($isEmpty) {
+                $csvContent .= "No Operational Data for Selected Period\n";
+            } else {
+                $csvContent .= "Metric,Value\n";
+                $csvContent .= "Total Vessels Registered,{$vessels}\n";
+                $csvContent .= "Approvals Granted,{$approvals}\n";
+                $csvContent .= "Rejections Issued,{$rejections}\n";
+            }
+            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $csvContent);
+        }
+
+        $sizeBytes = \Illuminate\Support\Facades\Storage::disk('public')->size($path);
+        
+        if ($sizeBytes >= 1048576) {
+            $readableSize = number_format($sizeBytes / 1048576, 1) . ' MB';
+        } else {
+            $readableSize = number_format($sizeBytes / 1024, 1) . ' KB';
+        }
+
+        $report = \App\Models\Report::create([
+            'title' => $reportType . ' - ' . now()->format('M d'),
+            'type' => $requestFormat,
+            'file_path' => $path,
+            'size' => $readableSize,
+        ]);
+
+        return response()->json([
+            'message' => 'Report generated successfully',
+            'report' => [
+                'id' => $report->id,
+                'title' => $report->title,
+                'type' => $report->type,
+                'date' => $report->created_at->format('Y-m-d'),
+                'size' => $report->size,
+                'file_url' => asset('storage/' . $report->file_path)
+            ]
         ]);
     }
 
@@ -180,7 +271,7 @@ class ExecutiveController extends Controller
 
         $vessel = Vessel::findOrFail($id);
         $vessel->status = 'rejected';
-        // You might want to add a rejection_reason column to vessels later if needed
+        $vessel->rejection_reason = $request->reason;
         $vessel->save();
 
         Log::create([

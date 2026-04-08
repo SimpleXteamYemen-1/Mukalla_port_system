@@ -1,4 +1,4 @@
-import { LayoutDashboard, Ship, Bell, Anchor, FileText, Activity, FileCheck } from 'lucide-react';
+import { LayoutDashboard, Ship, Bell, Anchor, FileText, Activity, FileCheck, FileDown } from 'lucide-react';
 import { Language } from '../App';
 import { translations } from '../utils/translations';
 
@@ -19,6 +19,7 @@ export function Sidebar({ currentPage, onNavigate, language }: SidebarProps) {
     { id: 'manifests', label: t.menu.cargoManifests, icon: FileText },
     { id: 'clearances', label: t.menu.portClearances, icon: FileCheck },
     { id: 'tracker', label: t.menu.requestStatusTracker, icon: Activity },
+    { id: 'report', label: language === 'ar' ? 'تقرير نشاط السفينة' : 'Vessel Activity Report', icon: FileDown },
   ];
 
   return (

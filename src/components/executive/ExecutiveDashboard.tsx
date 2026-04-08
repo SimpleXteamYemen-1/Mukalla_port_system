@@ -9,7 +9,7 @@ import { StatusBadge } from '../ui/StatusBadge';
 
 interface ExecutiveDashboardProps {
   language: Language;
-  onNavigate: (page: string) => void;
+  onNavigate: (page: string, params?: any) => void;
 }
 
 export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardProps) {
@@ -252,6 +252,13 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
                     {t.reject}
                   </button>
                 </div>
+                <button 
+                  onClick={() => onNavigate('vessel-history', { vesselId: approval.vesselId })}
+                  className="mt-3 w-full py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  {language === 'ar' ? 'عرض السجل الكامل' : 'View Full History'}
+                </button>
               </div>
             ))}
           </div>

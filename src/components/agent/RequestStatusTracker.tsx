@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Clock, Ship, Anchor, FileText, Calendar, User as UserIcon, Tag, MapPin, Loader2, ClipboardList } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Ship, Anchor, FileText, Calendar, Loader2 } from 'lucide-react';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
@@ -29,7 +29,7 @@ interface RequestItem {
   timeline: TimelineStep[];
 }
 
-export function RequestStatusTracker({ language, onNavigate }: RequestStatusTrackerProps) {
+export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
   const t = translations[language]?.agent?.tracker || translations.en.agent.tracker;
   const [allRequests, setAllRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,13 +174,13 @@ export function RequestStatusTracker({ language, onNavigate }: RequestStatusTrac
                       </div>
 
                       {request.status === 'rejected' && request.rejectionReason && (
-                        <div className="alert-danger mb-6">
-                          <div className="flex items-start gap-3">
-                            <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-black text-sm mb-1 uppercase tracking-wider">{t.rejectionReason}</div>
-                              <div className="text-sm font-medium">{request.rejectionReason}</div>
+                        <div className="mt-4 mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+                          <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <div className="text-red-500 font-bold text-sm mb-1 uppercase tracking-wider">
+                              {language === 'ar' ? 'ملاحظات الإدارة' : 'Executive Feedback'}
                             </div>
+                            <div className="text-red-400 text-sm font-medium">{request.rejectionReason}</div>
                           </div>
                         </div>
                       )}

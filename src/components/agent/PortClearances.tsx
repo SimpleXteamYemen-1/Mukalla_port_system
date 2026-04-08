@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
-import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Edit2 } from 'lucide-react';
+import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Edit2, Download } from 'lucide-react';
+import { exportClearancePdf } from '../../utils/exportPdf';
 import { Clearance } from '../../utils/portOfficerApi';
 import { agentService, Vessel } from '../../services/agentService';
 
@@ -265,6 +266,22 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 >
                                     <QrCode className="w-4 h-4" />
                                     QR Code
+                                </button>
+                                <button
+                                    onClick={() => exportClearancePdf({
+                                        id: parseInt(clearance.id),
+                                        status: clearance.status,
+                                        issue_date: clearance.issueTime,
+                                        expiry_date: clearance.expiryTime,
+                                        next_port: clearance.nextPort,
+                                        vessel: (clearance as any).vesselData || { name: clearance.vessel },
+                                        officer: (clearance as any).officer || null,
+                                    })}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-sm font-bold transition-all"
+                                    title={isRTL ? 'تصدير PDF' : 'Export PDF'}
+                                >
+                                    <Download className="w-4 h-4" />
+                                    PDF
                                 </button>
                             </div>
                         </div>
