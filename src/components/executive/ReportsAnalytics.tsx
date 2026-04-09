@@ -388,7 +388,7 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
           </div>
         </div>
         <button 
-          onClick={handleGenerate}
+          onClick={() => handleGenerate()}
           disabled={isGenerating}
           className={`mt-4 w-full py-3 bg-gradient-to-r ${isGenerating ? 'from-gray-500 to-gray-600 cursor-not-allowed' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'} rounded-xl text-white font-semibold transition-all flex items-center justify-center gap-2`}
         >

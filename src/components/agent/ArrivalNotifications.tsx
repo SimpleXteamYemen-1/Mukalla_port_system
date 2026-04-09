@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, UploadCloud } from 'lucide-react';
-import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, Download } from 'lucide-react';
+import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, UploadCloud, Download } from 'lucide-react';
 import { exportArrivalPdf } from '../../utils/exportPdf';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
@@ -60,7 +59,7 @@ interface ArrivalNotificationsProps {
 
 export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const t = translations[language]?.agent?.arrivals || translations.en.agent.arrivals;
-  
+
   const SESSION_KEY = 'arrival_notification_draft';
   const savedDraft = sessionStorage.getItem(SESSION_KEY);
   const hasDraft = !!savedDraft;
@@ -126,7 +125,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }, 100);
-        
+
         const timeout = setTimeout(() => {
           setHighlightedImo(null);
           const newUrl = new URL(window.location.href);
@@ -372,7 +371,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     sessionStorage.removeItem(SESSION_KEY);
                     setShowForm(false);
                     reset({
-                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '', 
+                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '',
                       arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
                     });
                     setImoVerified(false);
@@ -546,7 +545,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     sessionStorage.removeItem(SESSION_KEY);
                     setShowForm(false);
                     reset({
-                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '', 
+                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '',
                       arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
                     });
                     setImoVerified(false);
@@ -577,13 +576,13 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
         ) : notifications.map((notification) => {
           const hasManifest = notification.containers && notification.containers.length > 0;
           const hasManifestErrors = notification.status === 'draft' && (
-            !hasManifest || 
+            !hasManifest ||
             notification.containers.some((c: any) => c.extraction_status !== 'success')
           );
           const isRTL = language === 'ar';
           return (
-            <div 
-              key={notification.id} 
+            <div
+              key={notification.id}
               id={`arrival-notification-${notification.imo_number}`}
               className={`card-base card-hover p-6 group relative overflow-hidden transition-all duration-500 ${highlightedImo === notification.imo_number ? 'ring-4 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--background)] scale-[1.02] bg-[var(--surface-highlight)]' : ''} ${notification.status === 'draft' ? 'border-dashed border-slate-500/40' : ''}`}
             >
@@ -608,7 +607,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <span className={`inline-block px-5 py-2 rounded-2xl text-sm font-black border-2 ${getStatusColor(notification.status)}`}>
                     {getStatusLabel(notification.status)}
                   </span>
-                  
+
                   {/* Manifest Status Badge */}
                   <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--bg-primary)] border-[var(--secondary)] text-[var(--text-secondary)]'}`}>
                     {hasManifest ? (
@@ -632,8 +631,8 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                         onClick={() => handleFinalize(notification.id)}
                         disabled={hasManifestErrors}
                         className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 w-full md:w-auto justify-center
-                          ${hasManifestErrors 
-                            ? 'bg-[var(--secondary)] text-[var(--text-secondary)] cursor-not-allowed opacity-40 shadow-none' 
+                          ${hasManifestErrors
+                            ? 'bg-[var(--secondary)] text-[var(--text-secondary)] cursor-not-allowed opacity-40 shadow-none'
                             : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/20'
                           }
                         `}

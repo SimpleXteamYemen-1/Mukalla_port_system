@@ -20,6 +20,7 @@ import { DecisionLogs } from './executive/DecisionLogs';
 import { ReportsAnalytics } from './executive/ReportsAnalytics';
 import { UserApprovals } from './executive/UserApprovals';
 import { UserDirectory } from './executive/UserDirectory';
+import { VesselHistory } from './executive/VesselHistory';
 import { PortOfficerSidebar } from './portofficer/PortOfficerSidebar';
 import { PortOfficerDashboard } from './portofficer/PortOfficerDashboard';
 import { BerthingManagement } from './portofficer/BerthingManagement';
@@ -52,17 +53,45 @@ interface DashboardRouterProps {
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'dashboard';
+  });
+
+  const [activeVesselId, setActiveVesselId] = useState<string | number | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('vesselId');
+  });
+
+  const handleNavigate = (page: string, params?: { vesselId?: number | string }) => {
+    if (params?.vesselId) {
+      setActiveVesselId(params.vesselId);
+    } else {
+      // Clear vessel ID if navigating to a generic tab (optional, depends on UX)
+      // setActiveVesselId(null); 
+    }
+    setCurrentPage(page);
+  };
 
   useEffect(() => {
     const url = new URL(window.location.href);
+    
+    // Tab Sync
     if (currentPage === 'dashboard') {
       url.searchParams.delete('tab');
     } else {
       url.searchParams.set('tab', currentPage);
     }
+
+    // Vessel ID Sync
+    if (currentPage === 'vessel-history' && activeVesselId) {
+      url.searchParams.set('vesselId', activeVesselId.toString());
+    } else {
+      url.searchParams.delete('vesselId');
+    }
+
     window.history.replaceState({}, '', url);
-  }, [currentPage]);
+  }, [currentPage, activeVesselId]);
 
   // Executive Management Interface
   if (user.role === 'executive') {
@@ -76,7 +105,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {/* Sidebar */}
         <ExecutiveSidebar
           currentPage={currentPage}
-          onNavigate={setCurrentPage}
+          onNavigate={handleNavigate}
           language={language}
         />
 
@@ -158,9 +187,16 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
           {/* Page Content */}
           <main className="p-6">
-            {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={setCurrentPage} />}
-            {currentPage === 'arrivals' && <ArrivalApprovals language={language} />}
-            {currentPage === 'anchorage' && <AnchorageApprovals language={language} />}
+            {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={handleNavigate} />}
+            {currentPage === 'arrivals' && <ArrivalApprovals language={language} onNavigate={handleNavigate} />}
+            {currentPage === 'vessel-history' && activeVesselId && (
+              <VesselHistory 
+                language={language} 
+                vesselId={activeVesselId} 
+                onNavigate={handleNavigate} 
+              />
+            )}
+            {currentPage === 'anchorage' && <AnchorageApprovals language={language} onNavigate={handleNavigate} />}
             {currentPage === 'user-approvals' && <UserApprovals language={language} />}
             {currentPage === 'user-directory' && <UserDirectory language={language} />}
             {currentPage === 'logs' && <DecisionLogs language={language} />}
