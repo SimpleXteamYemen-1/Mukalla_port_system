@@ -1,0 +1,2 @@
+﻿VESSELS: id, name, imo_number, type, flag, owner_id, status, eta, etd, current_wharf_id, created_at, updated_at, purpose, cargo, priority, priority_reason, priority_document_path
+CONTAINERS: id, vessel_id, manifest_file_path, port_of_loading, arrival_date, description_of_goods, storage_type, consignee_name, consignee_phone, trader_user_id, status, extraction_status, extraction_errors, created_at, updated_at

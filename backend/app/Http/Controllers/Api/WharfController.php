@@ -42,7 +42,7 @@ class WharfController extends Controller
 
     public function getContainers(Request $request)
     {
-        $containers = Container::whereIn('status', ['arrived', 'assigned', 'ready_discharge'])->with('manifest.vessel')->get();
+        $containers = Container::with('arrivalNotification')->get();
         return response()->json($containers);
     }
 

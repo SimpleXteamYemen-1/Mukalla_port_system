@@ -48,4 +48,9 @@ class Vessel extends Model
     {
         return $this->hasMany(PortClearance::class);
     }
+
+    public function containers()
+    {
+        return $this->hasMany(Container::class);
+    }
 }

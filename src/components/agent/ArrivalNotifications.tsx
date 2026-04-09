@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, UploadCloud } from 'lucide-react';
 import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, Download } from 'lucide-react';
 import { exportArrivalPdf } from '../../utils/exportPdf';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
 import { translations } from '../../utils/translations';
+import { ManifestUploader } from './ManifestUploader';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -82,6 +84,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const [loading, setLoading] = useState(true);
   const [checkingIMO, setCheckingIMO] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [expandedManifestId, setExpandedManifestId] = useState<number | null>(null);
   const [highlightedImo, setHighlightedImo] = useState<string | null>(null);
 
   const {
@@ -240,6 +243,17 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     }
   };
 
+  const handleFinalize = async (id: number) => {
+    try {
+      await agentService.finalizeArrival(id);
+      toast.success(language === 'ar' ? 'تم تقديم الخدمة بنجاح للسلطات!' : 'Arrival notification officially submitted to authorities!');
+      loadArrivals();
+    } catch (error: any) {
+      const msg = error.response?.data?.message || (language === 'ar' ? 'فشل التقديم النهائي' : 'Final submission failed');
+      toast.error(msg);
+    }
+  };
+
   const handleEdit = (notification: any) => {
     setEditingId(notification.id);
     setImoVerified(true);
@@ -275,6 +289,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       case 'approved': return <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />;
       case 'rejected': return <XCircle className="w-5 h-5 text-[var(--danger)]" />;
       case 'pending': return <Clock className="w-5 h-5 text-[var(--warning)] animate-pulse" />;
+      case 'draft': return <Edit2 className="w-5 h-5 text-slate-400" />;
       default: return <AlertCircle className="w-5 h-5 text-[var(--info)]" />;
     }
   };
@@ -285,6 +300,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       case 'rejected': return 'status-danger';
       case 'pending':
       case 'awaiting': return 'status-warning';
+      case 'draft': return 'bg-slate-500/10 border-slate-500/30 text-slate-500';
       default: return 'status-info';
     }
   };
@@ -294,6 +310,8 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       approved: { ar: 'موافق', en: 'Approved' },
       rejected: { ar: 'مرفوض', en: 'Rejected' },
       pending: { ar: 'قيد الانتظار', en: 'Pending' },
+      awaiting: { ar: 'في انتظار المراجعة', en: 'Awaiting Review' },
+      draft: { ar: 'مسودة', en: 'Draft' },
     };
     return labels[status]?.[language] || status;
   };
@@ -557,12 +575,17 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
             <p className="text-lg font-bold">{language === 'ar' ? 'لا توجد إشعارات وصول.' : 'No arrival notifications found.'}</p>
           </div>
         ) : notifications.map((notification) => {
-          const hasManifest = notification.manifests && notification.manifests.length > 0;
+          const hasManifest = notification.containers && notification.containers.length > 0;
+          const hasManifestErrors = notification.status === 'draft' && (
+            !hasManifest || 
+            notification.containers.some((c: any) => c.extraction_status !== 'success')
+          );
+          const isRTL = language === 'ar';
           return (
             <div 
               key={notification.id} 
               id={`arrival-notification-${notification.imo_number}`}
-              className={`card-base card-hover p-6 group relative overflow-hidden transition-all duration-500 ${highlightedImo === notification.imo_number ? 'ring-4 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--background)] scale-[1.02] bg-[var(--surface-highlight)]' : ''}`}
+              className={`card-base card-hover p-6 group relative overflow-hidden transition-all duration-500 ${highlightedImo === notification.imo_number ? 'ring-4 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--background)] scale-[1.02] bg-[var(--surface-highlight)]' : ''} ${notification.status === 'draft' ? 'border-dashed border-slate-500/40' : ''}`}
             >
               <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-6">
                 <div className="flex items-start gap-4">
@@ -585,6 +608,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <span className={`inline-block px-5 py-2 rounded-2xl text-sm font-black border-2 ${getStatusColor(notification.status)}`}>
                     {getStatusLabel(notification.status)}
                   </span>
+                  
                   {/* Manifest Status Badge */}
                   <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--bg-primary)] border-[var(--secondary)] text-[var(--text-secondary)]'}`}>
                     {hasManifest ? (
@@ -595,10 +619,35 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <span>Manifest Pending</span>
                     )}
                   </span>
-                  {notification.status === 'awaiting' || notification.status === 'pending' ? (
+
+                  {/* Finalize Button for Drafts */}
+                  {notification.status === 'draft' && (
+                    <div className="flex flex-col items-end gap-2 mt-2 w-full">
+                      {hasManifestErrors && (
+                        <p className="text-[10px] text-red-500 font-bold bg-red-500/5 px-2 py-1 rounded border border-red-500/10">
+                          {isRTL ? 'يرجى حل جميع أخطاء استخراج البيانات قبل التقديم.' : 'Please resolve all manifest extraction errors before submitting.'}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => handleFinalize(notification.id)}
+                        disabled={hasManifestErrors}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 w-full md:w-auto justify-center
+                          ${hasManifestErrors 
+                            ? 'bg-[var(--secondary)] text-[var(--text-secondary)] cursor-not-allowed opacity-40 shadow-none' 
+                            : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/20'
+                          }
+                        `}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        {isRTL ? 'تقديم نهائي للسلطات' : 'Finalize & Submit'}
+                      </button>
+                    </div>
+                  )}
+
+                  {(notification.status === 'awaiting' || notification.status === 'pending' || notification.status === 'draft') ? (
                     <button
                       onClick={() => handleEdit(notification)}
-                      className="btn-ghost p-2"
+                      className="btn-ghost p-2 mt-1"
                       title={language === 'ar' ? 'تعديل' : 'Edit'}
                     >
                       <Edit2 className="w-5 h-5 text-[var(--primary)]" />
@@ -654,6 +703,34 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     </div>
                     <div className="text-red-400 text-sm font-medium">{notification.rejection_reason}</div>
                   </div>
+                </div>
+              )}
+
+              {/* Manifest Upload Section */}
+              {notification.status !== 'rejected' && (
+                <div className="mt-4">
+                  {expandedManifestId === notification.id ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <ManifestUploader
+                        vesselId={notification.id}
+                        language={language}
+                        onUploadSuccess={() => {
+                          setExpandedManifestId(null);
+                          loadArrivals();
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setExpandedManifestId(notification.id)}
+                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--secondary)]/40 hover:border-[var(--primary)]/60 rounded-xl text-[var(--text-secondary)] hover:text-[var(--primary)] font-bold text-sm transition-all hover:bg-[var(--primary)]/5"
+                    >
+                      <UploadCloud className="w-5 h-5" />
+                      {hasManifest
+                        ? (language === 'ar' ? 'رفع بيانات شحن إضافية' : 'Upload Additional Manifests')
+                        : (language === 'ar' ? 'رفع بيانات الشحن (بوليصة الشحن)' : 'Upload Cargo Manifests')}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

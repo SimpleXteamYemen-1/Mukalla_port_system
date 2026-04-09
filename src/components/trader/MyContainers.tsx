@@ -1,305 +1,152 @@
 import React, { useState, useEffect } from 'react';
-import { Language } from '../../App';
-import { Package, Ship, MapPin, RefreshCw, Search, Filter } from 'lucide-react';
-import { traderService } from '../../services/traderService';
+import { Package, MapPin, Calendar, CheckSquare, Clock, FileText, Loader2, Link } from 'lucide-react';
+import api from '../../services/api';
 
-interface MyContainersProps {
-  language: Language;
-  userEmail: string;
-}
-
-interface Container {
-  id: string;
-  containerId: string;
-  vesselName: string;
-  type: string;
+// Defined based on new model schema
+interface ContainerData {
+  id: number;
+  vessel_id: number;
+  manifest_file_path: string;
+  port_of_loading: string;
+  arrival_date: string;
+  description_of_goods: string;
+  storage_type: 'chemical' | 'frozen' | 'dry';
+  consignee_name: string;
+  consignee_phone: string;
   status: string;
-  assignedStorage: string | null;
-  weight: number;
-  arrivalDate: string;
+  arrival_notification?: {
+    id: number;
+    name: string;
+  };
 }
 
-export function MyContainers({ language, userEmail }: MyContainersProps) {
+export function MyContainers({ language, userEmail }: { language: 'ar' | 'en'; userEmail: string }) {
   const isRTL = language === 'ar';
-  const [containers, setContainers] = useState<Container[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const loadContainers = async () => {
-    setLoading(true);
-    try {
-      const data = await traderService.getContainers();
-
-      // Map data if necessary. Backend returns containers with manifest.vessel relation.
-      // Need to flatten structure to match interface or update interface.
-      // Interface: { id, containerId, vesselName, type, status, assignedStorage, weight, arrivalDate }
-      const mappedContainers = data.map((c: any) => ({
-        id: c.id.toString(),
-        containerId: c.id.toString(),
-        vesselName: c.manifest?.vessel?.name || 'Unknown',
-        type: 'general', // Mock or c.type
-        status: c.status,
-        assignedStorage: c.location,
-        weight: 10, // Mock
-        arrivalDate: c.created_at || new Date().toISOString()
-      }));
-
-      setContainers(mappedContainers);
-    } catch (error) {
-      console.error('Error loading containers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [containers, setContainers] = useState<ContainerData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadContainers();
-  }, [userEmail]);
+    fetchContainers();
+  }, []);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'arrived':
-        return {
-          label: isRTL ? 'وصلت' : 'Arrived',
-          bg: 'bg-blue-500/20',
-          border: 'border-blue-400/30',
-          text: 'text-blue-300'
-        };
-      case 'assigned':
-        return {
-          label: isRTL ? 'مخزنة' : 'Stored',
-          bg: 'bg-emerald-500/20',
-          border: 'border-emerald-400/30',
-          text: 'text-emerald-300'
-        };
-      case 'ready_discharge':
-        return {
-          label: isRTL ? 'جاهزة للتفريغ' : 'Ready for Discharge',
-          bg: 'bg-teal-500/20',
-          border: 'border-teal-400/30',
-          text: 'text-teal-300'
-        };
-      default:
-        return {
-          label: status,
-          bg: 'bg-gray-500/20',
-          border: 'border-gray-400/30',
-          text: 'text-gray-300'
-        };
+  const fetchContainers = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get('/trader/my-containers');
+      setContainers(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    const labels: any = {
-      general: isRTL ? 'عامة' : 'General',
-      refrigerated: isRTL ? 'مبردة' : 'Refrigerated',
-      bulk: isRTL ? 'بضائع سائبة' : 'Bulk',
-      hazardous: isRTL ? 'خطرة' : 'Hazardous'
-    };
-    return labels[type] || type;
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'cleared':
+        return <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-500 border border-green-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm"><CheckSquare className="w-3.5 h-3.5" /> {isRTL ? 'متاحة للاستلام' : 'Cleared for Pickup'}</span>;
+      case 'in_wharf':
+        return <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm"><MapPin className="w-3.5 h-3.5" /> {isRTL ? 'في المخزن' : 'Routed to Block'}</span>;
+      default:
+        return <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm"><Clock className="w-3.5 h-3.5" /> {isRTL ? 'قيد المراجعة' : 'Pending Allocation'}</span>;
+    }
   };
 
-  const filteredContainers = containers.filter(container => {
-    const matchesSearch =
-      container.containerId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      container.vesselName.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || container.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(isRTL ? 'ar' : 'en', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  if (isLoading) {
+    return <div className="p-20 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-[var(--primary)] drop-shadow-md" /></div>;
+  }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {isRTL ? 'حاوياتي' : 'My Containers'}
-            </h1>
-            <p className="text-emerald-200/70">
-              {isRTL ? 'عرض وإدارة جميع الحاويات الخاصة بك' : 'View and manage all your containers'}
-            </p>
-          </div>
-          <button
-            onClick={loadContainers}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-all disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="text-sm">{isRTL ? 'تحديث' : 'Refresh'}</span>
-          </button>
-        </div>
+    <div className={`space-y-6 ${isRTL ? 'rtl rtl-text-right' : 'ltr'}`}>
+      {/* Immersive Header Block */}
+      <div className="bg-gradient-to-br from-[var(--primary)] via-blue-600 to-indigo-700 rounded-2xl p-8 lg:p-10 text-white shadow-xl shadow-[var(--primary)]/20 relative overflow-hidden">
+        {/* Background Decorative Graphic */}
+        <Package className={`absolute -bottom-16 opacity-10 w-80 h-80 ${isRTL ? '-left-16 rotate-12' : '-right-16 -rotate-12'} pointer-events-none`} />
+        
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="space-y-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/20 text-white text-xs font-black uppercase tracking-widest backdrop-blur-md mb-2">
+                  <Link className="w-3 h-3" /> {isRTL ? 'إتصال آمن' : 'Encrypted Registry Link'}
+                </span>
+                <h2 className="text-3xl lg:text-4xl font-black tracking-tight drop-shadow-md">
+                   {isRTL ? 'البضائع و الحاويات المسجلة' : 'My Monitored Payloads'}
+                </h2>
+                <p className="text-blue-50 text-sm lg:text-base max-w-xl font-medium opacity-90">
+                   {isRTL 
+                       ? 'الأنظمة الذكية بالميناء قامت بمقارنة حسابك تلقائياً مع بوالص الشحن لتمنحك تحكماً كاملاً قبل الاستخراج.' 
+                       : 'Algorithms successfully matched your user profile parameters globally linking incoming logistics assets seamlessly into your direct workflow overview.'}
+                </p>
+            </div>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-300" />
-            <input
-              type="text"
-              placeholder={isRTL ? 'ابحث عن حاوية أو سفينة...' : 'Search by container or vessel...'}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-emerald-400/50"
-            />
-          </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-300 pointer-events-none" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-10 pr-8 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-emerald-400/50 appearance-none cursor-pointer min-w-[200px]"
-            >
-              <option value="all">{isRTL ? 'جميع الحالات' : 'All Status'}</option>
-              <option value="arrived">{isRTL ? 'وصلت' : 'Arrived'}</option>
-              <option value="assigned">{isRTL ? 'مخزنة' : 'Stored'}</option>
-              <option value="ready_discharge">{isRTL ? 'جاهزة للتفريغ' : 'Ready for Discharge'}</option>
-            </select>
-          </div>
+            <div className="mt-6 md:mt-0 bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/20 shadow-inner flex flex-col items-center min-w-[120px]">
+                <span className="text-4xl font-black drop-shadow-md">{containers.length}</span>
+                <span className="text-xs mt-1 font-bold tracking-wider uppercase opacity-90">{isRTL ? 'أرصدة مجمعة' : 'Matched Assets'}</span>
+            </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-          <div className="text-blue-200/60 text-sm mb-1">{isRTL ? 'إجمالي الحاويات' : 'Total Containers'}</div>
-          <div className="text-2xl font-bold text-white">{containers.length}</div>
-        </div>
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-          <div className="text-emerald-200/60 text-sm mb-1">{isRTL ? 'مخزنة' : 'Stored'}</div>
-          <div className="text-2xl font-bold text-white">
-            {containers.filter(c => c.status === 'assigned').length}
+      {containers.length === 0 ? (
+        <div className="bg-[var(--bg-card)] border border-[var(--secondary)]/20 rounded-2xl p-16 text-center shadow-sm">
+          <div className="bg-[var(--secondary)]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-[var(--secondary)]/20">
+             <Link className="w-8 h-8 text-[var(--secondary)] opacity-60" />
           </div>
-        </div>
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-          <div className="text-teal-200/60 text-sm mb-1">{isRTL ? 'جاهزة للتفريغ' : 'Ready for Discharge'}</div>
-          <div className="text-2xl font-bold text-white">
-            {containers.filter(c => c.status === 'ready_discharge').length}
-          </div>
-        </div>
-      </div>
-
-      {/* Containers Table */}
-      {loading ? (
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center">
-          <RefreshCw className="w-8 h-8 text-emerald-300 animate-spin mx-auto mb-4" />
-          <p className="text-blue-200">{isRTL ? 'جاري التحميل...' : 'Loading containers...'}</p>
-        </div>
-      ) : filteredContainers.length === 0 ? (
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center">
-          <Package className="w-16 h-16 text-blue-300 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-semibold text-white mb-2">
-            {isRTL ? 'لم يتم العثور على حاويات' : 'No Containers Found'}
+          <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+             {isRTL ? 'لم يتم رصد ارتباطات نشطة' : 'No Active Shipments Bridged'}
           </h3>
-          <p className="text-blue-200/60">
-            {isRTL ? 'لا توجد حاويات تطابق معايير البحث' : 'No containers match your search criteria'}
+          <p className="text-[var(--text-secondary)] text-sm max-w-md mx-auto leading-relaxed">
+             {isRTL 
+               ? 'سيتم تحديث هذا السجل الخفي تلقائياً في ثوانٍ بمجرد أن يقوم المخلص الجمركي برفع بوالص شحن تحتوي على رقم هاتفك.' 
+               : 'This intelligent table will dynamically map contents anytime the authorities securely upload incoming arrival manifests associated explicitly via your numeric phone profile identifiers.'}
           </p>
         </div>
       ) : (
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-white/5 border-b border-white/10">
-                  <th className={`px-6 py-4 text-${isRTL ? 'right' : 'left'} text-sm font-semibold text-emerald-300`}>
-                    {isRTL ? 'رقم الحاوية' : 'Container ID'}
-                  </th>
-                  <th className={`px-6 py-4 text-${isRTL ? 'right' : 'left'} text-sm font-semibold text-emerald-300`}>
-                    {isRTL ? 'السفينة' : 'Vessel'}
-                  </th>
-                  <th className={`px-6 py-4 text-${isRTL ? 'right' : 'left'} text-sm font-semibold text-emerald-300`}>
-                    {isRTL ? 'موقع التخزين' : 'Storage Location'}
-                  </th>
-                  <th className={`px-6 py-4 text-${isRTL ? 'right' : 'left'} text-sm font-semibold text-emerald-300`}>
-                    {isRTL ? 'النوع' : 'Type'}
-                  </th>
-                  <th className={`px-6 py-4 text-${isRTL ? 'right' : 'left'} text-sm font-semibold text-emerald-300`}>
-                    {isRTL ? 'الحالة' : 'Status'}
-                  </th>
-                  <th className={`px-6 py-4 text-${isRTL ? 'right' : 'left'} text-sm font-semibold text-emerald-300`}>
-                    {isRTL ? 'تاريخ الوصول' : 'Arrival Date'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {filteredContainers.map((container) => {
-                  const statusBadge = getStatusBadge(container.status);
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {containers.map((container, idx) => (
+            <div key={container.id} 
+              className="bg-[var(--bg-card)] border border-[var(--secondary)]/20 hover:border-[var(--primary)]/50 transition-all rounded-xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] group flex flex-col h-full"
+              style={{animationDelay: `${idx * 100}ms`}}
+            >
+              <div className="flex justify-between items-start mb-5 border-b border-[var(--secondary)]/10 pb-4">
+                <div>
+                   <h3 className="font-extrabold text-lg text-[var(--text-primary)] flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-[var(--primary)]" />
+                      {container.arrival_notification?.name || 'Carrier Matrix'}
+                   </h3>
+                   <span className="text-xs text-[var(--text-secondary)] font-mono tracking-widest opacity-80 mt-1 block">
+                      #{btoa(container.id.toString()).toUpperCase().substring(0,6)} • {container.port_of_loading}
+                   </span>
+                </div>
+                {getStatusBadge(container.status)}
+              </div>
 
-                  return (
-                    <tr key={container.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4 text-emerald-300" />
-                          <span className="font-medium text-white">{container.containerId}</span>
+              <div className="space-y-5 flex-grow">
+                {/* Description Focus */}
+                <div className="flex items-start gap-4 bg-[var(--bg-primary)]/40 p-4 rounded-xl border border-[var(--secondary)]/10">
+                   <div className={`p-2.5 rounded-lg flex-shrink-0 ${container.storage_type==='chemical'?'bg-amber-100 text-amber-600':container.storage_type==='frozen'?'bg-cyan-100 text-cyan-600':'bg-slate-100 text-slate-600'} dark:bg-opacity-10`}>
+                      <Package className="w-5 h-5" />
+                   </div>
+                   <div>
+                     <span className="text-[10px] text-[var(--text-secondary)] block uppercase font-bold tracking-wider mb-0.5">{isRTL ? 'المستخرج المعترف به' : 'Identified Payload Details'}</span>
+                     <span className="text-sm font-semibold text-[var(--text-primary)] leading-snug">{container.description_of_goods}</span>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-[var(--primary)]/10 p-2 rounded-full border border-[var(--primary)]/20">
+                           <Calendar className="w-4 h-4 text-[var(--primary)]" />
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <Ship className="w-4 h-4 text-blue-300" />
-                          <span className="text-blue-200">{container.vesselName}</span>
+                        <div>
+                            <span className="text-[10px] text-[var(--text-secondary)] block uppercase font-bold">{isRTL ? 'تاريخ الرسو' : 'Arrival Point'}</span>
+                            <span className="text-sm font-black text-[var(--text-primary)]">{container.arrival_date}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {container.assignedStorage ? (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-teal-300" />
-                            <span className="text-teal-200">{container.assignedStorage}</span>
-                          </div>
-                        ) : (
-                          <span className="text-blue-200/40">{isRTL ? 'في الانتظار' : 'Awaiting'}</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-blue-200">{getTypeLabel(container.type)}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-lg ${statusBadge.bg} border ${statusBadge.border} ${statusBadge.text} text-sm font-medium`}>
-                          {statusBadge.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-blue-200">
-                        {formatDate(container.arrivalDate)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
-      {/* Status Legend */}
-      <div className="mt-6 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-white mb-3">
-          {isRTL ? 'دليل الحالة' : 'Status Legend'}
-        </h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-            <span className="text-blue-200 text-sm">{isRTL ? 'وصلت: وصلت إلى الميناء' : 'Arrived: At port'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-emerald-400 rounded-full"></div>
-            <span className="text-emerald-200 text-sm">{isRTL ? 'مخزنة: تم تعيين موقع' : 'Stored: Location assigned'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-teal-400 rounded-full"></div>
-            <span className="text-teal-200 text-sm">{isRTL ? 'جاهزة: جاهزة للتفريغ' : 'Ready: Can be discharged'}</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

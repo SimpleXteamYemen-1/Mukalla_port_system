@@ -11,9 +11,12 @@ class TraderController extends Controller
 {
     public function getContainers(Request $request)
     {
-        // Match by email
-        $email = $request->user()->email;
-        $containers = Container::where('trader_email', $email)->with('manifest.vessel')->get();
+        $user = $request->user();
+        $containers = Container::where('trader_user_id', $user->id)
+            ->orWhere('consignee_phone', $user->phone)
+            ->with('arrivalNotification')
+            ->get();
+            
         return response()->json($containers);
     }
 

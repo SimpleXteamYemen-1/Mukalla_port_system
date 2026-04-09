@@ -159,6 +159,16 @@ export const agentService = {
         }
     },
 
+    finalizeArrival: async (id: number) => {
+        try {
+            const response = await api.post(`/agent/vessels/${id}/finalize`);
+            return response.data;
+        } catch (error) {
+            console.error('Error finalizing arrival', error);
+            throw error;
+        }
+    },
+
     updateArrival: async (id: number, data: { eta: string; type?: string; flag?: string; name?: string; imo_number?: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
         try {
             const formData = new FormData();

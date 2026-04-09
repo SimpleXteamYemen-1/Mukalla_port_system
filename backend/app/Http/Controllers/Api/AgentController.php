@@ -72,7 +72,7 @@ class AgentController extends Controller
     public function getVessels(Request $request)
     {
         $vessels = Vessel::where('owner_id', $request->user()->id)
-            ->with(['manifests', 'owner'])
+            ->with(['manifests', 'owner', 'containers'])
             ->latest()
             ->get();
         return response()->json($vessels);
@@ -347,6 +347,80 @@ class AgentController extends Controller
         $this->notifyUsers(['officer'], 'Clearance Updated', "Agent has updated port clearance request for vessel {$clearance->vessel->name}.");
 
         return response()->json($clearance);
+    }
+
+    public function finalizeArrival(Request $request, $id)
+    {
+        $vessel = Vessel::where('id', $id)
+            ->where('owner_id', $request->user()->id)
+            ->with('containers')
+            ->firstOrFail();
+
+        if ($vessel->status !== 'draft') {
+            return response()->json([
+                'message' => 'This arrival notification has already been submitted or is in a different state.',
+                'status' => $vessel->status
+            ], 422);
+        }
+
+        $containers = $vessel->containers;
+
+        // 1. Ensure at least one manifest exists
+        if ($containers->isEmpty()) {
+            return response()->json([
+                'message' => 'Cannot finalize: At least one cargo manifest must be uploaded.',
+                'error_code' => 'NO_MANIFESTS'
+            ], 422);
+        }
+
+        // 2. Check for OCR extraction errors
+        $failedManifests = $containers->filter(function($c) {
+            return in_array($c->extraction_status, ['failed', 'incomplete']);
+        });
+
+        if ($failedManifests->isNotEmpty()) {
+            return response()->json([
+                'message' => 'Cannot finalize: One or more manifests have OCR extraction errors. Please resolve them first.',
+                'failed_ids' => $failedManifests->pluck('id'),
+                'error_code' => 'OCR_VALIDATION_FAILED'
+            ], 422);
+        }
+
+        // 3. Finalize
+        $vessel->status = 'awaiting';
+        $vessel->save();
+
+        // Dispatch events now that it's officially submitted
+        \App\Events\VesselArrived::dispatch($vessel);
+        $this->notifyUsers(['officer', 'executive'], 'New Arrival Notification', "A new arrival notification for {$vessel->name} has been submitted and is ready for review.");
+
+        return response()->json([
+            'message' => 'Arrival notification successfully finalized and submitted for review.',
+            'vessel' => $vessel
+        ]);
+    }
+
+    public function deleteManifest(Request $request, $id)
+    {
+        $container = \App\Models\Container::findOrFail($id);
+        
+        // Ensure authorization: manifest belongs to a vessel owned by this agent
+        $vessel = Vessel::where('id', $container->vessel_id)
+            ->where('owner_id', $request->user()->id)
+            ->first();
+
+        if (!$vessel) {
+            return response()->json(['message' => 'Unauthorized or manifest not found.'], 403);
+        }
+
+        // Delete the physical file if it exists
+        if ($container->manifest_file_path && Storage::disk('public')->exists($container->manifest_file_path)) {
+            Storage::disk('public')->delete($container->manifest_file_path);
+        }
+
+        $container->delete();
+
+        return response()->json(null, 204);
     }
 
     /**

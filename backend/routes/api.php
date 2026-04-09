@@ -13,7 +13,9 @@ use App\Http\Controllers\Api\PortOfficerController;
 use App\Http\Controllers\Api\WharfController;
 use App\Http\Controllers\Api\TraderController;
 use App\Http\Controllers\Api\ExecutiveController;
+
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\ManifestUploadController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -33,6 +35,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/vessels', [AgentController::class, 'getVessels']);
         Route::post('/agent/manifests', [AgentController::class, 'uploadManifest']);
         Route::get('/agent/manifests', [AgentController::class, 'getManifests']);
+        
+        // NEW: Manifest Extraction & Upload Pipeline
+        Route::post('/arrival-notifications/{id}/manifests', [ManifestUploadController::class, 'upload']);
+        Route::post('/agent/vessels/{id}/finalize', [AgentController::class, 'finalizeArrival']);
+
         Route::post('/agent/anchorage', [AgentController::class, 'submitAnchorageRequest']);
         Route::get('/agent/anchorage', [AgentController::class, 'getAnchorageRequests']);
         Route::get('/agent/stats', [AgentController::class, 'getDashboardStats']);
@@ -44,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Edit endpoints
         Route::put('/agent/vessels/{id}', [AgentController::class, 'updateArrival']);
         Route::put('/agent/manifests/{id}', [AgentController::class, 'updateManifest']);
+        Route::delete('/agent/manifests/{id}', [AgentController::class, 'deleteManifest']);
         Route::put('/agent/anchorage/{id}', [AgentController::class, 'updateAnchorageRequest']);
         Route::put('/agent/clearance/{id}', [AgentController::class, 'updateClearance']);
     });
@@ -83,7 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Trader Routes
     Route::group(['middleware' => ['role:trader']], function () {
         Route::get('/trader/dashboard', [TraderController::class, 'getDashboardStats']);
-        Route::get('/trader/containers', [TraderController::class, 'getContainers']);
+        Route::get('/trader/my-containers', [TraderController::class, 'getContainers']);
         Route::post('/trader/discharge-request', [TraderController::class, 'requestDischarge']);
         Route::get('/trader/discharge-requests', [TraderController::class, 'getDischargeRequests']);
     });

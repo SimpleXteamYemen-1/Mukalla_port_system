@@ -23,7 +23,7 @@ class AgentService
                 'flag' => $data['flag'] ?? 'Unknown',
                 'owner_id' => $userId,
                 'eta' => $data['eta'],
-                'status' => 'awaiting',
+                'status' => 'draft',
                 'purpose' => $data['purpose'] ?? 'Cargo Handling',
                 'cargo' => $data['cargo'] ?? null,
                 'priority' => $data['priority'] ?? 'Low',
@@ -31,22 +31,18 @@ class AgentService
                 'priority_document_path' => $data['priority_document_path'] ?? null,
             ]);
 
-            \App\Events\VesselArrived::dispatch($newVessel);
-
             return $newVessel;
         }
 
         $vessel->update([
             'eta' => $data['eta'],
-            'status' => 'awaiting',
+            'status' => 'draft',
             'purpose' => $data['purpose'] ?? $vessel->purpose,
             'cargo' => $data['cargo'] ?? $vessel->cargo,
             'priority' => $data['priority'] ?? $vessel->priority,
             'priority_reason' => $data['priority_reason'] ?? $vessel->priority_reason,
             'priority_document_path' => $data['priority_document_path'] ?? $vessel->priority_document_path,
         ]);
-
-        \App\Events\VesselArrived::dispatch($vessel);
 
         return $vessel;
     }

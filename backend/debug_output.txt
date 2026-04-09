@@ -1,0 +1,24 @@
+
+  Migration name  Batch / Status  
+  0001_01_01_000000_create_users_table  [1] Ran  
+  0001_01_01_000001_create_cache_table  [1] Ran  
+  0001_01_01_000002_create_jobs_table  [1] Ran  
+  2026_02_13_041446_create_permission_tables  [1] Ran  
+  2026_02_13_041657_create_port_tables  [1] Ran  
+  2026_02_13_043046_create_personal_access_tokens_table  [1] Ran  
+  2026_02_13_062737_add_imo_number_to_vessels_table  [1] Ran  
+  2026_02_13_063903_create_anchorage_requests_table  [1] Ran  
+  2026_02_14_071058_add_docking_time_to_anchorage_requests_table  [1] Ran  
+  2026_02_28_110525_add_etd_and_berth_to_vessels_table  [1] Ran  
+  2026_02_28_110551_add_yard_coordinates_to_containers_table  [1] Ran  
+  2026_02_28_222936_create_storage_areas_table  [1] Ran  
+  2026_02_28_223406_add_rejection_reason_to_cargo_manifests_table  [1] Ran  
+  2026_03_09_222732_add_purpose_and_cargo_to_vessels_table  [1] Ran  
+  2026_03_29_134618_add_next_port_to_port_clearances_table  [1] Ran  
+  2026_03_29_141352_add_priority_fields_to_vessels_table  [1] Ran  
+  2026_03_29_182223_add_wharf_id_to_anchorage_requests_table  [1] Ran  
+  2026_03_30_032811_remove_capacity_from_wharves_table  [1] Ran  
+  2026_03_30_032814_remove_capacity_from_wharves_table  [1] Ran  
+  2026_04_02_000000_add_profile_fields_to_users_table  [1] Ran  
+  2026_04_07_145929_modify_containers_structure_for_manifests  Pending  
+

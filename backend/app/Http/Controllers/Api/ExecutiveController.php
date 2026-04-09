@@ -206,46 +206,72 @@ class ExecutiveController extends Controller
 
     public function getPendingApprovals()
     {
-        // Return vessels awaiting approval acts as 'Arrival' requests
-        // Add artificial ID and type
-        $vessels = Vessel::where('status', 'awaiting')->with('owner')->get()->map(function($v) {
-            $cargoType = 'General Cargo';
-            $docs = ['Manifest'];
-            if ($v->type === 'Tanker') {
-                $cargoType = 'Liquid Bulk';
-                $docs[] = 'Hazmat Declaration';
-            } elseif ($v->type === 'Container') {
-                $docs[] = 'Bill of Lading';
-            }
+        // Eagerly load owner; try containers but gracefully handle if migration hasn't run
+        try {
+            $vessels = Vessel::where('status', 'awaiting')
+                ->with(['owner', 'containers'])
+                ->get();
+        } catch (\Exception $e) {
+            // containers table may not have vessel_id yet — load without it
+            $vessels = Vessel::where('status', 'awaiting')
+                ->with('owner')
+                ->get();
+        }
 
-            return [
-                'id' => 'REQ-' . $v->id,
-                'vesselId' => $v->id, // Real ID to be used for action
-                'type' => 'arrival',
-                'vessel' => [
-                    'name' => $v->name,
-                    'imo' => $v->imo_number ?? 'N/A',
-                    'flag' => $v->flag ?? '🏳️',
-                    'type' => $v->type,
-                ],
-                'agent' => [
-                    'name' => $v->owner ? $v->owner->name : 'Unknown Agent',
-                    'contact' => $v->owner ? $v->owner->email : 'N/A'
-                ],
-                'purpose' => $v->purpose ?? 'Cargo operations', 
-                'priority' => strtolower($v->priority ?? 'low'),
-                'priorityReason' => $v->priority_reason,
-                'priorityDocumentPath' => $v->priority_document_path ? asset('storage/' . $v->priority_document_path) : null,
-                'riskLevel' => $v->type === 'Tanker' ? 'high' : 'low',
-                'cargoType' => current(array_filter([$v->cargo, $cargoType])) ?: $cargoType,
-                'containers' => $v->type === 'Container' ? rand(50, 500) : 0, // Mock for now
-                'documents' => $docs,
-                'submittedDate' => $v->created_at->format('Y-m-d H:i'),
-                'eta' => $v->eta ? \Carbon\Carbon::parse($v->eta)->format('Y-m-d H:i') : 'N/A',
-            ];
-        });
+        $mapped = $vessels->map(function($v) {
+                $cargoType = 'General Cargo';
+                if ($v->type === 'Tanker') {
+                    $cargoType = 'Liquid Bulk';
+                } elseif ($v->type === 'Container') {
+                    $cargoType = 'Container Cargo';
+                }
 
-        return response()->json($vessels);
+                // Build real manifest documents from the containers table (if loaded)
+                $manifestDocuments = [];
+                $containerCount = 0;
+                if ($v->relationLoaded('containers')) {
+                    $manifestDocuments = $v->containers->map(function($container) {
+                        return [
+                            'id' => $container->id,
+                            'name' => basename($container->manifest_file_path),
+                            'url' => asset('storage/' . $container->manifest_file_path),
+                            'storage_type' => $container->storage_type,
+                            'consignee_name' => $container->consignee_name,
+                            'extraction_status' => $container->extraction_status,
+                            'extraction_errors' => $container->extraction_errors,
+                        ];
+                    })->values()->toArray();
+                    $containerCount = $v->containers->count();
+                }
+
+                return [
+                    'id' => 'REQ-' . $v->id,
+                    'vesselId' => $v->id,
+                    'type' => 'arrival',
+                    'vessel' => [
+                        'name' => $v->name,
+                        'imo' => $v->imo_number ?? 'N/A',
+                        'flag' => $v->flag ?? '🏳️',
+                        'type' => $v->type,
+                    ],
+                    'agent' => [
+                        'name' => $v->owner ? $v->owner->name : 'Unknown Agent',
+                        'contact' => $v->owner ? $v->owner->email : 'N/A'
+                    ],
+                    'purpose' => $v->purpose ?? 'Cargo operations',
+                    'priority' => strtolower($v->priority ?? 'low'),
+                    'priorityReason' => $v->priority_reason,
+                    'priorityDocumentPath' => $v->priority_document_path ? asset('storage/' . $v->priority_document_path) : null,
+                    'riskLevel' => $v->type === 'Tanker' ? 'high' : 'low',
+                    'cargoType' => current(array_filter([$v->cargo, $cargoType])) ?: $cargoType,
+                    'containers' => $containerCount,
+                    'documents' => $manifestDocuments,
+                    'submittedDate' => $v->created_at->format('Y-m-d H:i'),
+                    'eta' => $v->eta ? \Carbon\Carbon::parse($v->eta)->format('Y-m-d H:i') : 'N/A',
+                ];
+            });
+
+        return response()->json($mapped);
     }
 
     public function approveArrival(Request $request, $id)
@@ -266,7 +292,9 @@ class ExecutiveController extends Controller
     public function rejectArrival(Request $request, $id)
     {
         $request->validate([
-            'reason' => 'required|string'
+            'reason' => 'required|string',
+            'rejected_manifest_ids' => 'sometimes|array',
+            'rejected_manifest_ids.*' => 'exists:containers,id'
         ]);
 
         $vessel = Vessel::findOrFail($id);
@@ -274,13 +302,23 @@ class ExecutiveController extends Controller
         $vessel->rejection_reason = $request->reason;
         $vessel->save();
 
+        // Update specific manifests if provided
+        if ($request->has('rejected_manifest_ids') && !empty($request->rejected_manifest_ids)) {
+            \App\Models\Container::whereIn('id', $request->rejected_manifest_ids)
+                ->where('vessel_id', $vessel->id)
+                ->update(['status' => 'rejected_by_executive']);
+        }
+
         Log::create([
             'user_id' => $request->user()->id,
             'action' => 'reject_arrival',
             'details' => "Executive rejected arrival for vessel {$vessel->name}. Reason: {$request->reason}",
         ]);
 
-        return response()->json($vessel);
+        return response()->json([
+            'vessel' => $vessel,
+            'message' => 'Arrival rejected successfully and manifests flagged.'
+        ]);
     }
 
     public function getRecentDecisions()

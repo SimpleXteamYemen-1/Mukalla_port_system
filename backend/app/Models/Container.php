@@ -7,25 +7,53 @@ use Illuminate\Database\Eloquent\Model;
 class Container extends Model
 {
     protected $fillable = [
-        'manifest_id',
-        'container_number',
-        'type',
-        'weight',
-        'trader_email',
+        'vessel_id',
+        'manifest_file_path',
+        'port_of_loading',
+        'arrival_date',
+        'description_of_goods',
+        'storage_type',
+        'consignee_name',
+        'consignee_phone',
+        'trader_user_id',
         'status',
-        'block',
-        'row',
-        'tier',
+        'extraction_status',
+        'extraction_errors',
     ];
 
-    public function manifest()
+    protected $casts = [
+        'extraction_errors' => 'array',
+    ];
+
+    /**
+     * The legacy terminology requested (maps to Vessel under the hood)
+     */
+    public function arrivalNotification()
     {
-        return $this->belongsTo(CargoManifest::class , 'manifest_id');
+        return $this->belongsTo(Vessel::class, 'vessel_id');
     }
 
+    /**
+     * Standard relationship to Vessel
+     */
+    public function vessel()
+    {
+        return $this->belongsTo(Vessel::class, 'vessel_id');
+    }
+
+    /**
+     * Optional mapped trader user
+     */
+    public function trader()
+    {
+        return $this->belongsTo(User::class, 'trader_user_id');
+    }
+
+    /**
+     * Standard relationship to Discharge Requests natively
+     */
     public function dischargeRequest()
     {
         return $this->hasOne(DischargeRequest::class);
     }
-//
 }

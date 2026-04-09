@@ -29,7 +29,15 @@ export interface PendingApproval {
     riskLevel: string;
     cargoType: string;
     containers: number;
-    documents: string[];
+    documents: { 
+        id: number;
+        name: string; 
+        url: string; 
+        storage_type: string; 
+        consignee_name: string;
+        extraction_status: 'success' | 'incomplete' | 'failed';
+        extraction_errors?: string[] | null;
+    }[];
     submittedDate: string;
     eta: string;
 }
@@ -53,10 +61,10 @@ export const executiveService = {
         }
     },
 
-    getPendingApprovals: async () => {
+    getPendingApprovals: async (): Promise<PendingApproval[]> => {
         try {
             const response = await api.get('/executive/approvals');
-            return response.data as PendingApproval[];
+            return response.data;
         } catch (error) {
             console.error('Error fetching pending approvals:', error);
             return [];
@@ -83,7 +91,7 @@ export const executiveService = {
         }
     },
 
-    rejectArrival: async (id: number, reason: string) => {
+    rejectArrival: async (id: number, reason: string, rejectedManifestIds: number[] = []) => {
         try {
             const response = await api.post(`/executive/arrivals/${id}/reject`, { 
                 status: 'rejected', 

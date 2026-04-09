@@ -1,0 +1,17 @@
+VESSELS:
+ID:1 | Name:desert vessel | Status:awaiting | Type:general
+Total: 1
+
+CONTAINERS COLUMNS:
+id (bigint unsigned)
+manifest_id (bigint unsigned)
+container_number (varchar(255))
+type (varchar(255))
+weight (decimal(10,2))
+trader_email (varchar(255))
+status (varchar(255))
+block (varchar(255))
+row (int)
+tier (int)
+created_at (timestamp)
+updated_at (timestamp)

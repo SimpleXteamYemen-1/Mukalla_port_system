@@ -1,272 +1,177 @@
 import { useState, useEffect } from 'react';
-import { Language } from '../../App';
-import { AlertTriangle, TrendingUp, RefreshCw, Database } from 'lucide-react';
-import { wharfService } from '../../services/wharfService';
+import { Package, ThermometerSnowflake, FlaskConical, Box, AlertTriangle, Search, Loader2, Calendar } from 'lucide-react';
+import api from '../../services/api';
 
-interface StorageManagementProps {
-  language: Language;
-}
-
-interface StorageArea {
-  id: string;
-  name: string;
-  capacity: number;
-  used: number;
-  type: 'general' | 'refrigerated' | 'hazardous' | 'bulk';
-  status: 'available' | 'near_full' | 'full';
-}
-
-export function StorageManagement({ language }: StorageManagementProps) {
-  const isRTL = language === 'ar';
-  const [storageAreas, setStorageAreas] = useState<StorageArea[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadStorageData = async () => {
-    setLoading(true);
-    try {
-      const data = await wharfService.getStorageAreas();
-      if (data && data.success) {
-        setStorageAreas(data.areas);
-      }
-    } catch (error) {
-      console.error('Error loading storage data:', error);
-    } finally {
-      setLoading(false);
-    }
+// Defined based on new model schema
+interface ContainerData {
+  id: number;
+  vessel_id: number;
+  manifest_file_path: string;
+  port_of_loading: string;
+  arrival_date: string;
+  description_of_goods: string;
+  storage_type: 'chemical' | 'frozen' | 'dry';
+  consignee_name: string;
+  consignee_phone: string;
+  status: string;
+  arrival_notification?: {
+    id: number;
+    name: string;
   };
+}
+
+export function StorageManagement({ language }: { language: 'ar' | 'en' }) {
+  const isRTL = language === 'ar';
+  const [containers, setContainers] = useState<ContainerData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'chemical' | 'frozen' | 'dry'>('chemical');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    loadStorageData();
+    fetchContainers();
   }, []);
 
-  const getStorageColor = (used: number, capacity: number) => {
-    const percentage = (used / capacity) * 100;
-    if (percentage >= 90) return 'from-red-500 to-red-600';
-    if (percentage >= 70) return 'from-amber-500 to-orange-500';
-    return 'from-green-500 to-emerald-500';
-  };
-
-  const getStorageStatus = (used: number, capacity: number) => {
-    const percentage = (used / capacity) * 100;
-    if (percentage >= 90) return { label: isRTL ? 'ممتلئ' : 'Full', color: 'text-red-400' };
-    if (percentage >= 70) return { label: isRTL ? 'قريب من الامتلاء' : 'Near Full', color: 'text-amber-400' };
-    return { label: isRTL ? 'متاح' : 'Available', color: 'text-green-400' };
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'refrigerated': return '❄️';
-      case 'hazardous': return '⚠️';
-      case 'bulk': return '📦';
-      default: return '🏭';
+  const fetchContainers = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get('/wharf/containers');
+      setContainers(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getTypeName = (type: string) => {
-    const names: Record<string, { ar: string; en: string }> = {
-      general: { ar: 'عام', en: 'General' },
-      refrigerated: { ar: 'مبرد', en: 'Refrigerated' },
-      hazardous: { ar: 'خطير', en: 'Hazardous' },
-      bulk: { ar: 'بالجملة', en: 'Bulk' }
-    };
-    return isRTL ? names[type]?.ar : names[type]?.en;
-  };
+  const filteredContainers = containers.filter(c => 
+    c.storage_type === activeTab &&
+    (c.description_of_goods.toLowerCase().includes(searchQuery.toLowerCase()) || 
+     c.consignee_name.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
-  const totalCapacity = storageAreas.reduce((sum, area) => sum + area.capacity, 0);
-  const totalUsed = storageAreas.reduce((sum, area) => sum + area.used, 0);
-  const overallPercentage = totalCapacity > 0 ? (totalUsed / totalCapacity) * 100 : 0;
+  const tabs = [
+    { id: 'chemical', icon: FlaskConical, label: isRTL ? 'المنطقة الكيميائية' : 'Chemical Storage', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+    { id: 'frozen', icon: ThermometerSnowflake, label: isRTL ? 'منطقة التجميد' : 'Frozen Storage', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+    { id: 'dry', icon: Box, label: isRTL ? 'التخزين الجاف' : 'Dry Storage', color: 'text-slate-500', bg: 'bg-slate-500/10' },
+  ] as const;
+
+  if (isLoading) {
+    return <div className="p-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" /></div>;
+  }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className={`space-y-6 ${isRTL ? 'rtl rtl-text-right' : 'ltr'}`}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[var(--secondary)]/10 pb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {isRTL ? 'إدارة التخزين' : 'Storage Management'}
-          </h1>
-          <p className="text-blue-200">
-            {isRTL ? 'مراقبة مناطق التخزين والسعة' : 'Monitor storage areas and capacity'}
+          <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
+            {isRTL ? 'إدارة تصنيف المخازن' : 'Categorical Engine'}
+          </h2>
+          <p className="text-[var(--text-secondary)] mt-1 max-w-2xl text-sm leading-relaxed">
+            {isRTL 
+              ? 'نظام توجيه آلي يقوم بفلترة وتوجيه أمان البضائع للمخازن الفنية (كيميائية و مبردة و جافة) بمجرد فك البيانات بالميناء.' 
+              : 'Autonomously route incoming payloads into secure regional blocks matching their scanned payload parameters.'}
           </p>
         </div>
-        <button
-          onClick={loadStorageData}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-all disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          {isRTL ? 'تحديث' : 'Refresh'}
-        </button>
+        
+        {/* Search */}
+        <div className="relative w-full md:w-auto">
+          <input
+            type="text"
+            placeholder={isRTL ? "البحث برقم الهاتف أو التاجر..." : "Search goods or trader..."}
+            className="w-full md:w-72 pl-10 pr-5 py-2.5 bg-[var(--bg-card)] border border-[var(--secondary)]/30 text-[var(--text-primary)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50 focus:border-[var(--primary)] shadow-sm text-sm transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <Search className={`w-4 h-4 text-[var(--text-secondary)] absolute top-3.5 ${isRTL ? 'right-4' : 'left-3.5'}`} />
+        </div>
       </div>
 
-      {/* Overall Capacity */}
-      <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl rounded-2xl p-8 border border-purple-400/30 shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {isRTL ? 'السعة الإجمالية' : 'Overall Capacity'}
-            </h2>
-            <p className="text-purple-200">
-              {totalUsed.toLocaleString()} / {totalCapacity.toLocaleString()} {isRTL ? 'طن' : 'tons'}
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-5xl font-bold text-white mb-2">{overallPercentage.toFixed(1)}%</div>
-            <div className={`text-sm font-semibold ${overallPercentage >= 90 ? 'text-red-400' :
-              overallPercentage >= 70 ? 'text-amber-400' :
-                'text-green-400'
-              }`}>
-              {overallPercentage >= 90 ? (isRTL ? 'ممتلئ' : 'FULL') :
-                overallPercentage >= 70 ? (isRTL ? 'قريب من الامتلاء' : 'NEAR FULL') :
-                  (isRTL ? 'متاح' : 'AVAILABLE')}
-            </div>
-          </div>
-        </div>
-        <div className="w-full bg-white/10 rounded-full h-6 overflow-hidden">
-          <div
-            className={`h-6 bg-gradient-to-r ${getStorageColor(totalUsed, totalCapacity)} transition-all duration-500 flex items-center justify-center text-white text-sm font-bold`}
-            style={{ width: `${overallPercentage}%` }}
-          >
-            {overallPercentage > 10 && `${overallPercentage.toFixed(0)}%`}
-          </div>
-        </div>
-        {overallPercentage >= 70 && (
-          <div className="mt-4 flex items-center gap-2 bg-amber-500/20 border border-amber-400/30 rounded-xl p-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400" />
-            <span className="text-amber-200 text-sm">
-              {isRTL
-                ? 'تحذير: السعة الإجمالية تقترب من الحد الأقصى'
-                : 'Warning: Overall capacity approaching limit'}
-            </span>
-          </div>
-        )}
+      {/* Tri Tab Navigation */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-1.5 bg-[#f8fafc] dark:bg-[#1e293b]/50 rounded-xl overflow-hidden border border-[var(--secondary)]/10 shadow-inner">
+        {tabs.map((tab) => {
+          const count = containers.filter(c => c.storage_type === tab.id).length;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as 'chemical'|'frozen'|'dry')}
+              className={`flex items-center justify-between sm:justify-center gap-3 py-3.5 px-4 rounded-lg text-sm font-bold transition-all ${
+                isActive 
+                  ? `bg-[var(--bg-card)] shadow-sm text-[var(--text-primary)] border border-[var(--secondary)]/10 ring-1 ring-inset ${tab.id==='chemical'?'ring-amber-500/20':tab.id==='frozen'?'ring-cyan-500/20':'ring-slate-500/20'}` 
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)]/50'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                 <tab.icon className={`w-5 h-5 ${isActive ? tab.color : 'opacity-50'}`} />
+                 <span>{tab.label}</span>
+              </div>
+              <span className={`px-2.5 py-0.5 rounded-md text-xs font-black ${isActive ? tab.bg + ' ' + tab.color : 'bg-[var(--secondary)]/20'}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Storage Areas Grid */}
-      <div>
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-3">
-          <Database className="w-6 h-6 text-blue-400" />
-          {isRTL ? 'مناطق التخزين' : 'Storage Areas'}
-        </h2>
+      {/* Categorical Results Table */}
+      <div className="bg-[var(--bg-card)] border border-[var(--secondary)]/20 rounded-2xl shadow-lg shadow-[var(--secondary)]/5 overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+        <div className={`px-6 py-5 border-b border-[var(--secondary)]/10 flex justify-between items-center
+          ${activeTab === 'chemical' ? 'bg-amber-500/5 border-l-4 border-l-amber-500' : ''}
+          ${activeTab === 'frozen' ? 'bg-cyan-500/5  border-l-4 border-l-cyan-500' : ''}
+          ${activeTab === 'dry' ? 'bg-slate-500/5  border-l-4 border-l-slate-500' : ''}
+        `}>
+          <div className="flex gap-3 items-center">
+              {activeTab === 'chemical' && <AlertTriangle className="w-5 h-5 text-amber-500 drop-shadow-sm" />}
+              {activeTab === 'frozen' && <ThermometerSnowflake className="w-5 h-5 text-cyan-500 drop-shadow-sm" />}
+              {activeTab === 'dry' && <Box className="w-5 h-5 text-slate-500 drop-shadow-sm" />}
+              <h3 className="font-extrabold text-[var(--text-primary)] uppercase tracking-wider text-sm">
+                {tabs.find(t => t.id === activeTab)?.label} Queue
+              </h3>
+          </div>
+          <span className="text-xs text-[var(--text-secondary)] font-semibold">{filteredContainers.length} {isRTL ? 'وحدة' : 'Units'}</span>
+        </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <RefreshCw className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
+        {filteredContainers.length === 0 ? (
+          <div className="py-16 text-center">
+            <Package className="w-16 h-16 mx-auto mb-4 text-[var(--secondary)]/40" />
+            <h4 className="font-bold text-[var(--text-primary)] mb-1">{isRTL ? 'المنطقة خالية' : 'Block Clear'}</h4>
+            <p className="text-[var(--text-secondary)] text-sm max-w-sm mx-auto">{isRTL ? 'لا توجد حاويات تم تحليلها وتوجيهها للانتظار في هذه المنطقة حالياً.' : 'No payloads matching these categorical constraints are scheduled for storage handling.'}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {storageAreas.map((area) => {
-              const percentage = (area.used / area.capacity) * 100;
-              const status = getStorageStatus(area.used, area.capacity);
-              const available = area.capacity - area.used;
-
-              return (
-                <div
-                  key={area.id}
-                  className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-400/30 shadow-xl hover:shadow-2xl transition-all"
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-3xl">{getTypeIcon(area.type)}</div>
-                      <div>
-                        <h3 className="text-xl font-bold text-white">{area.name}</h3>
-                        <p className="text-sm text-blue-300">{getTypeName(area.type)}</p>
-                      </div>
-                    </div>
-                    <div className={`text-2xl font-bold ${status.color}`}>
-                      {percentage.toFixed(0)}%
-                    </div>
-                  </div>
-
-                  {/* Capacity Bar */}
-                  <div className="mb-4">
-                    <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden mb-2">
-                      <div
-                        className={`h-4 bg-gradient-to-r ${getStorageColor(area.used, area.capacity)} transition-all duration-500`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-300">
-                        {area.used.toLocaleString()} {isRTL ? 'طن مستخدم' : 'tons used'}
-                      </span>
-                      <span className="text-gray-300">
-                        {area.capacity.toLocaleString()} {isRTL ? 'طن' : 'tons'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-1">{isRTL ? 'متاح' : 'Available'}</p>
-                      <p className={`text-lg font-bold ${status.color}`}>
-                        {available.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-400">{isRTL ? 'طن' : 'tons'}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-3">
-                      <p className="text-xs text-gray-400 mb-1">{isRTL ? 'الحالة' : 'Status'}</p>
-                      <p className={`text-sm font-bold ${status.color}`}>
-                        {status.label}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Alert */}
-                  {percentage >= 90 && (
-                    <div className="mt-4 flex items-center gap-2 bg-red-500/20 border border-red-400/30 rounded-xl p-2">
-                      <AlertTriangle className="w-4 h-4 text-red-400" />
-                      <span className="text-red-200 text-xs">
-                        {isRTL ? 'ممتلئ - لا يمكن قبول حاويات جديدة' : 'Full - Cannot accept new containers'}
-                      </span>
-                    </div>
-                  )}
-                  {percentage >= 70 && percentage < 90 && (
-                    <div className="mt-4 flex items-center gap-2 bg-amber-500/20 border border-amber-400/30 rounded-xl p-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" />
-                      <span className="text-amber-200 text-xs">
-                        {isRTL ? 'قريب من الامتلاء' : 'Near capacity'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-[#f8fafc] dark:bg-[#1e293b]/30 text-xs text-[var(--text-secondary)] uppercase tracking-wider">
+                <tr>
+                  <th className="px-6 py-4 font-bold border-b border-[var(--secondary)]/10">{isRTL ? 'الارتباط الداخلي (السفينة)' : 'Vessel Anchor'}</th>
+                  <th className="px-6 py-4 font-bold border-b border-[var(--secondary)]/10">{isRTL ? 'تحليل البضاعة' : 'Cargo Description'}</th>
+                  <th className="px-6 py-4 font-bold border-b border-[var(--secondary)]/10">{isRTL ? 'بيانات التاجر' : 'Verified Consignee'}</th>
+                  <th className="px-6 py-4 font-bold border-b border-[var(--secondary)]/10">{isRTL ? 'الجدولة' : 'Logistics'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--secondary)]/5 text-sm">
+                {filteredContainers.map(container => (
+                  <tr key={container.id} className="hover:bg-[var(--primary)]/5 transition-colors group">
+                    <td className="px-6 py-4 align-top">
+                       <span className="font-bold text-[var(--primary)]">{container.arrival_notification?.name || 'Unknown Vessel'}</span>
+                    </td>
+                    <td className="px-6 py-4 align-top max-w-[250px]">
+                       <span className="text-[var(--text-primary)] font-medium block leading-snug">{container.description_of_goods}</span>
+                    </td>
+                    <td className="px-6 py-4 align-top">
+                       <span className="font-bold text-[var(--text-primary)] block bg-[var(--secondary)]/10 w-fit px-2 py-0.5 rounded text-xs mb-1">{container.consignee_name}</span>
+                       <span className="text-xs font-semibold text-[var(--text-secondary)]">{container.consignee_phone}</span>
+                    </td>
+                    <td className="px-6 py-4 align-top">
+                       <div className="flex flex-col gap-1.5">
+                           <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5"/> {container.arrival_date}</span>
+                       </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
-
-      {/* Capacity Trend */}
-      <div className="bg-gradient-to-br from-indigo-500/20 to-blue-500/20 backdrop-blur-xl rounded-2xl p-6 border border-indigo-400/30 shadow-xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-indigo-500/30 rounded-xl">
-            <TrendingUp className="w-6 h-6 text-indigo-300" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-white">
-              {isRTL ? 'اتجاه السعة' : 'Capacity Trend'}
-            </h3>
-            <p className="text-indigo-300 text-sm">
-              {isRTL ? 'آخر 7 أيام' : 'Last 7 days'}
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-sm text-gray-400 mb-1">{isRTL ? 'متوسط الاستخدام' : 'Average Usage'}</p>
-            <p className="text-2xl font-bold text-white">78%</p>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-sm text-gray-400 mb-1">{isRTL ? 'ذروة الاستخدام' : 'Peak Usage'}</p>
-            <p className="text-2xl font-bold text-white">92%</p>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4">
-            <p className="text-sm text-gray-400 mb-1">{isRTL ? 'الاتجاه' : 'Trend'}</p>
-            <p className="text-2xl font-bold text-green-400">+5%</p>
-          </div>
-        </div>
       </div>
     </div>
   );
