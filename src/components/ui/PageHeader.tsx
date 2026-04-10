@@ -1,6 +1,5 @@
-import React from 'react';
 import { LucideIcon } from 'lucide-react';
-import { Language } from '../../App';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 
 interface ActionButton {
     label: string;
@@ -11,6 +10,8 @@ interface ActionButton {
     loading?: boolean;
 }
 
+import { Language } from '../../App';
+
 interface PageHeaderProps {
     title: string;
     subtitle?: string;
@@ -18,7 +19,7 @@ interface PageHeaderProps {
     language?: Language;
 }
 
-export function PageHeader({ title, subtitle, actions = [], language = 'en' }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, actions = [] }: PageHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 group mb-8">
             <div>
@@ -48,9 +49,9 @@ export function PageHeader({ title, subtitle, actions = [], language = 'en' }: P
                                 key={index}
                                 onClick={action.onClick}
                                 disabled={action.disabled || action.loading}
-                                className={variantClasses[action.variant || 'secondary']}
+                                className={`${variantClasses[action.variant || 'secondary']} min-w-[100px] justify-center`}
                             >
-                                {action.loading && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />}
+                                {action.loading && <LoadingIndicator type="line-spinner" size="xs" className="mr-2" />}
                                 {!action.loading && Icon && <Icon className="w-5 h-5" />}
                                 {action.label && <span>{action.label}</span>}
                             </button>

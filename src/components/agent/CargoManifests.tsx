@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FileText, Upload, CheckCircle2, XCircle, Clock, AlertCircle, Download, Eye, Loader2, Edit2 } from 'lucide-react';
+import { FileText, Upload, CheckCircle2, XCircle, Clock, AlertCircle, Download, Eye, Edit2 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { agentService, CargoManifest, Vessel } from '../../services/agentService';
 import { Language } from '../../App';
 import { toast } from 'react-toastify';
@@ -244,7 +245,7 @@ export function CargoManifests({ language }: CargoManifestsProps) {
                 disabled={!selectedVessel || uploading}
                 className="flex-1 py-3 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] hover:shadow-lg hover:shadow-[var(--primary)]/20 disabled:bg-gray-500 disabled:cursor-not-allowed rounded-xl text-white font-bold transition-all duration-300"
               >
-                {uploading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingId ? (language === 'ar' ? 'تحديث' : 'Update') : t.upload)}
+                {uploading ? <LoadingIndicator type="line-spinner" size="xs" label={language === 'ar' ? 'جاري الرفع...' : 'Uploading...'} className="text-white" /> : (editingId ? (language === 'ar' ? 'تحديث' : 'Update') : t.upload)}
               </button>
               <button
                 onClick={() => {
@@ -263,9 +264,8 @@ export function CargoManifests({ language }: CargoManifestsProps) {
       {/* Manifests List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center text-[var(--text-secondary)] py-8">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-            Loading...
+          <div className="text-center text-[var(--text-secondary)] py-12">
+            <LoadingIndicator type="line-spinner" size="md" label={language === 'ar' ? 'جاري التحميل...' : 'Loading...'} />
           </div>
         ) : manifests.length === 0 ? (
           <div className="text-center text-[var(--text-secondary)] py-8 border border-[var(--secondary)] rounded-md bg-[var(--bg-primary)]">

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, LogOut, Shield, Ship, Package, BarChart3, Anchor, Bell, Globe, User as UserIcon, ChevronDown, Settings, Sun, Moon } from 'lucide-react';
+import { AlertCircle, LogOut, Shield, Ship, Package, BarChart3, Anchor, Bell, Globe, User as UserIcon, ChevronDown, Settings, Sun, Moon, Search } from 'lucide-react';
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
 import { MainLayout } from './MainLayout';
+import { useSidebar } from '../contexts/SidebarContext';
+import { Menu } from 'lucide-react';
 import { AccountSettings } from './AccountSettings';
 import { AgentDashboard } from './agent/AgentDashboard';
 import { MyVessels } from './agent/MyVessels';
@@ -63,12 +65,11 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
     return params.get('vesselId');
   });
 
+  const { isExpanded, toggleSidebar } = useSidebar();
+
   const handleNavigate = (page: string, params?: { vesselId?: number | string }) => {
     if (params?.vesselId) {
       setActiveVesselId(params.vesselId);
-    } else {
-      // Clear vessel ID if navigating to a generic tab (optional, depends on UX)
-      // setActiveVesselId(null); 
     }
     setCurrentPage(page);
   };
@@ -110,18 +111,29 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         />
 
         {/* Main Content Area */}
-        <div className={`${language === 'ar' ? 'mr-64' : 'ml-64'} min-h-screen transition-all duration-300`}>
+        <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--secondary)]">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex-1"></div>
+              <div className="flex-1 flex items-center gap-4">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                  <Search className="w-4 h-4 text-[var(--text-secondary)]" />
+                  <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
+                </div>
+                </div>
 
               {/* Right Actions */}
               <div className="flex items-center gap-4">
                 {/* Theme Toggle */}
                 <button
                   onClick={onToggleTheme}
-                  className="p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -130,57 +142,37 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Language Toggle */}
                 <button
                   onClick={onToggleLanguage}
-                  className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="flex items-center gap-1 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   <span className="text-sm">{language === 'ar' ? 'EN' : 'ع'}</span>
                 </button>
 
                 {/* Notifications */}
-                <button className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]">
+                <button className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                 </button>
 
-                {/* Profile Menu */}
-                <div className="relative group">
-                  <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
-                    <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-[var(--primary)]" />
-                    </div>
-                    <div className={`${language === 'ar' ? 'text-right' : 'text-left'} hidden md:block`}>
-                      <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs">{t.roles.executive}</div>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
+                {/* Profile Actions */}
+                <div className="flex items-center gap-4">
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  
+                  {/* Mobile avatar link to settings */}
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                  >
+                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
                   </button>
 
-                  {/* Profile Dropdown */}
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
-                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
-                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
-                    </div>
-                    <div className="p-2">
-                       <button 
-                        onClick={() => setCurrentPage('settings')}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
-                      >
-                        <Settings className="w-4 h-4" />
-                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
-                      </button>
-                    </div>
-                  </div>
+                  <button 
+                    onClick={onLogout} 
+                    className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                  >
+                    Log out
+                  </button>
                 </div>
-
-                {/* Logout */}
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md text-red-500 hover:text-red-400 transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">{t.logout}</span>
-                </button>
               </div>
             </div>
           </header>
@@ -233,11 +225,21 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         />
 
         {/* Main Content Area */}
-        <div className={`${language === 'ar' ? 'mr-72' : 'ml-72'} min-h-screen transition-all duration-300`}>
+        <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--secondary)]">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex-1">
+              <div className="flex-1 flex items-center gap-4">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                  <Search className="w-4 h-4 text-[var(--text-secondary)]" />
+                  <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
+                </div>
                 <h2 className="text-[var(--text-primary)] font-semibold text-lg">
                   {currentPage === 'dashboard' && (isRTL ? 'لوحة التحكم' : 'Dashboard')}
                   {currentPage === 'berthing' && (isRTL ? 'إدارة الرسو' : 'Berthing Management')}
@@ -252,7 +254,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Theme Toggle */}
                 <button
                   onClick={onToggleTheme}
-                  className="p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -261,57 +263,37 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Language Toggle */}
                 <button
                   onClick={onToggleLanguage}
-                  className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="flex items-center gap-1 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   <span className="text-sm font-medium">{language === 'ar' ? 'EN' : 'ع'}</span>
                 </button>
 
                 {/* Notifications */}
-                <button className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]">
+                <button className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
                 </button>
 
-                {/* Profile Menu */}
-                <div className="relative group">
-                  <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
-                    <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-[var(--primary)]" />
-                    </div>
-                    <div className={`${language === 'ar' ? 'text-right' : 'text-left'} hidden md:block`}>
-                      <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs">{t.roles.officer}</div>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
+                {/* Profile Actions */}
+                <div className="flex items-center gap-4">
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  
+                  {/* Mobile avatar link to settings */}
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                  >
+                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
                   </button>
 
-                  {/* Profile Dropdown */}
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
-                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
-                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
-                    </div>
-                    <div className="p-2">
-                       <button 
-                        onClick={() => setCurrentPage('settings')}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
-                      >
-                        <Settings className="w-4 h-4" />
-                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
-                      </button>
-                    </div>
-                  </div>
+                  <button 
+                    onClick={onLogout} 
+                    className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                  >
+                    Log out
+                  </button>
                 </div>
-
-                {/* Logout */}
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md text-red-500 hover:text-red-400 transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">{t.logout}</span>
-                </button>
               </div>
             </div>
           </header>
@@ -385,11 +367,21 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         />
 
         {/* Main Content Area */}
-        <div className={`${language === 'ar' ? 'mr-72' : 'ml-72'} min-h-screen transition-all duration-300`}>
+        <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--secondary)]">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex-1">
+              <div className="flex-1 flex items-center gap-4">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                  <Search className="w-4 h-4 text-[var(--text-secondary)]" />
+                  <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
+                </div>
                 <h2 className="text-[var(--text-primary)] font-semibold text-lg">
                   {currentPage === 'dashboard' && (isRTL ? 'لوحة التحكم' : 'Dashboard')}
                   {currentPage === 'availability' && (isRTL ? 'توفر الأرصفة' : 'Wharf Availability')}
@@ -404,7 +396,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Theme Toggle */}
                 <button
                   onClick={onToggleTheme}
-                  className="p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -413,7 +405,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Language Toggle */}
                 <button
                   onClick={onToggleLanguage}
-                  className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="flex items-center gap-1 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   <span className="text-sm font-medium">{language === 'ar' ? 'EN' : 'ع'}</span>
@@ -422,7 +414,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Notifications */}
                 <button 
                   onClick={() => setCurrentPage('availability')}
-                  className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)] group"
+                  className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
                 >
                   <Bell className="w-5 h-5" />
                   {waitlistAlert && (
@@ -442,45 +434,25 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   )}
                 </button>
 
-                {/* Profile Menu */}
-                <div className="relative group">
-                  <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
-                    <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-[var(--primary)]" />
-                    </div>
-                    <div className={`${language === 'ar' ? 'text-right' : 'text-left'} hidden md:block`}>
-                      <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs">{t.roles.wharf}</div>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
+                {/* Profile Actions */}
+                <div className="flex items-center gap-4">
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  
+                  {/* Mobile avatar link to settings */}
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                  >
+                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
                   </button>
 
-                  {/* Profile Dropdown */}
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
-                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
-                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
-                    </div>
-                    <div className="p-2">
-                       <button 
-                        onClick={() => setCurrentPage('settings')}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
-                      >
-                        <Settings className="w-4 h-4" />
-                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
-                      </button>
-                    </div>
-                  </div>
+                  <button 
+                    onClick={onLogout} 
+                    className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                  >
+                    Log out
+                  </button>
                 </div>
-
-                {/* Logout */}
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md text-red-500 hover:text-red-400 transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">{t.logout}</span>
-                </button>
               </div>
             </div>
           </header>
@@ -527,11 +499,21 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         />
 
         {/* Main Content Area */}
-        <div className={`${language === 'ar' ? 'mr-72' : 'ml-72'} min-h-screen transition-all duration-300`}>
+        <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--secondary)]">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
-              <div className="flex-1">
+              <div className="flex-1 flex items-center gap-4">
+                <button
+                  onClick={toggleSidebar}
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                  <Search className="w-4 h-4 text-[var(--text-secondary)]" />
+                  <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
+                </div>
                 <h2 className="text-[var(--text-primary)] font-semibold text-lg">
                   {currentPage === 'dashboard' && (isRTL ? 'لوحة التحكم' : 'Dashboard')}
                   {currentPage === 'containers' && (isRTL ? 'حاوياتي' : 'My Containers')}
@@ -545,7 +527,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Theme Toggle */}
                 <button
                   onClick={onToggleTheme}
-                  className="p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -554,7 +536,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Language Toggle */}
                 <button
                   onClick={onToggleLanguage}
-                  className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="flex items-center gap-1 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   <span className="text-sm font-medium">{language === 'ar' ? 'EN' : 'ع'}</span>
@@ -563,51 +545,31 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 {/* Notifications */}
                 <button
                   onClick={() => setCurrentPage('notifications')}
-                  className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
                 </button>
 
-                {/* Profile Menu */}
-                <div className="relative group">
-                  <button className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all">
-                    <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
-                      <UserIcon className="w-4 h-4 text-[var(--primary)]" />
-                    </div>
-                    <div className={`${language === 'ar' ? 'text-right' : 'text-left'} hidden md:block`}>
-                      <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs">{t.roles.trader}</div>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-[var(--text-secondary)] transition-transform group-hover:rotate-180" />
+                {/* Profile Actions */}
+                <div className="flex items-center gap-4">
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  
+                  {/* Mobile avatar link to settings */}
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                  >
+                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
                   </button>
 
-                  {/* Profile Dropdown */}
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden scale-95 opacity-0 pointer-events-none group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
-                    <div className="p-4 border-b border-[var(--secondary)]/50 bg-[var(--secondary)]/5">
-                      <div className="text-[var(--text-primary)] font-medium truncate">{user.name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs truncate">{user.email}</div>
-                    </div>
-                    <div className="p-2">
-                       <button 
-                        onClick={() => setCurrentPage('settings')}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--primary)]/10 text-[var(--text-primary)] transition-colors text-sm ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
-                      >
-                        <Settings className="w-4 h-4" />
-                        {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
-                      </button>
-                    </div>
-                  </div>
+                  <button 
+                    onClick={onLogout} 
+                    className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                  >
+                    Log out
+                  </button>
                 </div>
-
-                {/* Logout */}
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md text-red-500 hover:text-red-400 transition-all"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">{t.logout}</span>
-                </button>
               </div>
             </div>
           </header>
@@ -714,7 +676,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             </div>
             <button
               onClick={onLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md text-red-500 hover:text-red-400 transition-all"
+              className="hidden lg:flex items-center gap-1 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span className="text-sm">{t.logout}</span>

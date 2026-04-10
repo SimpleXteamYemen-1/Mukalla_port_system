@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Language } from '../../App';
-import { translations } from '../../utils/translations';
 import { Anchor, Ship, FileCheck, AlertTriangle, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { getVessels, getWharves, getClearances, getLogs, initializeData, Vessel, Clearance, LogEntry } from '../../utils/portOfficerApi';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { getVessels, getClearances, getLogs, initializeData, Vessel, Clearance, LogEntry } from '../../utils/portOfficerApi';
 import { toast } from 'react-toastify';
 import { StatCard } from '../ui/StatCard';
 
@@ -11,7 +11,6 @@ interface PortOfficerDashboardProps {
 }
 
 export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
-  const t = translations[language].portOfficer;
   const isRTL = language === 'ar';
 
   const [vessels, setVessels] = useState<Vessel[]>([]);
@@ -28,7 +27,6 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
         getClearances(),
         getLogs()
       ]);
-
       setVessels(vesselsData);
       setClearances(clearancesData);
       setLogs(logsData);
@@ -56,12 +54,10 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
 
   useEffect(() => {
     loadData();
-    // Refresh data every 30 seconds
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate stats
   const stats = {
     activeVessels: vessels.filter(v => v.status !== 'awaiting').length,
     awaitingBerth: vessels.filter(v => v.status === 'awaiting').length,
@@ -69,16 +65,13 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
     todayAssignments: logs.filter(l => l.action === 'berth_assignment').length
   };
 
-  // Generate system alerts
   const systemAlerts = [
     ...clearances
       .filter(c => c.status === 'expiring-soon')
       .map(c => ({
         id: c.id,
         type: 'expiry',
-        message: isRTL
-          ? `تصريح المغادرة ${c.clearanceId} سينتهي خلال ${c.hoursRemaining} ساعة`
-          : `Port clearance ${c.clearanceId} expires in ${c.hoursRemaining} hours`,
+        message: isRTL ? `تصريح المغادرة ${c.clearanceId} سينتهي خلال ${c.hoursRemaining} ساعة` : `Port clearance ${c.clearanceId} expires in ${c.hoursRemaining} hours`,
         severity: 'medium' as const,
         time: isRTL ? 'حديث' : 'Recent'
       })),
@@ -87,22 +80,17 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
       .map(c => ({
         id: c.id + '-expired',
         type: 'expiry',
-        message: isRTL
-          ? `تصريح المغادرة ${c.clearanceId} انتهت صلاحيته`
-          : `Port clearance ${c.clearanceId} has expired`,
+        message: isRTL ? `تصريح المغادرة ${c.clearanceId} انتهت صلاحيته` : `Port clearance ${c.clearanceId} has expired`,
         severity: 'high' as const,
         time: isRTL ? 'حديث' : 'Recent'
       }))
   ].slice(0, 5);
 
-  // Get recent activity from logs
   const recentActivity = logs.slice(0, 4).map(log => ({
     id: log.id,
     action: isRTL
-      ? (log.action === 'berth_assignment' ? 'تعيين رصيف' :
-        log.action === 'clearance_issued' ? 'إصدار تصريح مغادرة' : 'تحرير رصيف')
-      : (log.action === 'berth_assignment' ? 'Berth Assignment' :
-        log.action === 'clearance_issued' ? 'Clearance Issued' : 'Berth Release'),
+      ? (log.action === 'berth_assignment' ? 'تعيين رصيف' : log.action === 'clearance_issued' ? 'إصدار تصريح مغادرة' : 'تحرير رصيف')
+      : (log.action === 'berth_assignment' ? 'Berth Assignment' : log.action === 'clearance_issued' ? 'Clearance Issued' : 'Berth Release'),
     vessel: log.vessel,
     wharf: log.wharf,
     clearanceId: log.clearanceId,
@@ -112,24 +100,21 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
 
   if (loading && vessels.length === 0) {
     return (
-      <div className="flex items-center justify-center p-20">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-[var(--primary)] animate-spin mx-auto mb-4" />
-          <p className="text-[var(--text-secondary)] text-lg font-bold">{isRTL ? 'جاري تحميل البيانات...' : 'Loading data...'}</p>
-        </div>
+      <div className="flex items-center justify-center p-20 bg-slate-50 dark:bg-slate-900 min-h-full">
+        <LoadingIndicator type="line-spinner" size="lg" label={isRTL ? 'جاري تحميل البيانات...' : 'Loading data...'} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
             {isRTL ? 'لوحة تحكم موظف الميناء' : 'Port Officer Operations'}
           </h1>
-          <p className="text-[var(--text-secondary)] font-medium text-lg">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             {isRTL ? 'إدارة الرسو وإصدار تصاريح المغادرة' : 'Manage Berthing Operations & Port Clearances'}
           </p>
         </div>
@@ -138,97 +123,61 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
             <button
               onClick={handleInitialize}
               disabled={initializing}
-              className="btn-primary bg-emerald-600 hover:bg-emerald-700 border-none"
+              className="bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[140px] justify-center"
             >
-              {initializing ? (
-                <>
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                  {isRTL ? 'جاري التهيئة...' : 'Initializing...'}
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-5 h-5" />
-                  {isRTL ? 'تهيئة البيانات' : 'Initialize Data'}
-                </>
-              )}
+              {initializing ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <CheckCircle className="w-4 h-4" />}
+              {isRTL ? 'تهيئة البيانات' : 'Initialize Data'}
             </button>
           )}
           <button
             onClick={loadData}
             disabled={loading}
-            className="btn-secondary"
+            className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
           >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
             {isRTL ? 'تحديث' : 'Refresh'}
           </button>
         </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          label={isRTL ? 'السفن الحالية' : 'Active Vessels'}
-          value={stats.activeVessels}
-          icon={Ship}
-          color="cyan"
-          language={language}
-        />
-        <StatCard
-          label={isRTL ? 'انتظار الرصيف' : 'Awaiting Berth'}
-          value={stats.awaitingBerth}
-          icon={Clock}
-          color="amber"
-          language={language}
-        />
-        <StatCard
-          label={isRTL ? 'تصاريح معلقة' : 'Pending Clearances'}
-          value={stats.pendingClearances}
-          icon={FileCheck}
-          color="blue"
-          language={language}
-        />
-        <StatCard
-          label={isRTL ? 'تعيينات اليوم' : "Today's Assignments"}
-          value={stats.todayAssignments}
-          icon={Anchor}
-          color="emerald"
-          language={language}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label={isRTL ? 'السفن الحالية' : 'Active Vessels'} value={stats.activeVessels} icon={Ship} color="blue" language={language} />
+        <StatCard label={isRTL ? 'انتظار الرصيف' : 'Awaiting Berth'} value={stats.awaitingBerth} icon={Clock} color="amber" language={language} />
+        <StatCard label={isRTL ? 'تصاريح معلقة' : 'Pending Clearances'} value={stats.pendingClearances} icon={FileCheck} color="teal" language={language} />
+        <StatCard label={isRTL ? 'تعيينات اليوم' : "Today's Assignments"} value={stats.todayAssignments} icon={Anchor} color="emerald" language={language} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* System Alerts */}
-        <div className="card-base p-6">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--border)]">
-            <div className="p-2 bg-red-500/10 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-red-700 dark:text-red-400" />
             </div>
-            <h2 className="text-xl font-black text-[var(--text-primary)]">
-              {isRTL ? 'تنبيهات النظام' : 'System Alerts'}
-            </h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">{isRTL ? 'تنبيهات النظام' : 'System Alerts'}</h2>
           </div>
 
           {systemAlerts.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {systemAlerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`p-4 rounded-2xl border-l-4 shadow-sm ${alert.severity === 'high'
-                      ? 'bg-red-500/5 border-l-red-500 border-y border-r border-red-500/10'
-                      : 'bg-amber-500/5 border-l-amber-500 border-y border-r border-amber-500/10'
+                  className={`p-4 rounded-lg border-l-4 ${alert.severity === 'high'
+                    ? 'bg-red-100 dark:bg-red-900/30 border-l-red-600 dark:border-l-red-400'
+                    : 'bg-amber-100 dark:bg-amber-900/30 border-l-amber-500 dark:border-l-amber-400'
                     }`}
                 >
-                  <div className="flex items-start gap-4">
-                    {alert.severity === 'high' ? (
-                      <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
-                    ) : (
-                      <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
-                    )}
-                    <div className="flex-1">
-                      <p className="text-[var(--text-primary)] font-bold mb-1">{alert.message}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Clock className="w-3 h-3 text-[var(--text-secondary)]" />
-                        <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">{alert.time}</p>
+                  <div className="flex items-start gap-3">
+                    {alert.severity === 'high'
+                      ? <XCircle className="w-5 h-5 text-red-700 dark:text-red-400 flex-shrink-0" />
+                      : <AlertTriangle className="w-5 h-5 text-amber-700 dark:text-amber-400 flex-shrink-0" />
+                    }
+                    <div>
+                      <p className={`text-sm font-medium ${alert.severity === 'high' ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'}`}>{alert.message}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{alert.time}</p>
                       </div>
                     </div>
                   </div>
@@ -236,22 +185,20 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/50">
-              <CheckCircle className="w-12 h-12 text-emerald-500/30 mx-auto mb-3" />
-              <p className="text-[var(--text-secondary)] font-medium">{isRTL ? 'لا توجد تنبيهات' : 'No alerts'}</p>
+            <div className="text-center py-10 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
+              <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-3 opacity-50" />
+              <p className="text-slate-500 dark:text-slate-400 text-sm">{isRTL ? 'لا توجد تنبيهات' : 'No alerts'}</p>
             </div>
           )}
         </div>
 
         {/* Recent Activity */}
-        <div className="card-base p-6">
-          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[var(--border)]">
-            <div className="p-2 bg-[var(--primary)]/10 rounded-lg">
-              <Clock className="w-5 h-5 text-[var(--primary)]" />
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Clock className="w-4 h-4 text-blue-700 dark:text-blue-400" />
             </div>
-            <h2 className="text-xl font-black text-[var(--text-primary)]">
-              {isRTL ? 'النشاط الأخير' : 'Recent Activity'}
-            </h2>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">{isRTL ? 'النشاط الأخير' : 'Recent Activity'}</h2>
           </div>
 
           {recentActivity.length > 0 ? (
@@ -259,39 +206,32 @@ export function PortOfficerDashboard({ language }: PortOfficerDashboardProps) {
               {recentActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className="p-4 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 rounded-2xl border border-[var(--border)] hover:border-[var(--primary)] transition-all group duration-300"
+                  className="p-4 bg-slate-50 dark:bg-slate-700/25 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors duration-200"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[var(--primary)] font-black text-sm uppercase tracking-wide">
-                      {activity.action}
-                    </span>
-                    <CheckCircle className="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:scale-110" />
+                    <span className="text-blue-700 dark:text-blue-400 font-semibold text-xs uppercase tracking-wide">{activity.action}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{activity.time}</span>
                   </div>
-                  <p className="text-[var(--text-primary)] font-bold mb-2 text-lg">{activity.vessel}</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-[var(--text-secondary)] font-medium bg-[var(--background)] p-2 rounded-lg">
+                  <p className="text-slate-900 dark:text-slate-50 font-medium text-sm mb-2">{activity.vessel}</p>
+                  <div className="flex flex-wrap gap-2">
                     {activity.wharf && (
-                      <span className="px-2 py-1 bg-[var(--surface)] rounded border border-[var(--border)]">
-                        {isRTL ? 'الرصيف: ' : 'Wharf: '}<span className="text-[var(--text-primary)] font-bold">{activity.wharf}</span>
+                      <span className="text-xs px-2 py-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+                        {isRTL ? 'الرصيف: ' : 'Wharf: '}<span className="font-medium text-slate-900 dark:text-slate-50">{activity.wharf}</span>
                       </span>
                     )}
                     {activity.clearanceId && (
-                      <span className="px-2 py-1 bg-[var(--surface)] rounded border border-[var(--border)]">
-                        {isRTL ? 'رقم التصريح: ' : 'ID: '}<span className="text-[var(--text-primary)] font-bold">{activity.clearanceId}</span>
+                      <span className="text-xs px-2 py-1 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+                        {isRTL ? 'رقم التصريح: ' : 'ID: '}<span className="font-medium text-slate-900 dark:text-slate-50">{activity.clearanceId}</span>
                       </span>
                     )}
-                  </div>
-                  <div className="flex justify-end mt-2">
-                    <p className="text-[10px] text-[var(--text-secondary)]/70 font-bold uppercase tracking-widest flex items-center gap-1">
-                      {activity.time}
-                    </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/50">
-              <Clock className="w-12 h-12 text-[var(--text-secondary)]/30 mx-auto mb-3" />
-              <p className="text-[var(--text-secondary)] font-medium">{isRTL ? 'لا يوجد نشاط حديث' : 'No recent activity'}</p>
+            <div className="text-center py-10 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
+              <Clock className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-500 dark:text-slate-400 text-sm">{isRTL ? 'لا يوجد نشاط حديث' : 'No recent activity'}</p>
             </div>
           )}
         </div>
