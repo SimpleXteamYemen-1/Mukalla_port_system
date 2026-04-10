@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Language } from '../../App';
 import { Anchor, Clock, Ship, CheckCircle, RefreshCw, AlertTriangle, Inbox, ChevronDown } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { wharfService } from '../../services/wharfService';
 import { toast } from 'react-toastify';
 
@@ -33,10 +34,7 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
   const [anchorageRequests, setAnchorageRequests] = useState<AnchorageRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
-
-  // Per-request selected wharf for Option A
   const [selectedWharfMap, setSelectedWharfMap] = useState<Record<number, number>>({});
-  // Expandable request details
   const [expandedRequest, setExpandedRequest] = useState<number | null>(null);
   const [expandedWaitingId, setExpandedWaitingId] = useState<number | null>(null);
 
@@ -89,7 +87,6 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
     }
   };
 
-  // Option A: Approve & Assign
   const handleApprove = async (request: AnchorageRequest) => {
     const wharfId = selectedWharfMap[request.id];
     if (!wharfId) {
@@ -109,7 +106,6 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
     }
   };
 
-  // Option B: Waitlist
   const handleWaitlist = async (request: AnchorageRequest) => {
     setProcessing(request.id);
     try {
@@ -127,46 +123,58 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
   const pendingRequests = anchorageRequests.filter((r) => r.status === 'pending');
   const processedRequests = anchorageRequests.filter((r) => r.status !== 'pending');
 
+  const getWharfStatusBadge = (status: string) => {
+    if (status === 'available') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+    if (status === 'maintenance') return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+    return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+  };
+
+  const getWharfStatusLabel = (status: string) => {
+    if (status === 'available') return isRTL ? 'متاح' : 'Available';
+    if (status === 'maintenance') return isRTL ? 'صيانة' : 'Maintenance';
+    return isRTL ? 'مشغول' : 'Occupied';
+  };
+
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
             {isRTL ? 'توفر الأرصفة' : 'Wharf Availability'}
           </h1>
-          <p className="text-blue-200 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             {isRTL ? 'إدارة توفر الأرصفة وطلبات الرسو' : 'Manage wharf availability and anchorage requests'}
           </p>
         </div>
         <button
           onClick={loadData}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white transition-all disabled:opacity-50"
+          className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
           {isRTL ? 'تحديث' : 'Refresh'}
         </button>
       </div>
 
-      {/* ─── SECTION 1: Pending Anchorage Requests Queue ───────────────────────── */}
-      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+      {/* SECTION 1: Pending Anchorage Requests */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Inbox className="w-5 h-5 text-amber-400" />
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <Inbox className="w-4 h-4 text-amber-700 dark:text-amber-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">
                 {isRTL ? 'طلبات الرسو المعلقة' : 'Pending Anchorage Requests'}
               </h2>
-              <p className="text-blue-300 text-xs">
+              <p className="text-slate-500 dark:text-slate-400 text-xs">
                 {isRTL ? 'انقر على طلب لمراجعة التفاصيل وتعيين الرصيف' : 'Review and assign a wharf or place on waitlist'}
               </p>
             </div>
           </div>
           {pendingRequests.length > 0 && (
-            <span className="px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full border border-amber-500/30">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               {pendingRequests.length} {isRTL ? 'طلب' : 'pending'}
             </span>
           )}
@@ -174,30 +182,28 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
 
         {loading ? (
           <div className="py-12 text-center">
-            <RefreshCw className="w-8 h-8 text-amber-400 animate-spin mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
+            <LoadingIndicator type="line-spinner" size="lg" label={isRTL ? 'جاري التحميل...' : 'Loading...'} />
           </div>
         ) : pendingRequests.length === 0 ? (
           <div className="py-12 text-center">
-            <CheckCircle className="w-12 h-12 text-green-400/40 mx-auto mb-3" />
-            <p className="text-gray-400">{isRTL ? 'لا توجد طلبات معلقة' : 'No pending requests — all clear!'}</p>
+            <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3 opacity-50" />
+            <p className="text-slate-500 dark:text-slate-400">{isRTL ? 'لا توجد طلبات معلقة' : 'No pending requests — all clear!'}</p>
           </div>
         ) : (
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {pendingRequests.map((request) => (
-              <div key={request.id} className="p-6">
-                {/* Request Header Row */}
+              <div key={request.id} className="p-5">
                 <div
-                  className="flex items-center justify-between cursor-pointer"
+                  className="flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/25 -m-1 p-1 rounded-lg transition-colors"
                   onClick={() => setExpandedRequest(expandedRequest === request.id ? null : request.id)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg">
-                      <Ship className="w-6 h-6 text-white" />
+                    <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                      <Ship className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     </div>
                     <div>
-                      <div className="text-white font-bold text-lg">{request.vessel?.name}</div>
-                      <div className="flex items-center gap-3 text-xs text-blue-300 font-medium mt-0.5">
+                      <div className="text-slate-900 dark:text-slate-50 font-semibold">{request.vessel?.name}</div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         <span className="font-mono">#{request.id}</span>
                         <span>·</span>
                         <Clock className="w-3 h-3" />
@@ -207,39 +213,34 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                       </div>
                     </div>
                   </div>
-                  <ChevronDown className={`w-5 h-5 text-blue-300 transition-transform duration-200 ${expandedRequest === request.id ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expandedRequest === request.id ? 'rotate-180' : ''}`} />
                 </div>
 
-                {/* Expanded Detail + Actions */}
                 {expandedRequest === request.id && (
-                  <div className="mt-5 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                    {/* Reason */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                      <p className="text-blue-300 text-xs font-bold uppercase tracking-widest mb-1">
+                  <div className="mt-4 space-y-3">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
                         {isRTL ? 'السبب / الغرض' : 'Reason / Purpose'}
                       </p>
-                      <p className="text-white text-sm">{request.reason}</p>
+                      <p className="text-slate-900 dark:text-slate-50 text-sm">{request.reason}</p>
                     </div>
 
-                    {/* Availability Info */}
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                      <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${availableWharves.length === 0 ? 'text-red-400' : 'text-green-400'}`} />
-                      <p className="text-sm text-gray-300">
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
+                      <AlertTriangle className={`w-4 h-4 flex-shrink-0 ${availableWharves.length === 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} />
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {availableWharves.length === 0
                           ? (isRTL ? 'لا تتوفر أرصفة حالياً.' : 'No wharves currently available.')
                           : `${availableWharves.length} ${isRTL ? 'رصيف متاح' : 'wharf(s) available'}: ${availableWharves.map(w => w.name).join(', ')}`}
                       </p>
                     </div>
 
-                    {/* Action Row */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                      {/* Option A */}
                       <div className="flex gap-2 flex-1">
                         <select
                           value={selectedWharfMap[request.id] || ''}
                           onChange={(e) => setSelectedWharfMap((prev) => ({ ...prev, [request.id]: Number(e.target.value) }))}
                           disabled={availableWharves.length === 0}
-                          className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40 [&>option]:bg-[#1A3A5C]"
+                          className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 disabled:opacity-40 transition-colors"
                         >
                           <option value="">{isRTL ? '-- اختر رصيفاً --' : '-- Select Wharf --'}</option>
                           {availableWharves.map((w) => (
@@ -249,18 +250,16 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                         <button
                           onClick={() => handleApprove(request)}
                           disabled={!selectedWharfMap[request.id] || processing === request.id}
-                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/30"
+                          className="bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[140px] justify-center"
                         >
-                          {processing === request.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                          {processing === request.id ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <CheckCircle className="w-4 h-4" />}
                           {isRTL ? 'تعيين رصيف' : 'Approve & Assign'}
                         </button>
                       </div>
-
-                      {/* Option B */}
                       <button
                         onClick={() => handleWaitlist(request)}
                         disabled={processing === request.id}
-                        className="flex items-center gap-2 px-4 py-2 bg-orange-600/80 hover:bg-orange-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all"
+                        className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
                       >
                         <Clock className="w-4 h-4" />
                         {isRTL ? 'وضع في قائمة الانتظار' : 'Hold / Waitlist'}
@@ -274,36 +273,36 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
         )}
       </div>
 
-      {/* ─── SECTION 2: Processed Requests (compact) ──────────────────────────── */}
+      {/* SECTION 2: Processed Requests */}
       {processedRequests.length > 0 && (
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/10">
-            <h2 className="text-base font-bold text-white">{isRTL ? 'الطلبات المعالجة' : 'Processed Requests'}</h2>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">{isRTL ? 'الطلبات المعالجة' : 'Processed Requests'}</h2>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {processedRequests.map((req) => (
-              <div key={req.id} className="group">
-                <div className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors transition-all duration-200">
+              <div key={req.id}>
+                <div className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors duration-200">
                   <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-xl border ${
-                      req.status === 'wharf_assigned' ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' :
-                      'bg-orange-500/10 border-orange-500/20 text-orange-400'
+                    <div className={`p-2 rounded-lg border ${
+                      req.status === 'wharf_assigned' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-900/30' :
+                      'bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-900/30'
                     }`}>
-                      <Ship className="w-4 h-4" />
+                      <Ship className={`w-4 h-4 ${req.status === 'wharf_assigned' ? 'text-blue-700 dark:text-blue-400' : 'text-amber-700 dark:text-amber-400'}`} />
                     </div>
                     <div>
-                      <p className="text-white font-bold text-sm">{req.vessel?.name}</p>
-                      <p className="text-blue-300/60 text-xs mt-0.5">
+                      <p className="text-slate-900 dark:text-slate-50 font-medium text-sm">{req.vessel?.name}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                         {new Date(req.docking_time).toLocaleString(isRTL ? 'ar-SA' : 'en-US')} · {req.duration}h
                         {req.wharf && ` · ${req.wharf.name}`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${
-                      req.status === 'wharf_assigned' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' :
-                      req.status === 'waiting' ? 'bg-orange-500/10 text-orange-300 border-orange-500/30' :
-                      'bg-gray-500/10 text-gray-300 border-gray-500/30'
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                      req.status === 'wharf_assigned' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                      req.status === 'waiting' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                     }`}>
                       {req.status === 'wharf_assigned' ? (isRTL ? 'رصيف معين' : 'Wharf Assigned') :
                        req.status === 'waiting' ? (isRTL ? 'قائمة انتظار' : 'Waitlisted') : req.status}
@@ -311,7 +310,7 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                     {req.status === 'waiting' && (
                       <button
                         onClick={() => setExpandedWaitingId(expandedWaitingId === req.id ? null : req.id)}
-                        className="p-1.5 hover:bg-white/10 rounded-lg text-blue-300 transition-colors"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition-colors"
                       >
                         <ChevronDown className={`w-4 h-4 transition-transform ${expandedWaitingId === req.id ? 'rotate-180' : ''}`} />
                       </button>
@@ -319,13 +318,12 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                   </div>
                 </div>
 
-                {/* Inline Rescheduling for Waitlisted */}
                 {req.status === 'waiting' && expandedWaitingId === req.id && (
-                  <div className="px-6 pb-6 pt-2 animate-in slide-in-from-top-2 duration-200">
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-4">
-                      <div className="flex items-center gap-2 text-amber-400">
+                  <div className="px-6 pb-5 pt-1">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700 space-y-4">
+                      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                         <AlertTriangle className="w-4 h-4" />
-                        <span className="text-xs font-bold uppercase tracking-wider">
+                        <span className="text-xs font-semibold uppercase tracking-wider">
                           {isRTL ? 'إعادة جدولة من قائمة الانتظار' : 'Reschedule from Waitlist'}
                         </span>
                       </div>
@@ -334,7 +332,7 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                           value={selectedWharfMap[req.id] || ''}
                           onChange={(e) => setSelectedWharfMap((prev) => ({ ...prev, [req.id]: Number(e.target.value) }))}
                           disabled={availableWharves.length === 0}
-                          className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-40 [&>option]:bg-[#1A3A5C]"
+                          className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900/20 disabled:opacity-40 transition-colors"
                         >
                           <option value="">{isRTL ? '-- اختر رصيفاً --' : '-- Select Wharf --'}</option>
                           {availableWharves.map((w) => (
@@ -344,9 +342,9 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                         <button
                           onClick={() => handleApprove(req)}
                           disabled={!selectedWharfMap[req.id] || processing === req.id}
-                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-900/30"
+                          className="bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[140px] justify-center"
                         >
-                          {processing === req.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                          {processing === req.id ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <CheckCircle className="w-4 h-4" />}
                           {isRTL ? 'تعيين رصيف' : 'Approve & Assign'}
                         </button>
                       </div>
@@ -359,63 +357,49 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
         </div>
       )}
 
-      {/* ─── SECTION 3: Wharf Status Cards ─────────────────────────────────────── */}
+      {/* SECTION 3: Wharf Status Cards */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">{isRTL ? 'حالة الأرصفة' : 'Wharf Status'}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">{isRTL ? 'حالة الأرصفة' : 'Wharf Status'}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {loading ? (
-            <div className="col-span-full text-center py-12">
-              <RefreshCw className="w-12 h-12 text-blue-400 animate-spin mx-auto mb-4" />
+            <div className="col-span-full py-12 text-center">
+              <LoadingIndicator type="line-spinner" size="lg" />
             </div>
           ) : wharves.map((wharf) => (
-            <div key={wharf.id} className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-white">{wharf.name}</h3>
-                </div>
-                <Anchor className={`w-8 h-8 ${
-                  wharf.status === 'available' ? 'text-green-400' :
-                  wharf.status === 'maintenance' ? 'text-amber-400' : 'text-red-400'
+            <div key={wharf.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">{wharf.name}</h3>
+                <Anchor className={`w-6 h-6 ${
+                  wharf.status === 'available' ? 'text-green-600 dark:text-green-400' :
+                  wharf.status === 'maintenance' ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'
                 }`} />
               </div>
-
-              <div className="mb-6">
-                <p className="text-sm text-gray-400 mb-1">{isRTL ? 'الحالة' : 'Status'}</p>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold capitalize ${
-                  wharf.status === 'available' ? 'bg-green-500/20 text-green-300' :
-                  wharf.status === 'maintenance' ? 'bg-amber-500/20 text-amber-300' :
-                  'bg-red-500/20 text-red-300'
-                }`}>
-                  {wharf.status === 'available' ? (isRTL ? 'متاح' : 'Available') :
-                   wharf.status === 'maintenance' ? (isRTL ? 'صيانة' : 'Maintenance') :
-                   (isRTL ? 'مشغول' : 'Occupied')}
+              <div className="mb-4">
+                <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">{isRTL ? 'الحالة' : 'Status'}</p>
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getWharfStatusBadge(wharf.status)}`}>
+                  {getWharfStatusLabel(wharf.status)}
                 </span>
               </div>
-
               <div className="flex gap-2">
-                {/* Toggle Maintenance */}
                 <button
                   onClick={() => toggleMaintenance(wharf)}
                   disabled={processing === wharf.id || wharf.status === 'occupied'}
-                  className={`flex-1 py-2 rounded-xl font-semibold text-sm transition-all ${
+                  className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
                     wharf.status === 'maintenance'
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-amber-600 hover:bg-amber-700 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      ? 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white'
+                      : 'bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 text-white'
+                  }`}
                 >
-                  {processing === wharf.id ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> :
+                  {processing === wharf.id ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> :
                     wharf.status === 'maintenance' ? (isRTL ? 'إتاحة' : 'Set Available') : (isRTL ? 'صيانة' : 'Maintenance')}
                 </button>
-
-                {/* Release Occupied */}
                 {wharf.status === 'occupied' && (
                   <button
                     onClick={() => toggleOccupied(wharf)}
                     disabled={processing === wharf.id}
-                    className="flex-1 py-2 rounded-xl font-semibold text-sm bg-slate-600 hover:bg-slate-500 text-white transition-all disabled:opacity-50"
+                    className="flex-1 py-2 rounded-lg font-medium text-sm border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors duration-200 disabled:opacity-50 flex items-center justify-center"
                   >
-                    {processing === wharf.id ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> :
-                      (isRTL ? 'تحرير الرصيف' : 'Release Wharf')}
+                    {processing === wharf.id ? <LoadingIndicator type="line-spinner" size="xs" /> : (isRTL ? 'تحرير الرصيف' : 'Release Wharf')}
                   </button>
                 )}
               </div>

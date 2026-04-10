@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Language } from '../../App';
-import { Bell, CheckCircle2, XCircle, AlertTriangle, FileText, RefreshCw, Eye, Package } from 'lucide-react';
+import { Bell, CheckCircle2, XCircle, FileText, RefreshCw, Eye, Package } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
 interface TraderNotificationsProps {
@@ -35,7 +36,6 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
         }
       );
       const data = await response.json();
-      
       if (data.success) {
         setNotifications(data.notifications);
       } else {
@@ -61,10 +61,9 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
           body: JSON.stringify({ notificationId })
         }
       );
-      
       const data = await response.json();
       if (data.success) {
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
         );
       }
@@ -80,59 +79,17 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
   const getNotificationStyle = (type: string) => {
     switch (type) {
       case 'status_change':
-        return {
-          icon: Package,
-          bg: 'bg-blue-500/10',
-          border: 'border-blue-400/30',
-          iconBg: 'bg-blue-500/20',
-          iconColor: 'text-blue-300',
-          titleColor: 'text-blue-200'
-        };
+        return { icon: Package, iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-700 dark:text-blue-400', unreadBg: 'bg-blue-50 dark:bg-blue-900/10' };
       case 'discharge_approved':
-        return {
-          icon: CheckCircle2,
-          bg: 'bg-emerald-500/10',
-          border: 'border-emerald-400/30',
-          iconBg: 'bg-emerald-500/20',
-          iconColor: 'text-emerald-300',
-          titleColor: 'text-emerald-200'
-        };
+        return { icon: CheckCircle2, iconBg: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-700 dark:text-green-400', unreadBg: 'bg-green-50 dark:bg-green-900/10' };
       case 'discharge_rejected':
-        return {
-          icon: XCircle,
-          bg: 'bg-red-500/10',
-          border: 'border-red-400/30',
-          iconBg: 'bg-red-500/20',
-          iconColor: 'text-red-300',
-          titleColor: 'text-red-200'
-        };
+        return { icon: XCircle, iconBg: 'bg-red-100 dark:bg-red-900/30', iconColor: 'text-red-700 dark:text-red-400', unreadBg: 'bg-red-50 dark:bg-red-900/10' };
       case 'discharge_submitted':
-        return {
-          icon: FileText,
-          bg: 'bg-purple-500/10',
-          border: 'border-purple-400/30',
-          iconBg: 'bg-purple-500/20',
-          iconColor: 'text-purple-300',
-          titleColor: 'text-purple-200'
-        };
+        return { icon: FileText, iconBg: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-700 dark:text-amber-400', unreadBg: 'bg-amber-50 dark:bg-amber-900/10' };
       case 'clearance':
-        return {
-          icon: FileText,
-          bg: 'bg-teal-500/10',
-          border: 'border-teal-400/30',
-          iconBg: 'bg-teal-500/20',
-          iconColor: 'text-teal-300',
-          titleColor: 'text-teal-200'
-        };
+        return { icon: FileText, iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-700 dark:text-blue-400', unreadBg: 'bg-blue-50 dark:bg-blue-900/10' };
       default:
-        return {
-          icon: Bell,
-          bg: 'bg-gray-500/10',
-          border: 'border-gray-400/30',
-          iconBg: 'bg-gray-500/20',
-          iconColor: 'text-gray-300',
-          titleColor: 'text-gray-200'
-        };
+        return { icon: Bell, iconBg: 'bg-slate-100 dark:bg-slate-700', iconColor: 'text-slate-700 dark:text-slate-300', unreadBg: '' };
     }
   };
 
@@ -148,12 +105,8 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
     if (diffMins < 60) return isRTL ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`;
     if (diffHours < 24) return isRTL ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`;
     if (diffDays < 7) return isRTL ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
-    
-    return date.toLocaleDateString(isRTL ? 'ar' : 'en', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+
+    return date.toLocaleDateString(isRTL ? 'ar' : 'en', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const filteredNotifications = notifications.filter(n => {
@@ -165,93 +118,73 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {isRTL ? 'الإشعارات' : 'Notifications'}
-            </h1>
-            <p className="text-emerald-200/70">
-              {isRTL ? 'تنبيهات حالة الحاوية والتحديثات' : 'Container status alerts and updates'}
-            </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+            {isRTL ? 'الإشعارات' : 'Notifications'}
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            {isRTL ? 'تنبيهات حالة الحاوية والتحديثات' : 'Container status alerts and updates'}
+          </p>
+        </div>
+        <button
+          onClick={loadNotifications}
+          disabled={loading}
+          className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
+        >
+          {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
+          <span className="text-sm">{isRTL ? 'تحديث' : 'Refresh'}</span>
+        </button>
+      </div>
+
+      {/* Stats and Filter */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex gap-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-5 py-3 shadow-sm">
+            <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">{isRTL ? 'إجمالي' : 'Total'}</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{notifications.length}</div>
           </div>
-          <button
-            onClick={loadNotifications}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-all disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="text-sm">{isRTL ? 'تحديث' : 'Refresh'}</span>
-          </button>
+          {unreadCount > 0 && (
+            <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-900/30 rounded-lg px-5 py-3">
+              <div className="text-amber-700 dark:text-amber-400 text-xs mb-1">{isRTL ? 'غير مقروءة' : 'Unread'}</div>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{unreadCount}</div>
+            </div>
+          )}
         </div>
 
-        {/* Stats and Filter */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex gap-4">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-6 py-3">
-              <div className="text-blue-200/60 text-sm mb-1">{isRTL ? 'إجمالي' : 'Total'}</div>
-              <div className="text-2xl font-bold text-white">{notifications.length}</div>
-            </div>
-            {unreadCount > 0 && (
-              <div className="bg-amber-500/10 backdrop-blur-xl border border-amber-400/30 rounded-xl px-6 py-3">
-                <div className="text-amber-200/60 text-sm mb-1">{isRTL ? 'غير مقروءة' : 'Unread'}</div>
-                <div className="text-2xl font-bold text-amber-300">{unreadCount}</div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 ml-auto">
+        <div className="flex gap-2 ml-auto">
+          {['all', 'unread', 'read'].map((f) => (
             <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filter === 'all'
-                  ? 'bg-emerald-500/20 border border-emerald-400/30 text-emerald-200'
-                  : 'bg-white/5 border border-white/10 text-blue-200 hover:bg-white/10'
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                filter === f
+                  ? 'bg-blue-900 dark:bg-blue-800 text-white'
+                  : 'border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              {isRTL ? 'الكل' : 'All'}
+              {f === 'all' ? (isRTL ? 'الكل' : 'All') : f === 'unread' ? (isRTL ? 'غير مقروءة' : 'Unread') : (isRTL ? 'مقروءة' : 'Read')}
             </button>
-            <button
-              onClick={() => setFilter('unread')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filter === 'unread'
-                  ? 'bg-emerald-500/20 border border-emerald-400/30 text-emerald-200'
-                  : 'bg-white/5 border border-white/10 text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              {isRTL ? 'غير مقروءة' : 'Unread'}
-            </button>
-            <button
-              onClick={() => setFilter('read')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filter === 'read'
-                  ? 'bg-emerald-500/20 border border-emerald-400/30 text-emerald-200'
-                  : 'bg-white/5 border border-white/10 text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              {isRTL ? 'مقروءة' : 'Read'}
-            </button>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Notifications List */}
       {loading ? (
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center">
-          <RefreshCw className="w-8 h-8 text-emerald-300 animate-spin mx-auto mb-4" />
-          <p className="text-blue-200">{isRTL ? 'جاري التحميل...' : 'Loading notifications...'}</p>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-12 text-center shadow-sm">
+          <LoadingIndicator type="line-spinner" size="lg" label={isRTL ? 'جاري التحميل...' : 'Loading notifications...'} />
         </div>
       ) : filteredNotifications.length === 0 ? (
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center">
-          <Bell className="w-16 h-16 text-blue-300 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-12 text-center shadow-sm">
+          <Bell className="w-14 h-14 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
             {isRTL ? 'لا توجد إشعارات' : 'No Notifications'}
           </h3>
-          <p className="text-blue-200/60">
-            {filter === 'unread' 
-              ? (isRTL ? 'لا توجد إشعارات غير مقروءة' : 'No unread notifications') 
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            {filter === 'unread'
+              ? (isRTL ? 'لا توجد إشعارات غير مقروءة' : 'No unread notifications')
               : (isRTL ? 'لم تتلق أي إشعارات بعد' : 'You haven\'t received any notifications yet')}
           </p>
         </div>
@@ -264,38 +197,31 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
             return (
               <div
                 key={notification.id}
-                className={`bg-white/5 backdrop-blur-xl border ${style.border} rounded-xl p-5 hover:border-emerald-400/30 transition-all ${
-                  !notification.read ? 'bg-gradient-to-r from-emerald-500/5 to-transparent' : ''
+                className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors duration-200 ${
+                  !notification.read ? style.unreadBg : ''
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className={`flex-shrink-0 p-3 ${style.iconBg} rounded-xl`}>
+                  <div className={`flex-shrink-0 p-3 ${style.iconBg} rounded-lg`}>
                     <Icon className={`w-5 h-5 ${style.iconColor}`} />
                   </div>
-
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <h3 className={`font-semibold ${style.titleColor}`}>
-                        {notification.title}
-                      </h3>
+                    <div className="flex items-start justify-between gap-4 mb-1">
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm">{notification.title}</h3>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-blue-200/60 text-xs whitespace-nowrap">
+                        <span className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
                           {formatDate(notification.timestamp)}
                         </span>
                         {!notification.read && (
-                          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full"></div>
                         )}
                       </div>
                     </div>
-
-                    <p className="text-blue-200/80 text-sm mb-3">
-                      {notification.message}
-                    </p>
-
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">{notification.message}</p>
                     {!notification.read && (
                       <button
                         onClick={() => markAsRead(notification.id)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 rounded-lg text-emerald-200 text-xs font-medium transition-all"
+                        className="flex items-center gap-2 px-3 py-1.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-xs font-medium transition-colors duration-200"
                       >
                         <Eye className="w-3 h-3" />
                         <span>{isRTL ? 'وضع علامة مقروء' : 'Mark as read'}</span>
@@ -310,66 +236,30 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
       )}
 
       {/* Notification Types Legend */}
-      <div className="mt-8 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">
           {isRTL ? 'أنواع الإشعارات' : 'Notification Types'}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Package className="w-4 h-4 text-blue-300" />
-            </div>
-            <div>
-              <div className="text-blue-200 font-medium text-sm">
-                {isRTL ? 'تغيير الحالة' : 'Status Change'}
+          {[
+            { icon: Package, bg: 'bg-blue-100 dark:bg-blue-900/30', color: 'text-blue-700 dark:text-blue-400', title: isRTL ? 'تغيير الحالة' : 'Status Change', desc: isRTL ? 'تحديثات حالة الحاوية' : 'Container status updates' },
+            { icon: CheckCircle2, bg: 'bg-green-100 dark:bg-green-900/30', color: 'text-green-700 dark:text-green-400', title: isRTL ? 'موافقة التفريغ' : 'Discharge Approval', desc: isRTL ? 'تم الموافقة على الطلب' : 'Request approved' },
+            { icon: XCircle, bg: 'bg-red-100 dark:bg-red-900/30', color: 'text-red-700 dark:text-red-400', title: isRTL ? 'رفض التفريغ' : 'Discharge Rejection', desc: isRTL ? 'تم رفض الطلب' : 'Request rejected' },
+            { icon: FileText, bg: 'bg-blue-100 dark:bg-blue-900/30', color: 'text-blue-700 dark:text-blue-400', title: isRTL ? 'التخليص الجمركي' : 'Clearance', desc: isRTL ? 'تحديثات المستندات' : 'Document updates' },
+          ].map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <div className={`p-2 ${item.bg} rounded-lg`}>
+                  <Icon className={`w-4 h-4 ${item.color}`} />
+                </div>
+                <div>
+                  <div className="text-slate-900 dark:text-slate-50 font-medium text-sm">{item.title}</div>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs">{item.desc}</div>
+                </div>
               </div>
-              <div className="text-blue-200/60 text-xs">
-                {isRTL ? 'تحديثات حالة الحاوية' : 'Container status updates'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 rounded-lg">
-              <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-            </div>
-            <div>
-              <div className="text-emerald-200 font-medium text-sm">
-                {isRTL ? 'موافقة التفريغ' : 'Discharge Approval'}
-              </div>
-              <div className="text-emerald-200/60 text-xs">
-                {isRTL ? 'تم الموافقة على الطلب' : 'Request approved'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-500/20 rounded-lg">
-              <XCircle className="w-4 h-4 text-red-300" />
-            </div>
-            <div>
-              <div className="text-red-200 font-medium text-sm">
-                {isRTL ? 'رفض التفريغ' : 'Discharge Rejection'}
-              </div>
-              <div className="text-red-200/60 text-xs">
-                {isRTL ? 'تم رفض الطلب' : 'Request rejected'}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-teal-500/20 rounded-lg">
-              <FileText className="w-4 h-4 text-teal-300" />
-            </div>
-            <div>
-              <div className="text-teal-200 font-medium text-sm">
-                {isRTL ? 'التخليص الجمركي' : 'Clearance'}
-              </div>
-              <div className="text-teal-200/60 text-xs">
-                {isRTL ? 'تحديثات المستندات' : 'Document updates'}
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

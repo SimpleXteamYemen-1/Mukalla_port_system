@@ -8,11 +8,11 @@ import {
   Phone, 
   Lock, 
   Check, 
-  Loader2, 
   Moon, 
   Sun, 
   Globe 
 } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
 import { toast } from 'react-toastify';
@@ -204,10 +204,11 @@ export function AccountSettings({
   if (isInitialLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-[var(--primary)]" />
-        <p className="text-[var(--text-secondary)] animate-pulse">
-          {language === 'ar' ? 'جاري تحميل الإعدادات...' : 'Loading settings...'}
-        </p>
+        <LoadingIndicator 
+          type="line-spinner" 
+          size="lg" 
+          label={language === 'ar' ? 'جاري تحميل الإعدادات...' : 'Loading settings...'} 
+        />
       </div>
     );
   }
@@ -354,7 +355,11 @@ export function AccountSettings({
                   </CardContent>
                   <CardFooter className="flex justify-end border-t border-[var(--secondary)]/30 pt-6">
                     <Button type="submit" disabled={isLoading} className="gap-2">
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      {isLoading ? (
+                        <LoadingIndicator type="line-spinner" size="xs" className="text-white" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
                       {isLoading ? t.saving : t.saveChanges}
                     </Button>
                   </CardFooter>
@@ -488,7 +493,11 @@ export function AccountSettings({
                   </CardContent>
                   <CardFooter className="flex justify-end border-t border-[var(--secondary)]/30 pt-6">
                     <Button type="submit" disabled={isLoading} className="gap-2">
-                      {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                      {isLoading ? (
+                        <LoadingIndicator type="line-spinner" size="xs" className="text-white" />
+                      ) : (
+                        <Shield className="w-4 h-4" />
+                      )}
                       {isLoading ? t.saving : t.saveChanges}
                     </Button>
                   </CardFooter>

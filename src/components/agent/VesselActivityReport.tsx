@@ -6,6 +6,7 @@ import {
   Printer, Info
 } from 'lucide-react';
 import { Language } from '../../App';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import {
   agentService,
   Vessel,
@@ -411,10 +412,10 @@ export function VesselActivityReport({ language }: VesselActivityReportProps) {
               id="btn-generate-preview"
               onClick={handleSearch}
               disabled={!selectedVesselId || !selectedDate || isLoading}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white font-bold shadow-md shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/30 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white font-bold shadow-md shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/30 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 min-w-[160px]"
             >
               {isLoading
-                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{isRTL ? 'جارٍ التحميل…' : 'Loading…'}</>
+                ? <LoadingIndicator type="line-spinner" size="xs" label={isRTL ? 'جارٍ التحميل…' : 'Loading…'} className="text-white" />
                 : <><Search className="w-4 h-4" />{isRTL ? 'عرض التقرير' : 'Generate Preview'}</>
               }
             </button>

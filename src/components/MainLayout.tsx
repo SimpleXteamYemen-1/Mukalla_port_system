@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Bell, LogOut, User as UserIcon, ChevronDown, Globe, Settings, Sun, Moon } from 'lucide-react';
+import { Bell, LogOut, User as UserIcon, ChevronDown, Globe, Settings, Sun, Moon, Menu, Search } from 'lucide-react';
 import { User, Language } from '../App';
 import { Sidebar } from './Sidebar';
+import { useSidebar } from '../contexts/SidebarContext';
 import { translations } from '../utils/translations';
 
 interface MainLayoutProps {
@@ -28,6 +29,7 @@ export function MainLayout({
   onToggleTheme
 }: MainLayoutProps) {
   const t = translations[language]?.agent || translations.en.agent;
+  const { isExpanded, toggleSidebar } = useSidebar();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -58,19 +60,33 @@ export function MainLayout({
       />
 
       {/* Main Content Area */}
-      <div className={`${language === 'ar' ? 'mr-64' : 'ml-64'} min-h-screen transition-all duration-300`}>
+      <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 glass-panel border-b-0 shadow-sm">
+        <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
           <div className="flex items-center justify-between px-6 py-4">
-            {/* Page Title - will be set by each page */}
-            <div className="flex-1"></div>
+            <div className="flex-1 flex items-center gap-4">
+              <button
+                onClick={toggleSidebar}
+                className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                <Search className="w-4 h-4 text-[var(--text-secondary)]" />
+                <input 
+                  type="text" 
+                  placeholder={language === 'ar' ? 'بحث...' : 'Search'} 
+                  className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" 
+                />
+              </div>
+            </div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-4">
               {/* Theme Toggle */}
               <button
                 onClick={onToggleTheme}
-                className="p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -79,20 +95,20 @@ export function MainLayout({
               {/* Language Toggle */}
               <button
                 onClick={onToggleLanguage}
-                className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                className="flex items-center gap-1 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
-                <Globe className="w-4 h-4" />
-                <span className="text-sm">{language === 'ar' ? 'EN' : 'ع'}</span>
+                <Globe className="w-5 h-5" />
+                <span className="text-sm font-medium">{language === 'ar' ? 'EN' : 'ع'}</span>
               </button>
 
               {/* Notifications */}
               <div className="relative">
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+                  className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold animate-pulse">5</span>
                 </button>
                 {/* Notifications Dropdown */}
                 {showNotifications && (
@@ -120,75 +136,24 @@ export function MainLayout({
                 )}
               </div>
 
-              {/* Profile Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] hover:bg-[var(--secondary)]/10 rounded-md border border-[var(--secondary)] hover:border-[var(--accent)] transition-all"
+              {/* Profile Menu Actions */}
+              <div className="flex items-center gap-4">
+                <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => onNavigate('settings')}>Account</span>
+                
+                {/* Mobile avatar link to settings */}
+                <button 
+                  onClick={() => onNavigate('settings')}
+                  className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
                 >
-                  <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
-                  </div>
-                  <div className={`${language === 'ar' ? 'text-right' : 'text-left'} hidden md:block`}>
-                    <div className="text-[var(--text-primary)] text-sm font-medium">{user.name}</div>
-                    <div className="text-[var(--text-secondary)] text-xs">{t.agentRole}</div>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-[var(--text-secondary)] transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+                  <UserIcon className="w-4 h-4 text-[var(--primary)]" />
                 </button>
 
-                {/* Profile Dropdown */}
-                {showProfileMenu && (
-                  <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-64 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden`}>
-                    <div className="p-4 border-b border-[var(--secondary)]">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center">
-                          <UserIcon className="w-6 h-6 text-[var(--primary)]" />
-                        </div>
-                        <div>
-                          <div className="text-[var(--text-primary)] font-medium">{user.name}</div>
-                          <div className="text-[var(--text-secondary)] text-xs">{user.email}</div>
-                        </div>
-                      </div>
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg ${user.verified
-                        ? 'bg-green-500/10 border border-green-500/20 text-green-500'
-                        : 'bg-amber-500/10 border border-amber-500/20 text-amber-500'
-                        }`}>
-                        <div className={`w-2 h-2 rounded-full ${user.verified ? 'bg-green-500' : 'bg-amber-500'} animate-pulse`}></div>
-                        <span className="text-xs">{user.verified ? t.verified : t.pendingVerification}</span>
-                      </div>
-                    </div>
-                    <div className="p-2">
-                      <button 
-                        onClick={() => {
-                          onNavigate('settings');
-                          setShowProfileMenu(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
-                      >
-                        <UserIcon className="w-4 h-4" />
-                        <span className="text-sm">{t.profile}</span>
-                      </button>
-                      <button 
-                        onClick={() => {
-                          onNavigate('settings');
-                          setShowProfileMenu(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[var(--secondary)]/10 text-[var(--text-primary)] transition-colors ${currentPage === 'settings' ? 'bg-[var(--primary)]/10 text-[var(--primary)]' : ''}`}
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span className="text-sm">{t.settings}</span>
-                      </button>
-                      <div className="my-1 border-t border-[var(--secondary)]"></div>
-                      <button
-                        onClick={onLogout}
-                        className="w-full flex items-center gap-2 px-4 py-3 hover:bg-red-500/10 text-red-500 transition-colors"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span className="text-sm">{t.logout}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button 
+                  onClick={onLogout} 
+                  className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+                >
+                  Log out
+                </button>
               </div>
             </div>
           </div>
