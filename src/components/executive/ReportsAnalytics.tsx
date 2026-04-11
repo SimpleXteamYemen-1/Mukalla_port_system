@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Download, TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { BarChart3, Download, TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
@@ -27,62 +28,23 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
     try {
       const data = await executiveService.getAnalytics();
       if (data) {
-        // Map backend turnAround data to frontend format
-        const mappedTurnaround = data.turnaroundData.map((item: any) => ({
-          period: item.name, // The backend sends 'Jan', 'Feb' etc. The UI previously used Days. We adapt.
-          hours: item.avg
-        }));
+        const mappedTurnaround = data.turnaroundData.map((item: any) => ({ period: item.name, hours: item.avg }));
         setTurnaroundData(mappedTurnaround);
 
-        // Map rejection reasons
         setRejectionReasons(data.rejectionReasons.map((item: any) => ({
           reason: item.name,
           count: item.value,
-          percentage: item.value, // Simplification 
-          color: `bg-[${item.color}]` // Tailwind arbitrary values or pre-map
+          percentage: item.value,
+          color: `bg-[${item.color}]`
         })));
 
-        // Map performance metrics
         setPerformanceMetrics([
-          {
-            title: t.avgTurnaroundTime,
-            value: data.performanceMetrics.avgTurnaround,
-            change: '-12%', // Mock trend for now 
-            trend: 'down',
-            good: true,
-            icon: Clock,
-            color: 'from-blue-500 to-cyan-500'
-          },
-          {
-            title: t.approvalRate,
-            value: data.performanceMetrics.approvalRate,
-            change: '+5%',
-            trend: 'up',
-            good: true,
-            icon: CheckCircle2,
-            color: 'from-green-500 to-emerald-500'
-          },
-          {
-            title: t.rejectionRate,
-            value: (100 - parseInt(data.performanceMetrics.approvalRate)) + '%',
-            change: '-3%',
-            trend: 'down',
-            good: true,
-            icon: XCircle,
-            color: 'from-red-500 to-rose-500'
-          },
-          {
-            title: t.dailyDecisions,
-            value: '28', // This could be fetched too
-            change: '+15%',
-            trend: 'up',
-            good: true,
-            icon: BarChart3,
-            color: 'from-purple-500 to-pink-500'
-          },
+          { title: t.avgTurnaroundTime, value: data.performanceMetrics.avgTurnaround, change: '-12%', trend: 'down', good: true, icon: Clock, color: 'text-blue-700 dark:text-blue-400', borderColor: 'border-b-blue-500 dark:border-b-blue-400' },
+          { title: t.approvalRate, value: data.performanceMetrics.approvalRate, change: '+5%', trend: 'up', good: true, icon: CheckCircle2, color: 'text-green-700 dark:text-green-400', borderColor: 'border-b-green-500 dark:border-b-green-400' },
+          { title: t.rejectionRate, value: (100 - parseInt(data.performanceMetrics.approvalRate)) + '%', change: '-3%', trend: 'down', good: true, icon: XCircle, color: 'text-red-700 dark:text-red-400', borderColor: 'border-b-red-500 dark:border-b-red-400' },
+          { title: t.dailyDecisions, value: '28', change: '+15%', trend: 'up', good: true, icon: BarChart3, color: 'text-slate-900 dark:text-slate-50', borderColor: 'border-b-slate-400 dark:border-b-slate-500' },
         ]);
 
-        // Map recent reports
         setRecentReports(data.recentReports.map((report: any) => ({
           name: report.title,
           date: report.date,
@@ -98,9 +60,7 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
     }
   };
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [language]);
+  useEffect(() => { loadAnalytics(); }, [language]);
 
   const handleGenerate = async (paramsOverride?: { dateRange: string, reportType: string, format: string }) => {
     setIsGenerating(true);
@@ -111,19 +71,9 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
         reportType: paramsOverride?.reportType || reportType,
         format: paramsOverride?.format || format
       });
-
       if (response && response.report) {
-        // Prepend to recent reports
-        const newReport = {
-          name: response.report.title,
-          date: response.report.date,
-          type: response.report.type,
-          size: response.report.size,
-          file_url: response.report.file_url
-        };
+        const newReport = { name: response.report.title, date: response.report.date, type: response.report.type, size: response.report.size, file_url: response.report.file_url };
         setRecentReports((prev) => [newReport, ...prev].slice(0, 3));
-        
-        // Auto download
         const a = document.createElement('a');
         a.href = response.report.file_url;
         a.download = '';
@@ -131,151 +81,131 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
         a.click();
         document.body.removeChild(a);
       } else {
-         setError('Error: Unexpected response format from server.');
+        setError('Error: Unexpected response format from server.');
       }
     } catch (error: any) {
       console.error('Error generating report:', error);
-      if (error.response?.status === 500) {
-         setError('Error: Unable to connect to reporting service (Server Error).');
-      } else if (error.response?.status === 400 || error.response?.status === 422) {
-         setError('Error: Invalid data parameters submitted.');
-      } else {
-         setError(error.message || 'Failed to generate report due to a network or connection error.');
-      }
+      if (error.response?.status === 500) setError('Error: Unable to connect to reporting service (Server Error).');
+      else if (error.response?.status === 400 || error.response?.status === 422) setError('Error: Invalid data parameters submitted.');
+      else setError(error.message || 'Failed to generate report due to a network or connection error.');
     } finally {
       setIsGenerating(false);
     }
   };
 
   const exportReport = (expFormat: string) => {
-    handleGenerate({
-      dateRange: 'Last 30 Days',
-      reportType: 'Comprehensive',
-      format: expFormat
-    });
+    handleGenerate({ dateRange: 'Last 30 Days', reportType: 'Comprehensive', format: expFormat });
   };
-
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-20">
-        <RefreshCw className="w-12 h-12 text-blue-500 animate-spin" />
+      <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full flex items-center justify-center">
+        <LoadingIndicator 
+          type="line-spinner" 
+          size="lg" 
+          label={language === 'ar' ? 'جاري تحميل البيانات...' : 'Loading analytics...'} 
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-          <p className="text-blue-200">{t.subtitle}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t.subtitle}</p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={() => exportReport('PDF')}
-            className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            <Download className="w-5 h-5" />
-            PDF
+          <button onClick={() => exportReport('PDF')} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors">
+            <Download className="w-4 h-4" />PDF
           </button>
-          <button
-            onClick={() => exportReport('Excel')}
-            className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            <Download className="w-5 h-5" />
-            Excel
+          <button onClick={() => exportReport('Excel')} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-colors">
+            <Download className="w-4 h-4" />Excel
           </button>
         </div>
       </div>
 
       {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {performanceMetrics.map((metric) => {
           const Icon = metric.icon;
           const TrendIcon = metric.trend === 'up' ? TrendingUp : TrendingDown;
           return (
-            <div key={metric.title} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 hover:scale-[1.02] transition-transform">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-br ${metric.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <Icon className="w-6 h-6 text-white" />
+            <div key={metric.title} className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-b-4 ${metric.borderColor} rounded-lg p-5 shadow-sm`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                  <Icon className={`w-5 h-5 ${metric.color}`} />
                 </div>
-                <div className={`flex items-center gap-1 ${metric.good ? 'text-green-400' : 'text-red-400'}`}>
-                  <TrendIcon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{metric.change}</span>
+                <div className={`flex items-center gap-1 text-xs font-medium ${metric.good ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                  <TrendIcon className="w-3.5 h-3.5" />{metric.change}
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white mb-1">{metric.value}</div>
-              <div className="text-blue-200 text-sm">{metric.title}</div>
+              <div className={`text-2xl font-bold mb-1 ${metric.color}`}>{metric.value}</div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs">{metric.title}</div>
             </div>
           );
         })}
       </div>
 
-      {/* Charts Grid */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Turnaround Time Chart */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-6">{t.turnaroundTimeChart}</h2>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">{t.turnaroundTimeChart}</h2>
           <div className="space-y-4">
             {turnaroundData.map((data, index) => (
               <div key={index}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-blue-200 text-sm">{data.period}</span>
-                  <span className="text-white font-semibold">{data.hours}h</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-slate-500 dark:text-slate-400 text-sm">{data.period}</span>
+                  <span className="text-slate-900 dark:text-slate-50 font-medium text-sm">{data.hours}h</span>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
-                    style={{ width: `${(data.hours / 4) * 100}%` }}
-                  ></div>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
+                  <div className="h-2.5 bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(data.hours / 4) * 100}%` }} />
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-4 p-3 bg-blue-500/10 border border-blue-400/30 rounded-xl">
-            <div className="text-blue-200 text-xs mb-1">{t.average}</div>
-            <div className="text-white font-bold text-lg">2.6 {t.hours}</div>
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-lg">
+            <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">{t.average}</div>
+            <div className="text-blue-700 dark:text-blue-400 font-bold">2.6 {t.hours}</div>
           </div>
         </div>
 
         {/* Rejection Reasons Chart */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-          <h2 className="text-xl font-bold text-white mb-6">{t.rejectionReasonsChart}</h2>
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">{t.rejectionReasonsChart}</h2>
           <div className="space-y-4">
             {rejectionReasons.map((item, index) => (
               <div key={index}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-blue-200 text-sm">{item.reason}</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-slate-500 dark:text-slate-400 text-sm">{item.reason}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-blue-300 text-xs">{item.count}</span>
-                    <span className="text-white font-semibold">{item.percentage}%</span>
+                    <span className="text-slate-400 dark:text-slate-500 text-xs">{item.count}</span>
+                    <span className="text-slate-900 dark:text-slate-50 font-medium text-sm">{item.percentage}%</span>
                   </div>
                 </div>
-                <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden">
-                  <div
-                    className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                    style={{ width: `${item.percentage}%` }}
-                  ></div>
+                <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
+                  <div className={`h-2.5 ${item.color} rounded-full transition-all duration-500`} style={{ width: `${item.percentage}%` }} />
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-400/30 rounded-xl">
-            <div className="text-red-200 text-xs mb-1">{t.totalRejections}</div>
-            <div className="text-white font-bold text-lg">34</div>
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-lg">
+            <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">{t.totalRejections}</div>
+            <div className="text-red-700 dark:text-red-400 font-bold">34</div>
           </div>
         </div>
       </div>
 
-      {/* Decision Timeline */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-        <h2 className="text-xl font-bold text-white mb-6">{t.decisionTimeline}</h2>
+      {/* Decision Timeline Heatmap */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">{t.decisionTimeline}</h2>
         <div className="grid grid-cols-7 gap-2">
           {[...Array(7)].map((_, weekIndex) => (
             <div key={weekIndex} className="space-y-1">
-              <div className="text-blue-300 text-xs text-center mb-2">
+              <div className="text-slate-500 dark:text-slate-400 text-xs text-center mb-2">
                 {language === 'ar' ? `أسبوع ${weekIndex + 1}` : `Week ${weekIndex + 1}`}
               </div>
               {[...Array(5)].map((_, dayIndex) => {
@@ -284,51 +214,45 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
                 return (
                   <div
                     key={dayIndex}
-                    className="h-8 rounded transition-all hover:scale-110 cursor-pointer"
-                    style={{
-                      backgroundColor: `rgba(59, 130, 246, ${intensity * 0.5 + 0.1})`
-                    }}
+                    className="h-7 rounded transition-all hover:scale-110 cursor-pointer"
+                    style={{ backgroundColor: `rgba(30, 58, 138, ${intensity * 0.5 + 0.1})` }}
                     title={`${decisions} ${t.decisions}`}
-                  ></div>
+                  />
                 );
               })}
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-center gap-6 mt-6">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-500/20"></div>
-            <span className="text-blue-300 text-xs">{t.low}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-500/40"></div>
-            <span className="text-blue-300 text-xs">{t.medium}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-blue-500/60"></div>
-            <span className="text-blue-300 text-xs">{t.high}</span>
-          </div>
+        <div className="flex items-center justify-center gap-6 mt-4">
+          {[
+            { label: t.low, bg: 'rgba(30, 58, 138, 0.15)' },
+            { label: t.medium, bg: 'rgba(30, 58, 138, 0.35)' },
+            { label: t.high, bg: 'rgba(30, 58, 138, 0.6)' },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: item.bg }} />
+              <span className="text-slate-500 dark:text-slate-400 text-xs">{item.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Recent Reports */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-        <h2 className="text-xl font-bold text-white mb-4">{t.recentReports}</h2>
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">{t.recentReports}</h2>
         <div className="space-y-3">
           {recentReports.map((report, index) => (
-            <div key={index} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                  <Download className="w-6 h-6 text-white" />
+            <div key={index} className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-4 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Download className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                 </div>
                 <div>
-                  <div className="text-white font-medium">{report.name}</div>
-                  <div className="text-blue-300 text-xs mt-1">
-                    {report.date} • {report.type} • {report.size}
-                  </div>
+                  <div className="text-slate-900 dark:text-slate-50 font-medium text-sm">{report.name}</div>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">{report.date} • {report.type} • {report.size}</div>
                 </div>
               </div>
-              <a href={report.file_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-lg text-blue-200 hover:text-white text-sm transition-all flex items-center justify-center">
+              <a href={report.file_url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-medium transition-colors">
                 {t.download}
               </a>
             </div>
@@ -336,68 +260,42 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
         </div>
       </div>
 
-      {/* Export Options */}
-      <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-        <h2 className="text-xl font-bold text-white mb-4">{t.customExport}</h2>
-        
+      {/* Custom Export */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-4">{t.customExport}</h2>
+
         {error && (
-          <div className="mb-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl flex items-center gap-3 text-red-200">
-            <XCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-lg flex items-center gap-3 text-red-700 dark:text-red-400">
+            <XCircle className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
         )}
 
         <div className="grid md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">{t.dateRange}</label>
-            <select 
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all"
-            >
-              <option value="Last 7 Days">{t.last7Days}</option>
-              <option value="Last 30 Days">{t.last30Days}</option>
-              <option value="Last Month">{t.lastMonth}</option>
-              <option value="Custom">{t.custom}</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">{t.reportType}</label>
-            <select 
-              value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all"
-            >
-              <option value="Performance">{t.performance}</option>
-              <option value="Decisions">{t.decisions}</option>
-              <option value="Rejections">{t.rejections}</option>
-              <option value="Comprehensive">{t.comprehensive}</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-white text-sm font-medium mb-2">{t.format}</label>
-            <select 
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-blue-400 transition-all"
-            >
-              <option value="PDF">PDF</option>
-              <option value="Excel">Excel</option>
-              <option value="CSV">CSV</option>
-            </select>
-          </div>
+          {[
+            {
+              label: t.dateRange, value: dateRange, setter: setDateRange,
+              options: [{ value: 'Last 7 Days', label: t.last7Days }, { value: 'Last 30 Days', label: t.last30Days }, { value: 'Last Month', label: t.lastMonth }, { value: 'Custom', label: t.custom }]
+            },
+            {
+              label: t.reportType, value: reportType, setter: setReportType,
+              options: [{ value: 'Performance', label: t.performance }, { value: 'Decisions', label: t.decisions }, { value: 'Rejections', label: t.rejections }, { value: 'Comprehensive', label: t.comprehensive }]
+            },
+            {
+              label: t.format, value: format, setter: setFormat,
+              options: [{ value: 'PDF', label: 'PDF' }, { value: 'Excel', label: 'Excel' }, { value: 'CSV', label: 'CSV' }]
+            },
+          ].map((field) => (
+            <div key={field.label}>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">{field.label}</label>
+              <select value={field.value} onChange={(e) => field.setter(e.target.value)} className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors">
+                {field.options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+              </select>
+            </div>
+          ))}
         </div>
-        <button 
-          onClick={() => handleGenerate()}
-          disabled={isGenerating}
-          className={`mt-4 w-full py-3 bg-gradient-to-r ${isGenerating ? 'from-gray-500 to-gray-600 cursor-not-allowed' : 'from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'} rounded-xl text-white font-semibold transition-all flex items-center justify-center gap-2`}
-        >
-          {isGenerating ? (
-            <>
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              {language === 'ar' ? 'جاري الإنشاء...' : 'Generating...'}
-            </>
-          ) : t.generateReport}
+        <button onClick={() => handleGenerate()} disabled={isGenerating} className="mt-4 w-full py-3 bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+          {isGenerating ? <LoadingIndicator type="line-spinner" size="xs" label={language === 'ar' ? 'جاري الإنشاء...' : 'Generating...'} className="text-white" /> : t.generateReport}
         </button>
       </div>
     </div>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
-import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Edit2, Download } from 'lucide-react';
+import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, Edit2, Download, RefreshCw } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { exportClearancePdf } from '../../utils/exportPdf';
 import { Clearance } from '../../utils/portOfficerApi';
 import { agentService, Vessel } from '../../services/agentService';
@@ -83,14 +84,6 @@ export function PortClearances({ language }: PortClearancesProps) {
         }
     };
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'valid': return <CheckCircle className="w-5 h-5" />;
-            case 'expiring-soon': return <Clock className="w-5 h-5" />;
-            case 'expired': return <AlertCircle className="w-5 h-5" />;
-            default: return <Clock className="w-5 h-5" />;
-        }
-    };
 
     const viewQRCode = (clearance: Clearance) => {
         setSelectedClearance(clearance);
@@ -100,7 +93,7 @@ export function PortClearances({ language }: PortClearancesProps) {
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
-                <RefreshCw className="w-8 h-8 text-[var(--primary)] animate-spin" />
+                <LoadingIndicator type="line-spinner" size="md" label={isRTL ? 'جاري التحميل...' : 'Loading clearances...'} />
             </div>
         );
     }
@@ -121,9 +114,9 @@ export function PortClearances({ language }: PortClearancesProps) {
                     <button
                         onClick={loadData}
                         disabled={loading}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--surface-highlight)] hover:bg-[var(--secondary)]/20 border border-[var(--border)] rounded-xl text-[var(--text-primary)] transition-all font-semibold"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--surface-highlight)] hover:bg-[var(--secondary)]/20 border border-[var(--border)] rounded-xl text-[var(--text-primary)] transition-all font-semibold min-w-[100px]"
                     >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
                         {isRTL ? 'تحديث' : 'Refresh'}
                     </button>
                     <button
@@ -384,10 +377,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 className="flex-1 px-4 py-3 bg-[var(--primary)] hover:bg-[var(--primary)]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-[var(--primary)]/20"
                             >
                                 {issuing ? (
-                                    <>
-                                        <RefreshCw className="w-5 h-5 animate-spin" />
-                                        {isRTL ? 'جاري التقديم...' : 'Submitting...'}
-                                    </>
+                                    <LoadingIndicator type="line-spinner" size="xs" label={isRTL ? 'جاري التقديم...' : 'Submitting...'} className="text-white" />
                                 ) : (
                                     <>
                                         <FileCheck className="w-5 h-5" />

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Language } from '../../App';
-import { BoxSelect, Ship, CheckCircle, RefreshCw, AlertTriangle, Layers, MapPin } from 'lucide-react';
+import { BoxSelect, Ship, RefreshCw, AlertTriangle, Layers, MapPin } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { wharfService } from '../../services/wharfService';
 
 interface ContainerAssignmentProps {
@@ -20,10 +21,9 @@ interface Container {
   arrivalDate: string;
 }
 
-// Yard dimensions
 const BLOCKS = ['A', 'B', 'C', 'D'];
-const ROWS = Array.from({ length: 10 }, (_, i) => i + 1); // 1 to 10
-const TIERS = Array.from({ length: 5 }, (_, i) => 5 - i); // 5 to 1 (top to bottom visual)
+const ROWS = Array.from({ length: 10 }, (_, i) => i + 1);
+const TIERS = Array.from({ length: 5 }, (_, i) => 5 - i);
 
 export function ContainerAssignment({ language }: ContainerAssignmentProps) {
   const isRTL = language === 'ar';
@@ -31,8 +31,6 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  // Selection state
   const [selectedContainer, setSelectedContainer] = useState<Container | null>(null);
   const [selectedBlock, setSelectedBlock] = useState<string>('A');
   const [selectedCoord, setSelectedCoord] = useState<{ row: number, tier: number } | null>(null);
@@ -42,7 +40,6 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
     setErrorMsg('');
     try {
       const containersData = await wharfService.getContainers();
-
       const mappedContainers = containersData.map((c: any) => ({
         id: c.id.toString(),
         vesselName: c.manifest?.vessel?.name || 'Unknown',
@@ -55,10 +52,7 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
         tier: c.tier,
         arrivalDate: c.created_at || new Date().toISOString()
       }));
-
       setContainers(mappedContainers);
-
-      // Clear selection if it was assigned or no longer exists
       if (selectedContainer) {
         const stillAwaiting = mappedContainers.find((c: Container) => c.id === selectedContainer.id && c.status === 'awaiting');
         if (!stillAwaiting) {
@@ -66,7 +60,6 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
           setSelectedCoord(null);
         }
       }
-
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -79,7 +72,6 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
       setErrorMsg(isRTL ? 'الرجاء تحديد حاوية وإحداثيات فارغة' : 'Please select a container and empty coordinates');
       return;
     }
-
     setAssigning(true);
     setErrorMsg('');
     try {
@@ -106,7 +98,6 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
     switch (type) {
       case 'refrigerated': return '❄️';
       case 'hazardous': return '⚠️';
-      case 'bulk': return '📦';
       default: return '📦';
     }
   };
@@ -114,61 +105,59 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
   const awaitingContainers = containers.filter(c => c.status === 'awaiting');
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-[#0A1628] via-[#153B5E] to-[#1A4D6F]">
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
             {isRTL ? 'إدارة ساحة الحاويات' : 'Yard Management'}
           </h1>
-          <p className="text-blue-200">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             {isRTL ? 'خريطة ساحة الحاويات والتعيين الدقيق' : 'Interactive Yard Map and Precise Container Assignment'}
           </p>
         </div>
         <button
           onClick={loadData}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-xl text-white transition-all disabled:opacity-50"
+          className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
           {isRTL ? 'تحديث' : 'Refresh'}
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Column: Awaiting List */}
-        <div className="lg:col-span-1 border border-white/20 bg-white/10 backdrop-blur-xl rounded-2xl p-4 flex flex-col max-h-[calc(100vh-160px)]">
-          <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
-            <BoxSelect className="w-5 h-5 text-amber-400" />
+        <div className="lg:col-span-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 flex flex-col shadow-sm" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 mb-3 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+            <BoxSelect className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             {isRTL ? 'في انتظار التعيين' : 'Awaiting Assignment'}
-            <span className="ml-auto bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full text-xs">
+            <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               {awaitingContainers.length}
             </span>
           </h2>
 
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto space-y-2">
             {loading ? (
-              <div className="flex justify-center py-8"><RefreshCw className="w-6 h-6 animate-spin text-cyan-400" /></div>
+              <div className="flex justify-center py-8"><LoadingIndicator type="line-spinner" size="sm" /></div>
             ) : awaitingContainers.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-sm">
-                {isRTL ? 'لا توجد حاويات تنتظر التعيين' : 'No containers awaiting assignment'}
-              </div>
+              <div className="text-center py-8 text-slate-400 text-sm">{isRTL ? 'لا توجد حاويات تنتظر التعيين' : 'No containers awaiting assignment'}</div>
             ) : (
               awaitingContainers.map(c => (
                 <div
                   key={c.id}
                   onClick={() => setSelectedContainer(c)}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all ${selectedContainer?.id === c.id
-                      ? 'bg-cyan-500/20 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]'
-                      : 'bg-black/20 border-white/5 hover:border-white/20'
-                    }`}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors duration-200 ${selectedContainer?.id === c.id
+                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 shadow-sm'
+                    : 'bg-slate-50 dark:bg-slate-700/25 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                  }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-white font-bold text-lg">{c.id}</span>
-                    <span className="text-xl">{getTypeIcon(c.type)}</span>
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-slate-900 dark:text-slate-50 font-bold text-sm">{c.id}</span>
+                    <span className="text-base">{getTypeIcon(c.type)}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-300">
-                    <Ship className="w-3 h-3 text-blue-400" />
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <Ship className="w-3 h-3" />
                     <span className="truncate">{c.vesselName}</span>
                   </div>
                 </div>
@@ -177,25 +166,25 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
           </div>
         </div>
 
-        {/* Middle/Right: Yard Grid Visualizer */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl flex-1">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-cyan-400" />
+        {/* Right: Yard Grid */}
+        <div className="lg:col-span-3 flex flex-col gap-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm flex-1">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-4">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-slate-400" />
                 {isRTL ? 'خريطة الساحة' : 'Yard Grid Map'}
               </h2>
 
-              {/* Block Selection Tabs */}
-              <div className="flex bg-black/30 p-1 rounded-xl">
+              {/* Block Tabs */}
+              <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg gap-1">
                 {BLOCKS.map(block => (
                   <button
                     key={block}
                     onClick={() => { setSelectedBlock(block); setSelectedCoord(null); }}
-                    className={`px-6 py-2 rounded-lg font-bold transition-all ${selectedBlock === block
-                        ? 'bg-cyan-600 text-white shadow-lg'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                      }`}
+                    className={`px-4 py-1.5 rounded-md font-medium text-sm transition-colors duration-200 ${selectedBlock === block
+                      ? 'bg-blue-900 dark:bg-blue-800 text-white shadow'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
                   >
                     {isRTL ? `المربع ${block}` : `Block ${block}`}
                   </button>
@@ -203,40 +192,49 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs font-semibold mb-6 flex-wrap">
-              <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-gray-800 border border-white/10"></div><span className="text-gray-300">{isRTL ? 'فارغ' : 'Empty'}</span></div>
-              <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-emerald-500/50 border border-emerald-400"></div><span className="text-gray-300">{isRTL ? 'مشغول' : 'Occupied'}</span></div>
-              <div className="flex items-center gap-2"><div className="w-4 h-4 rounded bg-cyan-500 shadow-[0_0_10px_cyan]"></div><span className="text-gray-300">{isRTL ? 'محدد' : 'Selected'}</span></div>
+            {/* Legend */}
+            <div className="flex items-center gap-6 text-xs mb-5">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600"></div>
+                <span className="text-slate-500 dark:text-slate-400">{isRTL ? 'فارغ' : 'Empty'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-green-200 dark:bg-green-900/40 border border-green-400 dark:border-green-700"></div>
+                <span className="text-slate-500 dark:text-slate-400">{isRTL ? 'مشغول' : 'Occupied'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-blue-500 dark:bg-blue-600 shadow-sm"></div>
+                <span className="text-slate-500 dark:text-slate-400">{isRTL ? 'محدد' : 'Selected'}</span>
+              </div>
             </div>
 
             {/* The Grid */}
-            <div className="overflow-x-auto pb-4">
-              <div className="min-w-[600px] flex">
-                {/* Y-Axis (Tiers) */}
-                <div className="flex flex-col justify-between pr-4 py-6 border-r border-white/10 space-y-2">
+            <div className="overflow-x-auto pb-2">
+              <div className="min-w-[560px] flex">
+                {/* Y-Axis */}
+                <div className="flex flex-col justify-between pr-3 py-5 border-r border-slate-200 dark:border-slate-700 space-y-2">
                   {TIERS.map(tier => (
-                    <div key={`tier-label-${tier}`} className="h-10 flex items-center justify-end text-gray-400 text-sm font-mono w-16">
+                    <div key={`tier-label-${tier}`} className="h-10 flex items-center justify-end text-slate-400 text-xs font-mono w-14">
                       Tier {tier}
                     </div>
                   ))}
                 </div>
 
                 {/* Grid Body */}
-                <div className="flex-1 pl-4 flex flex-col space-y-2 py-6">
+                <div className="flex-1 pl-3 flex flex-col space-y-2 py-5">
                   {TIERS.map(tier => (
                     <div key={`row-tier-${tier}`} className="flex gap-2">
                       {ROWS.map(row => {
                         const occupiedBy = checkOccupied(selectedBlock, row, tier);
                         const isSelected = selectedCoord?.row === row && selectedCoord?.tier === tier;
-
-                        let cellClass = "w-12 h-10 rounded-md border flex items-center justify-center transition-all cursor-pointer font-bold text-xs ";
+                        let cellClass = 'w-11 h-10 rounded border flex items-center justify-center transition-all cursor-pointer font-bold text-xs ';
 
                         if (isSelected) {
-                          cellClass += "bg-cyan-500 border-cyan-300 text-white shadow-[0_0_15px_rgba(34,211,238,0.5)] scale-110 z-10";
+                          cellClass += 'bg-blue-500 dark:bg-blue-600 border-blue-400 text-white shadow scale-110 z-10';
                         } else if (occupiedBy) {
-                          cellClass += "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/30";
+                          cellClass += 'bg-green-100 dark:bg-green-900/30 border-green-400 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50';
                         } else {
-                          cellClass += "bg-black/40 border-white/5 text-transparent hover:border-cyan-500/50 hover:bg-cyan-500/10";
+                          cellClass += 'bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 text-transparent hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20';
                         }
 
                         return (
@@ -244,7 +242,7 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
                             key={`cell-${row}-${tier}`}
                             className={cellClass}
                             onClick={() => {
-                              if (occupiedBy) return; // Can't select occupied
+                              if (occupiedBy) return;
                               if (selectedContainer) {
                                 setSelectedCoord({ row, tier });
                                 setErrorMsg('');
@@ -259,10 +257,10 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
                     </div>
                   ))}
 
-                  {/* X-Axis (Rows) */}
-                  <div className="flex gap-2 pt-4 border-t border-white/10 mt-4">
+                  {/* X-Axis */}
+                  <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700 mt-2">
                     {ROWS.map(row => (
-                      <div key={`row-label-${row}`} className="w-12 text-center text-gray-400 text-sm font-mono">
+                      <div key={`row-label-${row}`} className="w-11 text-center text-slate-400 text-xs font-mono">
                         R{row}
                       </div>
                     ))}
@@ -273,33 +271,33 @@ export function ContainerAssignment({ language }: ContainerAssignmentProps) {
           </div>
 
           {/* Assignment Panel */}
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl">
-            <div className="flex flex-col md:flex-row gap-6 items-center">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="flex-1 grid grid-cols-2 gap-4">
-                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                  <span className="text-gray-400 text-sm block mb-1">{isRTL ? 'الحاوية المحددة' : 'Selected Container'}</span>
-                  <div className="text-white font-bold text-xl">{selectedContainer ? selectedContainer.id : '-'}</div>
+                <div className="bg-slate-50 dark:bg-slate-700/25 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400 text-xs block mb-1">{isRTL ? 'الحاوية المحددة' : 'Selected Container'}</span>
+                  <div className="text-slate-900 dark:text-slate-50 font-bold text-lg">{selectedContainer ? selectedContainer.id : '-'}</div>
                 </div>
-                <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                  <span className="text-gray-400 text-sm block mb-1">{isRTL ? 'الموقع المحدد' : 'Selected Location'}</span>
-                  <div className="text-cyan-400 font-bold text-xl">
-                    {selectedCoord ? `B:${selectedBlock} - R:${selectedCoord.row} - T:${selectedCoord.tier}` : '-'}
+                <div className="bg-slate-50 dark:bg-slate-700/25 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400 text-xs block mb-1">{isRTL ? 'الموقع المحدد' : 'Selected Location'}</span>
+                  <div className="text-blue-700 dark:text-blue-400 font-bold text-sm">
+                    {selectedCoord ? `B:${selectedBlock} R:${selectedCoord.row} T:${selectedCoord.tier}` : '-'}
                   </div>
                 </div>
               </div>
 
-              <div className="w-full md:w-auto flex flex-col items-center flex-shrink-0">
+              <div className="flex flex-col items-center flex-shrink-0 w-full md:w-auto">
                 {errorMsg && (
-                  <div className="text-red-400 text-sm mb-3 flex items-center gap-1 bg-red-500/10 px-3 py-1 rounded">
+                  <div className="text-red-700 dark:text-red-400 text-xs mb-3 flex items-center gap-1 bg-red-100 dark:bg-red-900/30 px-3 py-2 rounded-lg border border-red-200 dark:border-red-900/30">
                     <AlertTriangle className="w-4 h-4" /> {errorMsg}
                   </div>
                 )}
                 <button
                   onClick={handleAssign}
                   disabled={!selectedContainer || !selectedCoord || assigning}
-                  className="w-full md:w-64 py-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 text-white font-bold text-lg flex justify-center items-center gap-2 shadow-lg transition-all"
+                  className="w-full md:w-56 py-3 rounded-lg bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white font-semibold flex justify-center items-center gap-2 transition-colors duration-200 disabled:cursor-not-allowed"
                 >
-                  {assigning ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Layers className="w-6 h-6" />}
+                  {assigning ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <Layers className="w-5 h-5" />}
                   {isRTL ? 'تعيين الموقع' : 'Assign Location'}
                 </button>
               </div>

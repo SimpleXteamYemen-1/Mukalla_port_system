@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
 import { DashboardRouter } from './components/DashboardRouter';
+import { SidebarProvider } from './contexts/SidebarContext';
+import { LoadingIndicator } from './components/application/loading-indicator/loading-indicator';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
@@ -112,8 +114,8 @@ function App() {
 
   if (isLoadingAuth) {
     return (
-      <div className={`flex h-screen w-screen items-center justify-center ${theme === 'dark' ? 'bg-gray-900 border-white' : 'bg-gray-100 border-black'}`}>
-        <div className={`animate-spin rounded-full h-16 w-16 border-b-4 ${theme === 'dark' ? 'border-white' : 'border-black'}`}></div>
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <LoadingIndicator type="line-spinner" size="lg" />
       </div>
     );
   }
@@ -138,14 +140,16 @@ function App() {
           />
         )}
         {currentPage === 'dashboard' && user && (
-          <DashboardRouter
-            user={user}
-            language={language}
-            onLogout={handleLogout}
-            onToggleLanguage={toggleLanguage}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-          />
+          <SidebarProvider>
+            <DashboardRouter
+              user={user}
+              language={language}
+              onLogout={handleLogout}
+              onToggleLanguage={toggleLanguage}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+            />
+          </SidebarProvider>
         )}
         <ToastContainer position="top-right" theme={theme} />
       </div>

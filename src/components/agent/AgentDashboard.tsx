@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Ship, Bell, Anchor, AlertCircle, TrendingUp, Clock, Plus, Activity, FileText, Download } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { agentService, AgentStats, Activity as AgentActivity, Arrival } from '../../services/agentService';
@@ -289,7 +290,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
               disabled={!activeVesselId || isExporting}
               className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isExporting && exportingType === 'arrival' ? <div className="w-4 h-4 rounded-full border-2 border-inherit border-t-transparent animate-spin" /> : <Download className="w-4 h-4" />}
+              {isExporting && exportingType === 'arrival' ? <LoadingIndicator type="line-spinner" size="xs" /> : <Download className="w-4 h-4" />}
               {language === 'ar' ? 'استخراج بلاغ الوصول' : 'Export Arrival Approval'}
             </button>
             <button
@@ -297,7 +298,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
               disabled={!activeVesselId || isExporting}
               className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 border border-purple-500/20 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isExporting && exportingType === 'anchorage' ? <div className="w-4 h-4 rounded-full border-2 border-inherit border-t-transparent animate-spin" /> : <Download className="w-4 h-4" />}
+              {isExporting && exportingType === 'anchorage' ? <LoadingIndicator type="line-spinner" size="xs" /> : <Download className="w-4 h-4" />}
               {language === 'ar' ? 'استخراج طلب الرسو' : 'Export Anchorage Request'}
             </button>
             <button
@@ -305,7 +306,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
               disabled={!activeVesselId || isExporting}
               className="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isExporting && exportingType === 'clearance' ? <div className="w-4 h-4 rounded-full border-2 border-inherit border-t-transparent animate-spin" /> : <Download className="w-4 h-4" />}
+              {isExporting && exportingType === 'clearance' ? <LoadingIndicator type="line-spinner" size="xs" /> : <Download className="w-4 h-4" />}
               {language === 'ar' ? 'استخراج تصريح مغادرة' : 'Export Port Clearance'}
             </button>
           </div>

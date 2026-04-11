@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Anchor, AlertCircle, CheckCircle2, XCircle, Clock, Plus, Loader2, Calendar, Edit2, Download } from 'lucide-react';
+import { Anchor, AlertCircle, CheckCircle2, XCircle, Clock, Plus, Calendar, Edit2, Download } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { exportAnchoragePdf } from '../../utils/exportPdf';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
@@ -281,7 +282,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
             <div className="flex gap-4 pt-6">
               <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 py-4">
                 {isSubmitting
-                  ? <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                  ? <LoadingIndicator type="line-spinner" size="xs" label={language === 'ar' ? 'جاري الإرسال...' : 'Submitting...'} className="text-white" />
                   : editingId ? (language === 'ar' ? 'تحديث' : 'Update') : t.submitButton}
               </button>
               <button
@@ -299,10 +300,11 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       <div className="space-y-4">
         {loading ? (
           <div className="text-center py-12">
-            <Loader2 className="w-12 h-12 animate-spin text-[var(--primary)] mx-auto mb-4" />
-            <p className="text-[var(--text-secondary)] font-bold">
-              {language === 'ar' ? 'جاري التحميل...' : 'Synchronizing anchorage data...'}
-            </p>
+            <LoadingIndicator 
+              type="line-spinner" 
+              size="lg" 
+              label={language === 'ar' ? 'جاري مزامنة بيانات الرسو...' : 'Synchronizing anchorage data...'} 
+            />
           </div>
         ) : requests.length === 0 ? (
           <div className="text-center py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--bg-primary)]/50">

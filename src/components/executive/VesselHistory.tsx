@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, ArrowLeft, Anchor, FileText, Ship, Info, Calendar, Loader2, Clock, CheckCircle2, XCircle, Search, Navigation, Package, Hash, LogIn, LogOut, ChevronDown, SortDesc } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
@@ -20,7 +21,7 @@ interface VesselRecord {
 }
 
 export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryProps) {
-  const t = translations[language]?.executive?.history || {
+  const t = (translations[language]?.executive as any)?.history || {
     title: 'Vessel History',
     subtitle: 'Comprehensive chronicle of all port calls and operational interactions',
     back: 'Back to Dashboard',
@@ -173,25 +174,25 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
   };
 
   const getEventIcon = (type: string) => {
-    if (type.includes('Registration') || type.includes('Arrival')) return <Ship className="w-5 h-5 text-blue-400" />;
-    if (type.includes('Cargo')) return <FileText className="w-5 h-5 text-indigo-400" />;
-    if (type.includes('Wharfage')) return <Anchor className="w-5 h-5 text-amber-400" />;
-    if (type.includes('Clearance')) return <CheckCircle2 className="w-5 h-5 text-emerald-400" />;
-    return <Info className="w-5 h-5 text-gray-400" />;
+    if (type.includes('Registration') || type.includes('Arrival')) return <Ship className="w-4 h-4 text-blue-700 dark:text-blue-400" />;
+    if (type.includes('Cargo')) return <FileText className="w-4 h-4 text-indigo-700 dark:text-indigo-400" />;
+    if (type.includes('Wharfage')) return <Anchor className="w-4 h-4 text-amber-700 dark:text-amber-400" />;
+    if (type.includes('Clearance')) return <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />;
+    return <Info className="w-4 h-4 text-slate-500 dark:text-slate-400" />;
   };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
       case 'approved':
-        return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+        return 'text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-900/30 dark:border-emerald-900/30';
       case 'pending':
-        return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+        return 'text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-900/30';
       case 'rejected':
       case 'failed':
-        return 'text-red-400 bg-red-400/10 border-red-400/20';
+        return 'text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-900/30 dark:border-red-900/30';
       default:
-        return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+        return 'text-blue-700 bg-blue-100 border-blue-200 dark:text-blue-400 dark:bg-blue-900/30 dark:border-blue-900/30';
     }
   };
 
@@ -307,9 +308,12 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
   // ─── Loading State ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
-        <RefreshCw className="w-12 h-12 text-blue-500 animate-spin" />
-        <p className="text-blue-200">Loading comprehensive vessel profile...</p>
+      <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full flex items-center justify-center">
+        <LoadingIndicator 
+          type="line-spinner" 
+          size="lg" 
+          label={language === 'ar' ? 'جاري تحميل ملف السفينة...' : 'Loading comprehensive vessel profile...'} 
+        />
       </div>
     );
   }
@@ -317,7 +321,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
   // ─── Error State ─────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <XCircle className="w-16 h-16 text-red-500" />
         <h2 className="text-2xl font-bold text-white mb-2">{error}</h2>
         <div className="flex gap-3">
@@ -340,7 +344,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
 
   // ─── Main History View ───────────────────────────────────────────────
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 p-6">
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Page Header and Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -349,29 +353,29 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
             className="p-3 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] rounded-xl text-[var(--text-primary)] transition-all group"
             title={isRTL ? 'اختر سفينة أخرى' : 'Select Another Vessel'}
           >
-            <ArrowLeft className={`w-5 h-5 group-hover:-translate-x-1 transition-transform ${isRTL ? 'rotate-180 group-hover:translate-x-1' : ''}`} />
+            <ArrowLeft className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-            <p className="text-blue-200">{t.subtitle}</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t.subtitle}</p>
           </div>
         </div>
 
         {/* IMO Search Form */}
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
-            <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]`} />
+            <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.searchPlaceholder}
-              className={`w-full md:w-64 bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl py-2.5 ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} focus:outline-none focus:border-[var(--primary)] transition-colors`}
+              className={`w-full md:w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-50 rounded-lg py-2.5 ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'} focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors text-sm shadow-sm`}
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2.5 bg-[var(--primary)] text-white rounded-xl font-medium hover:bg-[var(--primary)]/90 transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm text-sm"
           >
             {t.search}
           </button>
@@ -380,10 +384,11 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
 
       {/* Master Record */}
       {vesselData && (
-        <div className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-primary)] rounded-2xl border border-[var(--border)] shadow-xl p-8">
-          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-[var(--border)]">
-            <div className="w-16 h-16 bg-[var(--primary)]/10 text-[var(--primary)] rounded-2xl flex items-center justify-center">
-              <Ship className="w-8 h-8" />
+        <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-6 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-blue-600 dark:bg-blue-500" />
+          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-700/50">
+            <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg flex items-center justify-center">
+              <Ship className="w-7 h-7" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-[var(--text-primary)]">{vesselData.vesselName || vesselData.name}</h2>
@@ -394,34 +399,38 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
             </div>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4">
-              <div className="text-[var(--text-secondary)] text-xs mb-1">{t.flag}</div>
-              <div className="text-[var(--text-primary)] font-bold text-lg">{vesselData.flag}</div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">{t.flag}</div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{vesselData.flag}</div>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4">
-              <div className="text-[var(--text-secondary)] text-xs mb-1">{t.type}</div>
-              <div className="text-[var(--text-primary)] font-bold text-lg">{vesselData.type}</div>
+            <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">{t.type}</div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{vesselData.type}</div>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
-              <Hash className="w-5 h-5 text-[var(--primary)] mb-2" />
-              <div className="text-[var(--text-secondary)] text-xs mb-1">{t.imo}</div>
-              <div className="text-[var(--text-primary)] font-bold text-lg">{vesselData.imoNumber || vesselData.imo}</div>
+            <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+                <Hash className="w-3.5 h-3.5" />{t.imo}
+              </div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{vesselData.imoNumber || vesselData.imo}</div>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
-              <Package className="w-5 h-5 text-[var(--primary)] mb-2" />
-              <div className="text-[var(--text-secondary)] text-xs mb-1">{t.cargoType}</div>
-              <div className="text-[var(--text-primary)] font-bold text-base truncate w-full" title={vesselData.cargoType}>{vesselData.cargoType || 'N/A'}</div>
+            <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+                <Package className="w-3.5 h-3.5" />{t.cargoType}
+              </div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{vesselData.cargoType || 'N/A'}</div>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
-              <Navigation className="w-5 h-5 text-[var(--primary)] mb-2" />
-              <div className="text-[var(--text-secondary)] text-xs mb-1">{t.previousPort}</div>
-              <div className="text-[var(--text-primary)] font-bold text-lg">{vesselData.previousPort || 'N/A'}</div>
+            <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+                <Navigation className="w-3.5 h-3.5" />{t.previousPort}
+              </div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{vesselData.previousPort || 'N/A'}</div>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
-              <Calendar className="w-5 h-5 text-[var(--primary)] mb-2" />
-              <div className="text-[var(--text-secondary)] text-xs mb-1">{t.arrivalDate}</div>
-              <div className="text-[var(--text-primary)] font-bold text-sm">{vesselData.arrivalDate || 'N/A'}</div>
+            <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+                <Calendar className="w-3.5 h-3.5" />{t.arrivalDate}
+              </div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-sm line-clamp-1">{vesselData.arrivalDate || 'N/A'}</div>
             </div>
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
               <Calendar className="w-5 h-5 text-amber-400 mb-2" />
@@ -430,20 +439,24 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-6 mt-6">
-             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center justify-between">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4">
+             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/30 rounded-lg p-4 flex items-center justify-between shadow-sm">
               <div>
-                <div className="text-emerald-400 text-xs mb-1 font-medium">{t.totalArrivals}</div>
-                <div className="text-emerald-300 font-bold text-3xl">{vesselData.totalArrivals || 1}</div>
+                <div className="text-emerald-700 dark:text-emerald-400 text-xs font-semibold mb-1 uppercase tracking-wider">{t.totalArrivals}</div>
+                <div className="text-emerald-800 dark:text-emerald-300 font-bold text-2xl">{vesselData.totalArrivals || 1}</div>
               </div>
-              <LogIn className="w-10 h-10 text-emerald-400/50" />
+              <div className="p-2 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
+                <LogIn className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
             </div>
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4 flex items-center justify-between shadow-sm">
               <div>
-                <div className="text-blue-400 text-xs mb-1 font-medium">{t.totalDepartures}</div>
-                <div className="text-blue-300 font-bold text-3xl">{vesselData.totalDepartures || 0}</div>
+                <div className="text-blue-700 dark:text-blue-400 text-xs font-semibold mb-1 uppercase tracking-wider">{t.totalDepartures}</div>
+                <div className="text-blue-800 dark:text-blue-300 font-bold text-2xl">{vesselData.totalDepartures || 0}</div>
               </div>
-              <LogOut className="w-10 h-10 text-blue-400/50" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                <LogOut className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
             </div>
           </div>
         </div>
@@ -472,32 +485,32 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
             {sortedHistoryItems.map((item, index) => (
               <div key={`${item.id}-${index}`} className="relative pl-8 sm:pl-10">
                 {/* Timeline Dot */}
-                <span className="absolute -left-5 top-1 flex items-center justify-center w-10 h-10 bg-[var(--bg-primary)] rounded-full border-4 border-[var(--border)] shadow-sm">
+                <span className="absolute -left-4 top-1.5 flex items-center justify-center w-8 h-8 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm z-10">
                   {getEventIcon(item.type)}
                 </span>
                 
                 {/* Content Card */}
-                <div className="bg-[var(--surface)] hover:bg-[var(--secondary)]/5 transition-all border border-[var(--border)] rounded-xl p-5 shadow-sm">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-3">
+                <div className="bg-slate-50 dark:bg-slate-700/25 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-3">
                     <div>
-                      <h4 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-50 flex items-center gap-2">
                         {item.type}
-                        <span className="text-xs font-normal text-[var(--text-secondary)] bg-[var(--bg-primary)] px-2 py-0.5 rounded-md border border-[var(--border)]">
-                          {item.id}
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                          #{item.id}
                         </span>
                       </h4>
-                      <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mt-1.5">
-                        <Calendar className="w-4 h-4 opacity-70" />
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <Calendar className="w-3.5 h-3.5" />
                         {item.timestamp}
                       </div>
                     </div>
                     
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border uppercase tracking-wider ${getStatusColor(item.status)}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${getStatusColor(item.status)}`}>
                       {item.status}
                     </span>
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t border-[var(--border)] text-sm text-[var(--text-primary)]/90 leading-relaxed">
+                  <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-800 p-3 rounded border border-slate-100 dark:border-slate-700">
                     {item.details}
                   </div>
                 </div>
@@ -507,13 +520,13 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
         )}
 
         {hasMore && (
-          <div className="mt-10 text-center">
+          <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-slate-700/50">
             <button
               onClick={handleLoadMore}
               disabled={loadingMore}
-              className="px-8 py-3 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 border border-[var(--primary)]/30 rounded-xl text-[var(--primary)] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              className="px-6 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-900/30 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
-              {loadingMore && <Loader2 className="w-5 h-5 animate-spin" />}
+              {loadingMore ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
               {t.loadMore}
             </button>
           </div>

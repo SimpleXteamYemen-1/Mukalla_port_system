@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Ship, CheckCircle2, XCircle, AlertTriangle, Calendar, User as UserIcon, Clock, FileText, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
+import { Ship, CheckCircle2, XCircle, AlertTriangle, Calendar, User as UserIcon, Clock, FileText, Loader2, ExternalLink, AlertCircle, X } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService, PendingApproval } from '../../services/executiveService';
@@ -14,14 +15,11 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
   const [requests, setRequests] = useState<PendingApproval[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedManifests, setSelectedManifests] = useState<number[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-
-
 
   useEffect(() => {
     fetchRequests();
@@ -46,7 +44,6 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
       setIsProcessing(true);
       await executiveService.approveArrival(id);
       setRequests(requests.filter(r => r.vesselId !== id));
-      // Optional: Add a success toast here
     } catch (err) {
       console.error('Error approving:', err);
       alert(language === 'ar' ? 'حدث خطأ أثناء الموافقة' : 'An error occurred during approval');
@@ -66,7 +63,6 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
       alert(language === 'ar' ? 'يرجى إدخال سبب الرفض' : 'Please enter rejection reason');
       return;
     }
-
     try {
       setIsProcessing(true);
       await executiveService.rejectArrival(selectedRequest, rejectionReason, selectedManifests);
@@ -83,15 +79,14 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500/20 border-red-400/30 text-red-200';
-      case 'medium': return 'bg-amber-500/20 border-amber-400/30 text-amber-200';
-      case 'low': return 'bg-blue-500/20 border-blue-400/30 text-blue-200';
-      default: return 'bg-gray-500/20 border-gray-400/30 text-gray-200';
+  const getPriorityBadge = (priority: string) => {
+    switch (priority.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      case 'medium': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'low': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
-
 
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -99,171 +94,144 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
       medium: { ar: 'متوسط', en: 'Medium' },
       low: { ar: 'منخفض', en: 'Low' },
     };
-    return labels[priority]?.[language] || priority;
+    return labels[priority.toLowerCase()]?.[language] || priority;
   };
 
-
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-        <p className="text-blue-200">{t.subtitle}</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t.subtitle}</p>
       </div>
-
-
 
       {/* Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-amber-500/10 backdrop-blur-xl rounded-xl border border-amber-400/30 p-4">
-          <div className="text-amber-300 text-sm mb-1">{t.pendingApprovals}</div>
-          <div className="text-2xl font-bold text-white">{requests.length}</div>
-        </div>
-        <div className="bg-red-500/10 backdrop-blur-xl rounded-xl border border-red-400/30 p-4">
-          <div className="text-red-300 text-sm mb-1">{t.highPriority}</div>
-          <div className="text-2xl font-bold text-white">
-            {requests.filter(r => r.priority.toLowerCase() === 'high').length}
+        {[
+          { label: t.pendingApprovals, value: requests.length, borderColor: 'border-b-amber-500 dark:border-b-amber-400', textColor: 'text-amber-700 dark:text-amber-400' },
+          { label: t.highPriority, value: requests.filter(r => r.priority.toLowerCase() === 'high').length, borderColor: 'border-b-red-500 dark:border-b-red-400', textColor: 'text-red-700 dark:text-red-400' },
+          { label: t.avgProcessTime, value: '2.5h', borderColor: 'border-b-blue-500 dark:border-b-blue-400', textColor: 'text-blue-700 dark:text-blue-400' },
+        ].map((item) => (
+          <div key={item.label} className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-b-4 ${item.borderColor} rounded-lg p-4 shadow-sm`}>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">{item.label}</div>
+            <div className={`text-2xl font-bold ${item.textColor}`}>{item.value}</div>
           </div>
-        </div>
-        <div className="bg-blue-500/10 backdrop-blur-xl rounded-xl border border-blue-400/30 p-4">
-          <div className="text-blue-300 text-sm mb-1">{t.avgProcessTime}</div>
-          <div className="text-2xl font-bold text-white">2.5h</div>
-        </div>
+        ))}
       </div>
 
+      {/* Content */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+          <LoadingIndicator type="line-spinner" size="lg" label={language === 'ar' ? 'جاري التحميل...' : 'Loading...'} />
         </div>
       ) : error ? (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl p-6 text-center">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 rounded-lg p-6 text-center">
           {error}
-          <button
-            onClick={fetchRequests}
-            className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg transition-colors"
-          >
+          <button onClick={fetchRequests} className="mt-4 block mx-auto px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors text-sm">
             {language === 'ar' ? 'إعادة المحاولة' : 'Retry'}
           </button>
         </div>
       ) : requests.length === 0 ? (
-        <div className="bg-white/5 border border-white/10 text-white rounded-xl p-12 text-center">
-          <Ship className="w-12 h-12 text-blue-400/50 mx-auto mb-4" />
-          <h3 className="text-xl font-medium mb-2">
-            {language === 'ar' ? 'لا توجد طلبات معلقة' : 'No pending requests'}
-          </h3>
-          <p className="text-blue-200/60 text-sm">
-            {language === 'ar'
-              ? 'جميع طلبات الوصول تمت معالجتها'
-              : 'All arrival requests have been processed'}
-          </p>
+        <div className="bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-12 text-center">
+          <Ship className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-slate-700 dark:text-slate-300 font-medium mb-1">{language === 'ar' ? 'لا توجد طلبات معلقة' : 'No pending requests'}</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{language === 'ar' ? 'جميع طلبات الوصول تمت معالجتها' : 'All arrival requests have been processed'}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {requests.map((request) => (
-            <div key={request.id} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 hover:border-white/30 transition-all">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <Ship className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-white font-bold text-lg">{request.vessel.name}</h3>
-                      <span className="text-2xl">{request.vessel.flag}</span>
+            <div key={request.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
+              <div className="p-5">
+                {/* Card Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Ship className="w-5 h-5 text-blue-700 dark:text-blue-400" />
                     </div>
-                    <div className="text-blue-300 text-sm mb-1">{t.requestId}: {request.id}</div>
-                    <div className="text-blue-300/70 text-xs">{request.vessel.imo} • {request.vessel.type}</div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-slate-900 dark:text-slate-50 font-semibold">{request.vessel.name}</h3>
+                        <span className="text-xl">{request.vessel.flag}</span>
+                      </div>
+                      <div className="text-slate-500 dark:text-slate-400 text-xs">{t.requestId}: {request.id}</div>
+                      <div className="text-slate-400 dark:text-slate-500 text-xs">{request.vessel.imo} • {request.vessel.type}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`inline-block px-3 py-1 rounded-lg text-xs border font-medium ${getPriorityColor(request.priority.toLowerCase())}`}>
-                    {t.priority}: {getPriorityLabel(request.priority.toLowerCase())}
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityBadge(request.priority)}`}>
+                    {t.priority}: {getPriorityLabel(request.priority)}
                   </span>
                 </div>
-              </div>
 
-              {/* Details Grid */}
-              <div className="grid md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-blue-300 text-xs mb-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>{t.expectedArrival}</span>
-                  </div>
-                  <div className="text-white font-medium text-sm">{request.eta}</div>
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  {[
+                    { icon: Calendar, label: t.expectedArrival, value: request.eta },
+                    { icon: UserIcon, label: t.agent, value: request.agent.name },
+                    { icon: Clock, label: t.submitted, value: request.submittedDate },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label} className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
+                          <Icon className="w-3.5 h-3.5" />{item.label}
+                        </div>
+                        <div className="text-slate-900 dark:text-slate-50 font-medium text-sm">{item.value}</div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-blue-300 text-xs mb-1">
-                    <UserIcon className="w-4 h-4" />
-                    <span>{t.agent}</span>
-                  </div>
-                  <div className="text-white font-medium text-sm">{request.agent.name}</div>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-blue-300 text-xs mb-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{t.submitted}</span>
-                  </div>
-                  <div className="text-white font-medium text-sm">{request.submittedDate}</div>
-                </div>
-              </div>
 
-              {/* Purpose & Cargo */}
-              <div className="bg-white/5 rounded-lg p-3 mb-4">
-                <div className="text-blue-300 text-xs mb-1">{t.purpose}</div>
-                <div className="text-white text-sm mb-2">{request.purpose}</div>
-                <div className="flex gap-4 text-xs">
-                  <span className="text-blue-300">{t.cargoType}: <span className="text-white">{request.cargoType}</span></span>
-                  {request.containers > 0 && (
-                    <span className="text-blue-300">{t.containers}: <span className="text-white">{request.containers}</span></span>
-                  )}
-                </div>
-              </div>
-
-              {/* Conditional Agent Notes */}
-              {(request.priority.toLowerCase() === 'medium' && request.priorityReason) && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 mb-4">
-                  <div className="flex items-center gap-2 text-amber-300 text-xs mb-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="font-bold uppercase tracking-wider">{(t as any).agentJustification || 'Agent Justification'}</span>
+                {/* Purpose & Cargo */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t.purpose}</div>
+                  <div className="text-slate-900 dark:text-slate-50 text-sm mb-2">{request.purpose}</div>
+                  <div className="flex gap-4 text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">{t.cargoType}: <span className="text-slate-900 dark:text-slate-50 font-medium">{request.cargoType}</span></span>
+                    {request.containers > 0 && (
+                      <span className="text-slate-500 dark:text-slate-400">{t.containers}: <span className="text-slate-900 dark:text-slate-50 font-medium">{request.containers}</span></span>
+                    )}
                   </div>
-                  <div className="text-amber-100/90 text-sm italic leading-relaxed">"{request.priorityReason}"</div>
                 </div>
-              )}
-              {(request.priority.toLowerCase() === 'high' && request.priorityDocumentPath) && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4 flex items-center justify-between group hover:bg-red-500/20 transition-all">
-                  <div>
-                    <div className="flex items-center gap-2 text-red-300 text-xs mb-1">
-                      <FileText className="w-4 h-4" />
-                      <span className="font-bold uppercase tracking-wider">{(t as any).priorityDocumentation || 'Priority Documentation'}</span>
+
+                {/* Agent Justification for medium priority */}
+                {(request.priority.toLowerCase() === 'medium' && request.priorityReason) && (
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs mb-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span className="font-semibold uppercase tracking-wider">{(t as any).agentJustification || 'Agent Justification'}</span>
                     </div>
-                    <div className="text-red-100/70 text-xs">{(t as any).docRequiresReview || 'Review attached document before deciding.'}</div>
+                    <div className="text-amber-800 dark:text-amber-300 text-sm italic">"{request.priorityReason}"</div>
                   </div>
-                  <a
-                    href={request.priorityDocumentPath}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-red-500/30 hover:bg-red-500/50 border border-red-500/30 rounded-lg text-red-100 text-xs font-semibold transition-all flex items-center gap-2"
-                  >
-                    {(t as any).viewDocument || 'View Document'}
-                    <span className="text-lg">→</span>
-                  </a>
-                </div>
-              )}
+                )}
 
-              {/* Documents / Manifests */}
-              <div className="bg-white/5 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2 text-blue-300 text-xs mb-2">
-                  <FileText className="w-4 h-4" />
-                  <span>{t.documents}</span>
-                </div>
-                {request.documents.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                {/* High priority doc */}
+                {(request.priority.toLowerCase() === 'high' && request.priorityDocumentPath) && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-lg p-4 mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-red-700 dark:text-red-400 text-xs mb-1">
+                        <FileText className="w-3.5 h-3.5" />
+                        <span className="font-semibold uppercase tracking-wider">{(t as any).priorityDocumentation || 'Priority Documentation'}</span>
+                      </div>
+                      <div className="text-red-600 dark:text-red-300 text-xs">{(t as any).docRequiresReview || 'Review attached document before deciding.'}</div>
+                    </div>
+                    <a href={request.priorityDocumentPath} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-900/30 rounded-lg text-red-700 dark:text-red-400 text-xs font-medium transition-colors">
+                      {(t as any).viewDocument || 'View →'}
+                    </a>
+                  </div>
+                )}
+
+                {/* Documents / Manifests */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-2">
+                    <FileText className="w-3.5 h-3.5" />{t.documents}
+                  </div>
+                  {request.documents && request.documents.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
                     {request.documents.map((doc, index) => {
                       const storageColors = {
-                        chemical: 'bg-amber-500/20 border-amber-400/30 text-amber-200 hover:bg-amber-500/30',
-                        frozen: 'bg-cyan-500/20 border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/30',
-                        general: 'bg-green-500/20 border-green-400/30 text-green-200 hover:bg-green-500/30'
+                        chemical: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:border-amber-900/40 dark:text-amber-400',
+                        frozen: 'bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:border-cyan-900/40 dark:text-cyan-400',
+                        general: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:border-green-900/40 dark:text-green-400'
                       };
                       
                       const typeColor = storageColors[doc.storage_type as keyof typeof storageColors] || storageColors.general;
@@ -285,39 +253,25 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
                       );
                     })}
                   </div>
-                ) : (
-                  <span className="text-blue-300/50 text-xs italic">
-                    {language === 'ar' ? 'لم يتم رفع بيانات شحن بعد' : 'No manifests uploaded yet'}
-                  </span>
-                )}
-              </div>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 text-xs italic">
+                      {language === 'ar' ? 'لم يتم رفع بيانات شحن بعد' : 'No manifests uploaded yet'}
+                    </span>
+                  )}
+                </div>
 
-              {/* Decision Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
-                <button
-                  onClick={() => handleApprove(request.vesselId)}
-                  disabled={isProcessing}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 rounded-xl text-green-200 hover:text-white font-semibold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                  {t.approve}
-                </button>
-                <button
-                  onClick={() => handleReject(request)}
-                  disabled={isProcessing}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-400/30 rounded-xl text-red-200 hover:text-white font-semibold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  <XCircle className="w-5 h-5" />
-                  {t.reject}
-                </button>
-                <button
-                  onClick={() => onNavigate('vessel-history', { vesselId: request.vesselId })}
-                  className="flex-1 sm:flex-none sm:px-6 flex items-center justify-center gap-2 py-3 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 rounded-xl text-blue-200 hover:text-white font-semibold transition-all transform hover:scale-[1.02]"
-                  title={language === 'ar' ? 'عرض السجل الكامل للسفينة' : 'View full history of the vessel'}
-                >
-                  <Clock className="w-5 h-5" />
-                  <span className="sm:hidden md:inline">{language === 'ar' ? 'السجل' : 'History'}</span>
-                </button>
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <button onClick={() => handleApprove(request.vesselId)} disabled={isProcessing} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isProcessing ? <LoadingIndicator type="line-spinner" size="xs" /> : <CheckCircle2 className="w-4 h-4" />}{t.approve}
+                  </button>
+                  <button onClick={() => handleReject(request)} disabled={isProcessing} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <XCircle className="w-4 h-4" />{t.reject}
+                  </button>
+                  <button onClick={() => onNavigate('vessel-history', { vesselId: request.vesselId })} className="flex-1 sm:flex-none sm:px-4 flex items-center justify-center gap-2 py-2.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg font-medium text-sm transition-colors">
+                    <Clock className="w-4 h-4" /><span className="sm:hidden md:inline">{language === 'ar' ? 'السجل' : 'History'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -326,24 +280,31 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
 
       {/* Rejection Modal */}
       {showRejectModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-[#0A1628] rounded-3xl border border-white/10 p-8 max-w-lg w-full shadow-2xl overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-rose-500"></div>
-            
-            <h2 className="text-2xl font-bold text-white mb-2">{t.rejectRequest}</h2>
-            <p className="text-blue-300/60 text-sm mb-6">{language === 'ar' ? 'يرجى تحديد الأسباب والوثائق غير المكتملة.' : 'Please specify the reasons and flag problematic documents.'}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full shadow-2xl relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg"><XCircle className="w-5 h-5 text-red-700 dark:text-red-400" /></div>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t.rejectRequest}</h2>
+              </div>
+              <button onClick={() => { setShowRejectModal(false); setRejectionReason(''); setSelectedRequest(null); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{language === 'ar' ? 'يرجى تحديد الأسباب والوثائق غير المكتملة.' : 'Please specify the reasons and flag problematic documents.'}</p>
 
             {/* Document Checklist */}
             <div className="mb-6">
-              <label className="block text-blue-200 text-xs font-bold uppercase tracking-wider mb-3">
+              <label className="block text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">
                 {language === 'ar' ? 'الوثائق المرفقة' : 'Attached Documents'}
               </label>
               <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                {requests.find(r => r.vesselId === selectedRequest)?.documents.map((doc, idx) => (
-                  <label key={idx} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${selectedManifests.includes(doc.id) ? 'bg-red-500/10 border-red-400/30 text-white' : 'bg-white/5 border-white/10 text-blue-300 hover:bg-white/10'}`}>
+                {requests.find(r => r.vesselId === selectedRequest)?.documents?.map((doc: any, idx: number) => (
+                  <label key={idx} className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${selectedManifests.includes(doc.id) ? 'bg-red-50 dark:bg-red-900/20 border-red-400/30 text-red-700 dark:text-red-400' : 'bg-slate-50 dark:bg-slate-700/20 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}>
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-600 bg-gray-700 checkbox-styled"
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-600 bg-white dark:bg-slate-800"
                       checked={selectedManifests.includes(doc.id)}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -355,7 +316,6 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{doc.name}</div>
-
                     </div>
                   </label>
                 ))}
@@ -363,23 +323,24 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
             </div>
 
             <div className="mb-6">
-              <label className="block text-blue-200 text-xs font-bold uppercase tracking-wider mb-2">{t.rejectionReason}</label>
+              <label className="block text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">{t.rejectionReason}</label>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder={t.rejectionPlaceholder}
-                rows={3}
-                className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-blue-300/30 focus:outline-none focus:border-red-400 transition-all resize-none shadow-inner"
+                rows={4}
+                className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 resize-none text-sm mb-2"
               />
+              <p className="text-slate-400 dark:text-slate-500 text-xs">{t.rejectionNote}</p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={confirmReject}
                 disabled={isProcessing || !rejectionReason.trim()}
-                className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 rounded-xl text-white font-bold shadow-lg shadow-red-900/20 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed transform active:scale-95"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-900/30 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-colors"
               >
-                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
+                {isProcessing ? <LoadingIndicator type="line-spinner" size="xs" /> : <XCircle className="w-4 h-4" />}
                 {t.confirmReject}
               </button>
               <button
@@ -389,7 +350,7 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
                   setSelectedManifests([]);
                   setSelectedRequest(null);
                 }}
-                className="px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white font-bold transition-all"
+                className="flex-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 py-2.5 rounded-lg font-medium text-sm transition-colors"
               >
                 {t.cancel}
               </button>

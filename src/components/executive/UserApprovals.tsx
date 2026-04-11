@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckCircle, XCircle, Clock, ChevronRight, AlertCircle } from 'lucide-react';
+import { Users, CheckCircle, XCircle, Clock, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
@@ -39,9 +40,7 @@ export function UserApprovals({ language }: UserApprovalsProps) {
     }
   };
 
-  useEffect(() => {
-    fetchPendingUsers();
-  }, []);
+  useEffect(() => { fetchPendingUsers(); }, []);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -79,9 +78,7 @@ export function UserApprovals({ language }: UserApprovalsProps) {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
-        year: 'numeric', month: 'short', day: 'numeric'
-      });
+      return new Date(dateStr).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     } catch { return dateStr; }
   };
 
@@ -92,130 +89,99 @@ export function UserApprovals({ language }: UserApprovalsProps) {
   };
 
   return (
-    <div className="p-6 space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg animate-in slide-in-from-top-2 ${
-          toast.type === 'success' ? 'bg-green-500/20 border border-green-500/30 text-green-400' : 'bg-red-500/20 border border-red-500/30 text-red-400'
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-lg shadow-lg border ${
+          toast.type === 'success' ? 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400'
         }`}>
           {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          <span className="font-semibold text-sm">{toast.message}</span>
+          <span className="font-medium text-sm">{toast.message}</span>
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-[var(--text-primary)]">{t.title}</h1>
-          <p className="text-[var(--text-secondary)] mt-1 font-medium">{t.subtitle}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t.subtitle}</p>
         </div>
-        <button
-          onClick={fetchPendingUsers}
-          className="px-4 py-2 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] rounded-xl font-bold text-sm transition-all"
-        >
+        <button onClick={fetchPendingUsers} disabled={isLoading} className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center">
+          {isLoading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
           {language === 'ar' ? 'تحديث' : 'Refresh'}
         </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-panel p-5 flex items-center gap-4">
-          <div className="p-3 bg-amber-500/10 rounded-xl">
-            <Clock className="w-6 h-6 text-amber-500" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--text-primary)]">{pendingUsers.length}</div>
-            <div className="text-sm text-[var(--text-secondary)] font-medium">{t.pendingRequests}</div>
-          </div>
-        </div>
-        <div className="glass-panel p-5 flex items-center gap-4">
-          <div className="p-3 bg-green-500/10 rounded-xl">
-            <CheckCircle className="w-6 h-6 text-green-500" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--text-primary)]">{pendingUsers.filter(u => u.role === 'agent').length}</div>
-            <div className="text-sm text-[var(--text-secondary)] font-medium">{language === 'ar' ? 'وكلاء' : 'Agents'}</div>
-          </div>
-        </div>
-        <div className="glass-panel p-5 flex items-center gap-4">
-          <div className="p-3 bg-blue-500/10 rounded-xl">
-            <Users className="w-6 h-6 text-blue-500" />
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--text-primary)]">{pendingUsers.filter(u => u.role === 'trader').length}</div>
-            <div className="text-sm text-[var(--text-secondary)] font-medium">{language === 'ar' ? 'تجار' : 'Traders'}</div>
-          </div>
-        </div>
+        {[
+          { count: pendingUsers.length, label: t.pendingRequests, icon: Clock, bg: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-700 dark:text-amber-400' },
+          { count: pendingUsers.filter(u => u.role === 'agent').length, label: language === 'ar' ? 'وكلاء' : 'Agents', icon: CheckCircle, bg: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-700 dark:text-green-400' },
+          { count: pendingUsers.filter(u => u.role === 'trader').length, label: language === 'ar' ? 'تجار' : 'Traders', icon: Users, bg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-700 dark:text-blue-400' },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-5 shadow-sm flex items-center gap-4">
+              <div className={`p-3 ${item.bg} rounded-lg`}><Icon className={`w-5 h-5 ${item.iconColor}`} /></div>
+              <div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-50">{item.count}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">{item.label}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Table */}
-      <div className="glass-panel overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[var(--primary)]/30 border-t-[var(--primary)] rounded-full animate-spin"></div>
+            <LoadingIndicator type="line-spinner" size="md" />
           </div>
         ) : pendingUsers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-green-500" />
+            <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-7 h-7 text-green-700 dark:text-green-400" />
             </div>
-            <p className="text-[var(--text-secondary)] font-medium">{t.noRequests}</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">{t.noRequests}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="text-left px-6 py-4 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t.name}</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t.email}</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t.role}</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t.organization}</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t.submittedAt}</th>
-                  <th className="text-left px-6 py-4 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">{t.actions}</th>
+              <thead className="bg-slate-50 dark:bg-slate-700/25 border-b border-slate-200 dark:border-slate-700">
+                <tr>
+                  {[t.name, t.email, t.role, t.organization, t.submittedAt, t.actions].map((col) => (
+                    <th key={col} className="text-left px-5 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{col}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border)]">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {pendingUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-[var(--primary)]/5 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-bold text-sm">
+                        <div className="w-9 h-9 rounded-full bg-blue-900 dark:bg-blue-800 flex items-center justify-center text-white font-bold text-sm">
                           {user.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-semibold text-[var(--text-primary)]">{user.name}</span>
+                        <span className="font-medium text-slate-900 dark:text-slate-50 text-sm">{user.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[var(--text-secondary)] text-sm">{user.email}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        user.role === 'agent' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
-                      }`}>
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400 text-sm">{user.email}</td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${user.role === 'agent' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'}`}>
                         {getRoleLabel(user.role)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-[var(--text-secondary)] text-sm">{user.organization || '—'}</td>
-                    <td className="px-6 py-4 text-[var(--text-secondary)] text-sm">{formatDate(user.created_at)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400 text-sm">{user.organization || '—'}</td>
+                    <td className="px-5 py-4 text-slate-500 dark:text-slate-400 text-sm">{formatDate(user.created_at)}</td>
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleApprove(user.id)}
-                          disabled={actionLoading === user.id}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
-                        >
-                          {actionLoading === user.id ? (
-                            <div className="w-3 h-3 border border-green-400/30 border-t-green-400 rounded-full animate-spin"></div>
-                          ) : (
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          )}
+                        <button onClick={() => handleApprove(user.id)} disabled={actionLoading === user.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 min-w-[80px] justify-center">
+                          {actionLoading === user.id ? <LoadingIndicator type="line-spinner" size="xs" /> : <CheckCircle className="w-3.5 h-3.5" />}
                           {t.approve}
                         </button>
-                        <button
-                          onClick={() => setRejectModal({ userId: user.id, userName: user.name })}
-                          disabled={actionLoading === user.id}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-bold transition-all disabled:opacity-50"
-                        >
-                          <XCircle className="w-3.5 h-3.5" />
-                          {t.reject}
+                        <button onClick={() => setRejectModal({ userId: user.id, userName: user.name })} disabled={actionLoading === user.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
+                          <XCircle className="w-3.5 h-3.5" />{t.reject}
                         </button>
                       </div>
                     </td>
@@ -230,14 +196,12 @@ export function UserApprovals({ language }: UserApprovalsProps) {
       {/* Reject Modal */}
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-panel w-full max-w-md p-6 animate-in zoom-in duration-200">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-500/10 rounded-xl">
-                <XCircle className="w-5 h-5 text-red-500" />
-              </div>
-              <h3 className="text-lg font-black text-[var(--text-primary)]">{t.rejectTitle}</h3>
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg"><XCircle className="w-5 h-5 text-red-700 dark:text-red-400" /></div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t.rejectTitle}</h3>
             </div>
-            <p className="text-[var(--text-secondary)] text-sm mb-4">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
               {language === 'ar' ? `رفض طلب: ${rejectModal.userName}` : `Rejecting request for: ${rejectModal.userName}`}
             </p>
             <textarea
@@ -245,26 +209,15 @@ export function UserApprovals({ language }: UserApprovalsProps) {
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder={t.rejectPlaceholder}
               rows={4}
-              className="w-full px-4 py-3 bg-[var(--bg-primary)]/50 border border-[var(--border)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/40 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 transition-all resize-none text-sm mb-3"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 dark:focus:border-red-400 transition-all resize-none text-sm mb-2"
             />
-            <p className="text-red-400/70 text-xs mb-5">{t.rejectNote}</p>
+            <p className="text-red-600 dark:text-red-400 text-xs mb-5">{t.rejectNote}</p>
             <div className="flex gap-3">
-              <button
-                onClick={() => { setRejectModal(null); setRejectReason(''); }}
-                className="flex-1 py-3 bg-[var(--secondary)]/10 hover:bg-[var(--secondary)]/20 text-[var(--text-secondary)] rounded-xl font-bold text-sm transition-all"
-              >
+              <button onClick={() => { setRejectModal(null); setRejectReason(''); }} className="flex-1 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg font-medium text-sm transition-colors">
                 {language === 'ar' ? 'إلغاء' : 'Cancel'}
               </button>
-              <button
-                onClick={handleRejectConfirm}
-                disabled={!rejectReason.trim() || actionLoading !== null}
-                className="flex-1 py-3 bg-red-500 hover:bg-red-600 disabled:bg-red-500/30 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-              >
-                {actionLoading !== null ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
+              <button onClick={handleRejectConfirm} disabled={!rejectReason.trim() || actionLoading !== null} className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 dark:disabled:bg-red-900/30 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2">
+                {actionLoading !== null ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <ChevronRight className="w-4 h-4" />}
                 {t.reject}
               </button>
             </div>

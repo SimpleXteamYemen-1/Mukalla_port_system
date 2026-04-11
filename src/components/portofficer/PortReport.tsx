@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Language } from '../../App';
-import { translations } from '../../utils/translations';
-import { Ship, Calendar, Search, FileText, Download, Clock, CheckCircle } from 'lucide-react';
+import { Ship, Calendar, Search, FileText, Download, CheckCircle } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { getVessels, getPortReport, Vessel, PortReportData } from '../../utils/portOfficerApi';
 import { toast } from 'react-toastify';
 
@@ -26,7 +26,6 @@ const PRINT_CSS = `
     }
     .print-only { display: block !important; }
     .screen-only { display: none !important; }
-    
     h1 { font-size: 20pt; text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; text-transform: uppercase; }
     h2 { font-size: 14pt; border-bottom: 1px solid #000; padding-bottom: 5px; margin-top: 20px; }
     .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
@@ -62,9 +61,7 @@ export function PortReport({ language }: PortReportProps) {
     };
     loadVessels();
 
-    return () => {
-      document.head.removeChild(styleTag);
-    };
+    return () => { document.head.removeChild(styleTag); };
   }, []);
 
   const handleFetchReport = async () => {
@@ -86,75 +83,66 @@ export function PortReport({ language }: PortReportProps) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Search Header */}
-      <div className="card-base p-6">
-        <div className="flex flex-col md:flex-row gap-6 items-end">
-          <div className="flex-1 space-y-2">
-            <label className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-2">
-              <Ship className="w-4 h-4" />
-              {isRTL ? 'اسم السفينة' : 'Vessel Name'}
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{isRTL ? 'التقرير التنظيمي للميناء' : 'Regulatory Port Report'}</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{isRTL ? 'استخراج تقارير رسمية معتمدة' : 'Generate official certified reports'}</p>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex-1 space-y-1">
+            <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+              <Ship className="w-3.5 h-3.5" />{isRTL ? 'اسم السفينة' : 'Vessel Name'}
             </label>
-            <div className="relative">
-              <select
-                value={selectedVessel}
-                onChange={(e) => setSelectedVessel(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all appearance-none"
-              >
-                <option value="">{isRTL ? '— اختر سفينة —' : '— Select a Vessel —'}</option>
-                {vessels.map(v => (
-                  <option key={v.id} value={v.name}>{v.name}</option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={selectedVessel}
+              onChange={(e) => setSelectedVessel(e.target.value)}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors"
+            >
+              <option value="">{isRTL ? '— اختر سفينة —' : '— Select a Vessel —'}</option>
+              {vessels.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
+            </select>
           </div>
 
-          <div className="flex-1 space-y-2">
-            <label className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-widest flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              {isRTL ? 'تاريخ الهدف' : 'Target Date'}
+          <div className="flex-1 space-y-1">
+            <label className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5" />{isRTL ? 'تاريخ الهدف' : 'Target Date'}
             </label>
             <input
               type="date"
               value={targetDate}
               onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors"
             />
           </div>
 
           <button
             onClick={handleFetchReport}
             disabled={fetchingReport || !selectedVessel}
-            className="btn-primary min-w-[180px] h-[50px] flex items-center justify-center gap-2"
+            className="bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 whitespace-nowrap min-w-[140px] justify-center"
           >
-            {fetchingReport ? (
-              <Clock className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                <Search className="w-5 h-5" />
-                {isRTL ? 'عرض التقرير' : 'View Report'}
-              </>
-            )}
+            {fetchingReport ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <><Search className="w-4 h-4" />{isRTL ? 'عرض التقرير' : 'View Report'}</>}
           </button>
         </div>
       </div>
 
       {/* Report Preview */}
       {report ? (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-            <div className="flex items-center gap-3 text-emerald-500 font-bold">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-900/30 rounded-lg">
+            <div className="flex items-center gap-2 text-green-700 dark:text-green-400 font-medium">
               <CheckCircle className="w-5 h-5" />
               {isRTL ? 'تم إنشاء التقرير' : 'Report Synthesized Successfully'}
             </div>
-            <button onClick={handlePrint} className="btn-primary bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2">
-              <Download className="w-5 h-5" />
-              {isRTL ? 'استخراج PDF' : 'Extract as PDF'}
+            <button onClick={handlePrint} className="bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+              <Download className="w-4 h-4" />{isRTL ? 'استخراج PDF' : 'Extract as PDF'}
             </button>
           </div>
 
-          {/* This is the Actual Report for Printing & Screen Preview */}
-          <div id="port-official-report" className="bg-white p-10 shadow-xl rounded-sm text-black font-serif mx-auto">
+          {/* Print-ready Report */}
+          <div id="port-official-report" className="bg-white p-10 shadow-xl rounded border text-black font-serif mx-auto">
             <h1 className="text-3xl font-black text-center mb-8 border-b-4 border-black pb-4 uppercase tracking-tighter">
               Official Port Activity & Regulatory Report
             </h1>
@@ -176,30 +164,17 @@ export function PortReport({ language }: PortReportProps) {
                   <p className="text-xs uppercase font-black text-gray-500">Document Schedule</p>
                   <p className="text-xl font-bold">DATE: {report.date}</p>
                 </div>
-                <div className="inline-block px-3 py-1 bg-black text-white text-xs font-black uppercase tracking-widest self-end">
-                  Administrative Record
-                </div>
+                <div className="inline-block px-3 py-1 bg-black text-white text-xs font-black uppercase tracking-widest self-end">Administrative Record</div>
               </div>
             </div>
 
             <section className="mb-10">
-              <h2 className="text-xl font-black mb-4 border-b-2 border-black pb-2 uppercase tracking-wide">
-                1. Port Clearance Status
-              </h2>
+              <h2 className="text-xl font-black mb-4 border-b-2 border-black pb-2 uppercase tracking-wide">1. Port Clearance Status</h2>
               {report.clearance ? (
                 <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 border border-gray-200">
-                  <div>
-                    <p className="text-xs uppercase font-bold text-gray-500">Clearance Identifier</p>
-                    <p className="text-lg font-black">{report.clearance.clearance_id}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase font-bold text-gray-500">Official Status</p>
-                    <p className="text-lg font-black text-emerald-700">{report.clearance.status.toUpperCase()}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase font-bold text-gray-500">Next Destination</p>
-                    <p className="font-black">{report.clearance.next_port}</p>
-                  </div>
+                  <div><p className="text-xs uppercase font-bold text-gray-500">Clearance Identifier</p><p className="text-lg font-black">{report.clearance.clearance_id}</p></div>
+                  <div><p className="text-xs uppercase font-bold text-gray-500">Official Status</p><p className="text-lg font-black text-emerald-700">{report.clearance.status.toUpperCase()}</p></div>
+                  <div><p className="text-xs uppercase font-bold text-gray-500">Next Destination</p><p className="font-black">{report.clearance.next_port}</p></div>
                   <div>
                     <p className="text-xs uppercase font-bold text-gray-500">Issue/Expiry</p>
                     <p className="font-bold">Issued: {report.clearance.issue_date.split(' ')[0]}</p>
@@ -207,16 +182,12 @@ export function PortReport({ language }: PortReportProps) {
                   </div>
                 </div>
               ) : (
-                <div className="p-6 bg-gray-50 border border-gray-200 text-gray-500 italic">
-                  No Port Clearance data recorded for the selected vessel on this target date.
-                </div>
+                <div className="p-6 bg-gray-50 border border-gray-200 text-gray-500 italic">No Port Clearance data recorded for the selected vessel on this target date.</div>
               )}
             </section>
 
             <section className="mb-10">
-              <h2 className="text-xl font-black mb-4 border-b-2 border-black pb-2 uppercase tracking-wide">
-                2. Wharfage & Berthing Chronology
-              </h2>
+              <h2 className="text-xl font-black mb-4 border-b-2 border-black pb-2 uppercase tracking-wide">2. Wharfage & Berthing Chronology</h2>
               {report.wharfage.length > 0 ? (
                 <table className="w-full border-collapse border border-black">
                   <thead>
@@ -239,13 +210,10 @@ export function PortReport({ language }: PortReportProps) {
                   </tbody>
                 </table>
               ) : (
-                <div className="p-6 bg-gray-50 border border-gray-200 text-gray-600 font-bold uppercase tracking-tight text-center">
-                  No Wharfage or Clearance Activity Recorded for this Period
-                </div>
+                <div className="p-6 bg-gray-50 border border-gray-200 text-gray-600 font-bold uppercase tracking-tight text-center">No Wharfage or Clearance Activity Recorded for this Period</div>
               )}
             </section>
 
-            {/* Validation Section (Digital Signature Block) */}
             <section className="signature-section mt-20 pt-10 border-t-4 border-black">
               <h3 className="text-lg font-black mb-6 uppercase tracking-widest">Validation & Authorization Section</h3>
               <div className="flex justify-between gap-10 mb-12">
@@ -269,9 +237,7 @@ export function PortReport({ language }: PortReportProps) {
               </div>
               <div className="bg-gray-100 p-4 border border-gray-300">
                 <p className="text-[9px] uppercase font-black text-gray-400 mb-1 tracking-widest text-center">System Integration Authentication Code</p>
-                <div className="security-hash font-mono text-center text-sm font-bold tracking-tighter">
-                  {report.security_hash}
-                </div>
+                <div className="security-hash font-mono text-center text-sm font-bold tracking-tighter">{report.security_hash}</div>
               </div>
               <p className="text-[8px] text-gray-400 mt-2 text-center uppercase tracking-widest">
                 This document is generated by the Mukalla Sea Port Management System and serves as a primary record of regulatory compliance.
@@ -280,11 +246,9 @@ export function PortReport({ language }: PortReportProps) {
           </div>
         </div>
       ) : selectedVessel && !fetchingReport ? (
-        <div className="flex flex-col items-center justify-center p-20 card-base border-dashed">
-          <FileText className="w-16 h-16 text-[var(--text-muted)] mb-4" />
-          <p className="text-[var(--text-secondary)] font-bold text-xl uppercase tracking-widest">
-            {isRTL ? 'اختر معايير التقرير واضغط "عرض"' : 'Select report criteria and click "View"'}
-          </p>
+        <div className="bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-16 text-center">
+          <FileText className="w-14 h-14 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400 font-medium">{isRTL ? 'اختر معايير التقرير واضغط "عرض"' : 'Select report criteria and click "View"'}</p>
         </div>
       ) : null}
     </div>

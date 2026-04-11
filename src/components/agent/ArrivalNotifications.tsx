@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Ship, Clock, AlertCircle, CheckCircle2, XCircle, Plus, Loader2, Edit2, UploadCloud, Download } from 'lucide-react';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { exportArrivalPdf } from '../../utils/exportPdf';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
@@ -357,9 +358,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     type="button"
                     onClick={handleCheckIMO}
                     disabled={checkingIMO || !watchImo}
-                    className="btn-primary min-w-[160px]"
+                    className="btn-primary min-w-[160px] flex items-center justify-center"
                   >
-                    {checkingIMO ? <Loader2 className="w-5 h-5 animate-spin" /> : (language === 'ar' ? 'تحقق من IMO' : 'Verify IMO')}
+                    {checkingIMO ? <LoadingIndicator type="line-spinner" size="xs" /> : (language === 'ar' ? 'تحقق من IMO' : 'Verify IMO')}
                   </button>
                 </div>
                 {errors.imo && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.imo.message}</p>}
@@ -537,7 +538,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   disabled={isSubmitting}
                   className="btn-primary flex-1 py-4 text-lg"
                 >
-                  {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : t.submitButton}
+                  {isSubmitting ? <LoadingIndicator type="line-spinner" size="xs" label={language === 'ar' ? 'جاري الإرسال...' : 'Submitting...'} className="text-white" /> : t.submitButton}
                 </button>
                 <button
                   type="button"
@@ -565,8 +566,11 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       <div className="space-y-4">
         {loading ? (
           <div className="text-center text-[var(--text-secondary)] py-20 bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-3xl">
-            <Loader2 className="w-12 h-12 animate-spin text-[var(--primary)] mx-auto mb-4" />
-            <p className="font-bold">{language === 'ar' ? 'جاري التحميل...' : 'Synchronizing Data...'}</p>
+            <LoadingIndicator 
+              type="line-spinner" 
+              size="lg" 
+              label={language === 'ar' ? 'جاري مزامنة البيانات...' : 'Synchronizing Data...'} 
+            />
           </div>
         ) : notifications.length === 0 ? (
           <div className="text-center text-[var(--text-secondary)] py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--bg-primary)]/50">
