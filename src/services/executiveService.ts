@@ -190,6 +190,17 @@ export const executiveService = {
         }
     },
 
+    getAllVessels: async (search?: string) => {
+        try {
+            const params = search ? `?search=${encodeURIComponent(search)}` : '';
+            const response = await api.get(`/executive/vessels${params}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching vessels list:', error);
+            throw error;
+        }
+    },
+
     getVesselHistory: async (vesselId: string | number, page: number = 1) => {
         try {
             const response = await api.get(`/executive/vessels/${vesselId}/history?page=${page}`);

@@ -103,6 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/executive/dashboard', [ExecutiveController::class, 'getDashboardStats']);
         Route::get('/executive/analytics', [ExecutiveController::class, 'getAnalytics']);
         Route::post('/executive/reports/generate', [ExecutiveController::class, 'generateReport']);
+        Route::get('/executive/vessels', [ExecutiveController::class, 'getAllVessels']);
         Route::get('/executive/vessels/{id}/history', [ExecutiveController::class, 'getVesselHistory']);
         Route::get('/executive/approvals', [ExecutiveController::class, 'getPendingApprovals']);
         Route::get('/executive/users/pending', [ExecutiveController::class, 'getPendingUsers']);

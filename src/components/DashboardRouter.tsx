@@ -189,10 +189,10 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           <main className="p-6">
             {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={handleNavigate} />}
             {currentPage === 'arrivals' && <ArrivalApprovals language={language} onNavigate={handleNavigate} />}
-            {currentPage === 'vessel-history' && activeVesselId && (
+            {currentPage === 'vessel-history' && (
               <VesselHistory 
                 language={language} 
-                vesselId={activeVesselId} 
+                vesselId={activeVesselId || ''} 
                 onNavigate={handleNavigate} 
               />
             )}

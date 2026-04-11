@@ -436,4 +436,144 @@ class ExecutiveController extends Controller
             'user' => $user
         ]);
     }
+
+    /**
+     * Get comprehensive vessel history for a specific vessel.
+     * Supports lookup by database ID or IMO number.
+     */
+    public function getVesselHistory(Request $request, $id)
+    {
+        // Try to find by ID first, then by IMO number
+        $vessel = Vessel::with(['owner', 'wharf', 'clearances'])->find($id);
+
+        if (!$vessel) {
+            // Try by IMO number
+            $vessel = Vessel::with(['owner', 'wharf', 'clearances'])
+                ->where('imo_number', $id)
+                ->first();
+        }
+
+        if (!$vessel) {
+            return response()->json(['message' => 'Vessel not found'], 404);
+        }
+
+        // Aggregate totalArrivals: count all vessels with same IMO number (multiple port calls)
+        $totalArrivals = 1;
+        if ($vessel->imo_number) {
+            $totalArrivals = Vessel::where('imo_number', $vessel->imo_number)->count();
+        }
+
+        // Aggregate totalDepartures: count of clearances issued for this vessel
+        $totalDepartures = $vessel->clearances ? $vessel->clearances->count() : 0;
+
+        // Determine cargoType from vessel data
+        $cargoType = $vessel->cargo ?? 'General Cargo';
+        if (!$vessel->cargo) {
+            if ($vessel->type === 'Tanker') {
+                $cargoType = 'Liquid Bulk';
+            } elseif ($vessel->type === 'Container') {
+                $cargoType = 'Container Cargo';
+            }
+        }
+
+        // Determine previousPort from the most recent clearance's next_port
+        $previousPort = 'N/A';
+        if ($vessel->clearances && $vessel->clearances->count() > 0) {
+            $latestClearance = $vessel->clearances->sortByDesc('created_at')->first();
+            if ($latestClearance && $latestClearance->next_port) {
+                $previousPort = $latestClearance->next_port;
+            }
+        }
+
+        // Build the vessel data payload with the exact required fields
+        $vesselData = [
+            'id' => $vessel->id,
+            'name' => $vessel->name,
+            'vesselName' => $vessel->name,
+            'imo' => $vessel->imo_number ?? 'N/A',
+            'imoNumber' => $vessel->imo_number ?? 'N/A',
+            'flag' => $vessel->flag ?? '🏳️',
+            'type' => $vessel->type,
+            'status' => $vessel->status,
+            'cargoType' => $cargoType,
+            'previousPort' => $previousPort,
+            'arrivalDate' => $vessel->eta ? \Carbon\Carbon::parse($vessel->eta)->format('Y-m-d H:i') : 'N/A',
+            'departureDate' => $vessel->etd ? \Carbon\Carbon::parse($vessel->etd)->format('Y-m-d H:i') : 'N/A',
+            'totalArrivals' => $totalArrivals,
+            'totalDepartures' => $totalDepartures,
+            'owner' => $vessel->owner ? $vessel->owner->name : 'Unknown',
+            'wharf' => $vessel->wharf ? $vessel->wharf->name : 'Not Assigned',
+        ];
+
+        // Build historical timeline from logs mentioning this vessel, sorted newest first
+        $historyQuery = Log::where('details', 'like', "%{$vessel->name}%")
+            ->orderBy('created_at', 'desc');
+
+        $paginatedHistory = $historyQuery->paginate(10, ['*'], 'page', $request->query('page', 1));
+
+        // Map log entries to timeline items
+        $historyData = collect($paginatedHistory->items())->map(function ($log) {
+            // Determine event type from action
+            $typeMap = [
+                'approve_arrival' => 'Arrival Approved',
+                'reject_arrival' => 'Arrival Rejected',
+                'assign_berth' => 'Wharfage Assignment',
+                'issue_clearance' => 'Port Clearance',
+                'approve_anchorage' => 'Anchorage Approved',
+                'reject_anchorage' => 'Anchorage Rejected',
+                'submit_arrival' => 'Arrival Registration',
+                'upload_manifest' => 'Cargo Manifest Upload',
+            ];
+
+            $type = $typeMap[$log->action] ?? ucwords(str_replace('_', ' ', $log->action));
+
+            // Determine status from action
+            $status = 'completed';
+            if (str_contains($log->action, 'reject')) {
+                $status = 'rejected';
+            } elseif (str_contains($log->action, 'pending') || str_contains($log->action, 'submit')) {
+                $status = 'pending';
+            } elseif (str_contains($log->action, 'approve')) {
+                $status = 'approved';
+            }
+
+            return [
+                'id' => 'EVT-' . $log->id,
+                'type' => $type,
+                'status' => $status,
+                'timestamp' => $log->created_at->format('Y-m-d H:i:s'),
+                'details' => $log->details,
+            ];
+        });
+
+        return response()->json([
+            'vessel' => $vesselData,
+            'history' => [
+                'data' => $historyData->values(),
+                'current_page' => $paginatedHistory->currentPage(),
+                'last_page' => $paginatedHistory->lastPage(),
+                'total' => $paginatedHistory->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Get a searchable list of all vessels for the vessel selector/picker.
+     */
+    public function getAllVessels(Request $request)
+    {
+        $query = Vessel::query()->select('id', 'name', 'imo_number', 'type', 'flag', 'status', 'eta', 'etd', 'created_at');
+
+        // Search filter by name or IMO number
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('imo_number', 'like', "%{$search}%");
+            });
+        }
+
+        $vessels = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        return response()->json($vessels);
+    }
 }

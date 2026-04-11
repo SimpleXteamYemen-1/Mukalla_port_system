@@ -1,4 +1,4 @@
-import { LayoutDashboard, Ship, Anchor, FileText, BarChart3, Users, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Ship, Anchor, FileText, BarChart3, Users, ShieldCheck, History } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 
@@ -19,6 +19,7 @@ export function ExecutiveSidebar({ currentPage, onNavigate, language }: Executiv
     { id: 'user-directory', label: t.menu.userDirectory,     icon: ShieldCheck },
     { id: 'logs',           label: t.menu.decisionLogs,      icon: FileText },
     { id: 'reports',        label: t.menu.reportsAnalytics,  icon: BarChart3 },
+    { id: 'vessel-history', label: language === 'ar' ? 'سجل السفن' : 'Vessel History', icon: History },
   ];
 
   return (
