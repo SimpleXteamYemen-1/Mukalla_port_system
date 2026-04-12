@@ -96,7 +96,8 @@ export const executiveService = {
             const response = await api.post(`/executive/arrivals/${id}/reject`, { 
                 status: 'rejected', 
                 requestId: `REQ-${id}`, 
-                reason: reason 
+                reason: reason,
+                rejected_manifest_ids: rejectedManifestIds
             });
             return response.data;
         } catch (error) {

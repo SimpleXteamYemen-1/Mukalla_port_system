@@ -13,9 +13,9 @@ use App\Http\Controllers\Api\PortOfficerController;
 use App\Http\Controllers\Api\WharfController;
 use App\Http\Controllers\Api\TraderController;
 use App\Http\Controllers\Api\ExecutiveController;
+use App\Http\Controllers\Api\ManifestUploadController;
 
 use App\Http\Controllers\Api\AdminController;
-use App\Http\Controllers\Api\ManifestUploadController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

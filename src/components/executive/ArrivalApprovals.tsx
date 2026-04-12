@@ -21,6 +21,8 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
   const [selectedManifests, setSelectedManifests] = useState<number[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+
+
   useEffect(() => {
     fetchRequests();
   }, []);
@@ -104,6 +106,8 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t.subtitle}</p>
       </div>
+
+
 
       {/* Stats Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -347,6 +351,7 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
                 onClick={() => {
                   setShowRejectModal(false);
                   setRejectionReason('');
+                  setSelectedManifests([]);
                   setSelectedManifests([]);
                   setSelectedRequest(null);
                 }}

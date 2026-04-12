@@ -254,6 +254,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     }
   };
 
+
   const handleEdit = (notification: any) => {
     setEditingId(notification.id);
     setImoVerified(true);
@@ -736,6 +737,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   )}
                 </div>
               )}
+
             </div>
           )
         })}
