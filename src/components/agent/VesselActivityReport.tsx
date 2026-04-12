@@ -18,6 +18,7 @@ import {
 
 interface VesselActivityReportProps {
   language: Language;
+  vesselId?: string | number | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -254,7 +255,7 @@ const PRINT_STYLE = `
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export function VesselActivityReport({ language }: VesselActivityReportProps) {
+export function VesselActivityReport({ language, vesselId }: VesselActivityReportProps) {
   const isRTL = language === 'ar';
 
   const [vessels, setVessels] = useState<Vessel[]>([]);
@@ -285,6 +286,20 @@ export function VesselActivityReport({ language }: VesselActivityReportProps) {
       setLoadingVessels(false);
     });
   }, []);
+  
+  // Handle auto-selection if vesselId is provided via props
+  useEffect(() => {
+    if (vesselId && vessels.length > 0) {
+      const vid = Number(vesselId);
+      if (vessels.some(v => v.id === vid)) {
+        setSelectedVesselId(vid);
+        // Default to today if no date is picked
+        if (!selectedDate) {
+          setSelectedDate(new Date().toISOString().split('T')[0]);
+        }
+      }
+    }
+  }, [vesselId, vessels]);
 
   const selectedVessel = vessels.find(v => v.id === selectedVesselId);
 
@@ -453,8 +468,8 @@ export function VesselActivityReport({ language }: VesselActivityReportProps) {
             <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)]">
               <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                 <Ship className="w-4 h-4 text-[var(--primary)]" />
-                <span className="font-bold text-[var(--text-primary)]">{report.vessel.name}</span>
-                <span className="text-[var(--text-muted)]">({report.vessel.imo})</span>
+                <span className="font-bold text-[var(--text-primary)]">{report.vessel?.name || 'Unknown Vessel'}</span>
+                <span className="text-[var(--text-muted)]">({report.vessel?.imo || 'N/A'})</span>
               </div>
               <span className="text-[var(--border)]">·</span>
               <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">

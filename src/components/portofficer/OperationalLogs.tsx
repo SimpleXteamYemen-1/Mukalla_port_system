@@ -36,7 +36,7 @@ export function OperationalLogs({ language }: OperationalLogsProps) {
   const filteredLogs = logs.filter(log => {
     if (filterType !== 'all' && log.action !== filterType) return false;
     if (filterDate && !log.timestamp.startsWith(filterDate)) return false;
-    if (searchVessel && !log.vessel.toLowerCase().includes(searchVessel.toLowerCase())) return false;
+    if (searchVessel && !(log.vessel || '').toLowerCase().includes(searchVessel.trim().toLowerCase())) return false;
     return true;
   });
 

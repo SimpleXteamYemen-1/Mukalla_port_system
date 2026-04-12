@@ -56,8 +56,13 @@ export function PortReport({ language }: PortReportProps) {
     document.head.appendChild(styleTag);
 
     const loadVessels = async () => {
-      const data = await getVessels();
-      setVessels(data);
+      try {
+        const data = await getVessels();
+        setVessels(data || []);
+      } catch (error) {
+        console.error('Failed to load vessels:', error);
+        toast.error(isRTL ? 'فشل تحميل قائمة السفن' : 'Failed to load vessels list');
+      }
     };
     loadVessels();
 

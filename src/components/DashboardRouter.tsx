@@ -305,6 +305,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'vessels' && <ActiveVessels language={language} onNavigate={setCurrentPage} />}
             {currentPage === 'clearances' && <PortClearances language={language} />}
             {currentPage === 'logs' && <OperationalLogs language={language} />}
+            {currentPage === 'report' && <PortReport language={language} />}
             {currentPage === 'settings' && (
               <AccountSettings 
                 user={user} 
@@ -615,6 +616,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'manifests' && <CargoManifests language={language} />}
         {currentPage === 'clearances' && <AgentPortClearances language={language} />}
         {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
+        {currentPage === 'report' && <VesselActivityReport language={language} vesselId={activeVesselId} />}
         {currentPage === 'settings' && (
           <AccountSettings 
             user={user} 

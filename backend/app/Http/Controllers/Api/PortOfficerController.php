@@ -131,7 +131,7 @@ class PortOfficerController extends Controller
 
     public function getLogs()
     {
-        return response()->json(Log::latest()->take(20)->get());
+        return response()->json(Log::with('user')->latest()->take(50)->get());
     }
 
     public function getWharves()

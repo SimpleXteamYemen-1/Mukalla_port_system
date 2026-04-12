@@ -167,14 +167,30 @@ export async function issueClearance(vessel: string, nextPort: string, officerNa
 export async function getLogs(): Promise<LogEntry[]> {
   try {
     const response = await api.get('/officer/logs');
-    return response.data.map((l: any) => ({
-      id: l.id.toString(),
-      timestamp: l.created_at,
-      action: l.action,
-      vessel: 'Vessel',
-      details: l.details,
-      officer: 'Officer',
-    }));
+    return response.data.map((l: any) => {
+      // Logic to extract vessel name from details since it's not a separate field
+      let vesselName = 'Vessel';
+      const details = l.details || '';
+      
+      if (details.includes('Scheduled ')) {
+        vesselName = details.split('Scheduled ')[1].split(' to ')[0];
+      } else if (details.includes('Approved vessel ')) {
+        vesselName = details.split('Approved vessel ')[1].split(' arrival')[0];
+      } else if (details.includes('Issued clearance for vessel ')) {
+        vesselName = details.split('Issued clearance for vessel ')[1].split(' to ')[0];
+      } else if (details.includes('Released ')) {
+        vesselName = details.split('Released ')[1].split(' from ')[0];
+      }
+
+      return {
+        id: l.id.toString(),
+        timestamp: new Date(l.created_at).toLocaleString(),
+        action: l.action,
+        vessel: vesselName,
+        details: l.details,
+        officer: l.user ? l.user.name : 'Officer',
+      };
+    });
   } catch (error) {
     console.error('Error fetching logs:', error);
     return [];
