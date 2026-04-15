@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Language } from '../../App';
 import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { getClearances, issueClearance, getVessels, Clearance } from '../../utils/portOfficerApi';
+import { getClearances, issueClearance, approveClearance, rejectClearance, getVessels, Clearance } from '../../utils/portOfficerApi';
 
 interface PortClearancesProps {
   language: Language;
@@ -56,29 +56,56 @@ export function PortClearances({ language }: PortClearancesProps) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'valid': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'valid': 
+      case 'clearance_approved': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'pending_clearance': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
       case 'expiring-soon': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
-      case 'expired': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      case 'expired': 
+      case 'rejected': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
   const getCardBorderColor = (status: string) => {
     switch (status) {
-      case 'valid': return 'border-l-4 border-l-green-500 dark:border-l-green-400';
+      case 'valid': 
+      case 'clearance_approved': return 'border-l-4 border-l-green-500 dark:border-l-green-400';
+      case 'pending_clearance': return 'border-l-4 border-l-blue-500 dark:border-l-blue-400';
       case 'expiring-soon': return 'border-l-4 border-l-amber-500 dark:border-l-amber-400';
-      case 'expired': return 'border-l-4 border-l-red-500 dark:border-l-red-400';
+      case 'expired': 
+      case 'rejected': return 'border-l-4 border-l-red-500 dark:border-l-red-400';
       default: return '';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'valid': return <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" />;
+      case 'valid': 
+      case 'clearance_approved': return <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" />;
+      case 'pending_clearance': return <Clock className="w-5 h-5 text-blue-700 dark:text-blue-400" />;
       case 'expiring-soon': return <Clock className="w-5 h-5 text-amber-700 dark:text-amber-400" />;
-      case 'expired': return <AlertCircle className="w-5 h-5 text-red-700 dark:text-red-400" />;
+      case 'expired': 
+      case 'rejected': return <AlertCircle className="w-5 h-5 text-red-700 dark:text-red-400" />;
       default: return <Clock className="w-5 h-5 text-slate-400" />;
     }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await approveClearance(id);
+      alert(isRTL ? 'تم الموافقة على التصريح' : 'Clearance approved');
+      loadData();
+    } catch (e) { console.error(e); alert('Error'); }
+  };
+
+  const handleReject = async (id: string) => {
+    const reason = prompt(isRTL ? 'أدخل سبب الرفض' : 'Enter rejection reason:');
+    if (!reason) return;
+    try {
+      await rejectClearance(id, reason);
+      alert(isRTL ? 'تم رفض التصريح' : 'Clearance rejected');
+      loadData();
+    } catch (e) { console.error(e); alert('Error'); }
   };
 
   const getHoursColor = (hours: number) =>
@@ -147,7 +174,7 @@ export function PortClearances({ language }: PortClearancesProps) {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getStatusBadge(clearance.status)}`}>
-                  {clearance.status === 'valid' ? (isRTL ? 'ساري' : 'Valid') : clearance.status === 'expiring-soon' ? (isRTL ? 'ينتهي قريبًا' : 'Expiring Soon') : (isRTL ? 'منتهي' : 'Expired')}
+                  {clearance.status === 'valid' ? (isRTL ? 'ساري' : 'Valid') : clearance.status === 'expired' ? (isRTL ? 'منتهي' : 'Expired') : clearance.status === 'pending_clearance' ? (isRTL ? 'قيد الانتظار' : 'Pending Review') : clearance.status === 'rejected' ? (isRTL ? 'مرفوض' : 'Rejected') : clearance.status === 'clearance_approved' ? (isRTL ? 'طُبع' : 'Approved') : (isRTL ? 'ينتهي قريبًا' : 'Expiring Soon')}
                 </span>
                 <button onClick={() => viewQRCode(clearance)} className="p-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-colors">
                   <QrCode className="w-4 h-4 text-slate-500 dark:text-slate-400" />
@@ -184,10 +211,38 @@ export function PortClearances({ language }: PortClearancesProps) {
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
                   <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{isRTL ? 'وقت الانتهاء' : 'Expiry Time'}</p>
-                  <p className="text-slate-900 dark:text-slate-50 text-sm">{clearance.expiryTime}</p>
+                  <p className="text-slate-900 dark:text-slate-50 text-sm">{clearance.expiryTime || '-'}</p>
                 </div>
               </div>
             </div>
+
+            {clearance.status === 'pending_clearance' && (
+              <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={() => handleApprove(clearance.id)}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {isRTL ? 'موافقة' : 'Approve'}
+                </button>
+                <button
+                  onClick={() => handleReject(clearance.id)}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  {isRTL ? 'رفض' : 'Reject'}
+                </button>
+              </div>
+            )}
+            
+            {clearance.status === 'clearance_approved' && clearance.certificate_path && (
+               <div className="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                 <button
+                   onClick={() => window.open(`http://localhost:8000${clearance.certificate_path}`, '_blank')}
+                   className="flex items-center justify-center gap-2 w-full bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 py-2 rounded-lg text-sm font-semibold transition-colors"
+                 >
+                   {isRTL ? 'عرض الشهادة (PDF)' : 'View Certificate (PDF)'}
+                 </button>
+               </div>
+            )}
           </div>
         ))}
       </div>

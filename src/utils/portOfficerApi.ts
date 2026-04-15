@@ -24,12 +24,15 @@ export interface Wharf {
 export interface Clearance {
   id: string;
   clearanceId: string; // id
+  vessel_id?: string;
   vessel: string; // vessel name
   nextPort: string; // Not in backend yet? default to 'Unknown'
   issueTime: string; // issue_date
   expiryTime: string; // expiry_date
-  status: 'valid' | 'expiring-soon' | 'expired';
+  status: 'valid' | 'expiring-soon' | 'expired' | 'pending_clearance' | 'clearance_approved' | 'rejected';
   hoursRemaining: number;
+  certificate_path?: string;
+  rejection_reason?: string;
 }
 
 export interface LogEntry {
@@ -139,8 +142,10 @@ export async function getClearances(): Promise<Clearance[]> {
         nextPort: c.next_port || 'Unknown',
         issueTime: c.issue_date,
         expiryTime: c.expiry_date,
-        status: hours < 0 ? 'expired' : (hours < 24 ? 'expiring-soon' : 'valid'),
-        hoursRemaining: hours
+        status: c.status === 'pending_clearance' || c.status === 'rejected' || c.status === 'clearance_approved' ? c.status : (hours < 0 ? 'expired' : (hours < 24 ? 'expiring-soon' : 'valid')),
+        hoursRemaining: hours,
+        certificate_path: c.certificate_path,
+        rejection_reason: c.rejection_reason,
       };
     });
   } catch (error) {
@@ -159,6 +164,28 @@ export async function issueClearance(vessel: string, nextPort: string, officerNa
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Error issuing clearance:', error);
+    throw error;
+  }
+}
+
+export async function approveClearance(id: string) {
+  try {
+    const response = await api.post(`/officer/clearance/${id}/approve`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error approving clearance:', error);
+    throw error;
+  }
+}
+
+export async function rejectClearance(id: string, reason: string) {
+  try {
+    const response = await api.post(`/officer/clearance/${id}/reject`, {
+      rejection_reason: reason
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error rejecting clearance:', error);
     throw error;
   }
 }

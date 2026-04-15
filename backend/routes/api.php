@@ -44,8 +44,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/anchorage', [AgentController::class, 'getAnchorageRequests']);
         Route::get('/agent/stats', [AgentController::class, 'getDashboardStats']);
         Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
+        Route::post('/agent/clearance/request', [AgentController::class, 'requestClearance']);
         Route::get('/agent/clearances', [AgentController::class, 'getClearances']);
         Route::post('/agent/clearance', [AgentController::class, 'issueClearance']);
+        Route::post('/agent/vessels/{id}/depart', [AgentController::class, 'executeDeparture']);
         Route::get('/agent/vessel-report', [AgentController::class, 'getVesselActivityReport']);
 
         // Edit endpoints
@@ -65,6 +67,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/officer/vessels/{id}/berth', [PortOfficerController::class, 'assignBerth']);
         Route::delete('/officer/vessels/{id}/berth', [PortOfficerController::class, 'releaseBerth']);
         Route::post('/officer/clearance', [PortOfficerController::class, 'issueClearance']);
+        Route::post('/officer/clearance/{id}/approve', [PortOfficerController::class, 'approveClearance']);
+        Route::post('/officer/clearance/{id}/reject', [PortOfficerController::class, 'rejectClearance']);
         Route::get('/officer/clearances', [PortOfficerController::class, 'getClearances']);
         Route::get('/officer/logs', [PortOfficerController::class, 'getLogs']);
         Route::get('/officer/wharves', [PortOfficerController::class, 'getWharves']);

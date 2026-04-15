@@ -287,13 +287,24 @@ export const agentService = {
         try {
             const response = await api.get('/agent/clearances');
             return response.data.map((c: any) => {
-                const expiry = new Date(c.expiry_date);
+                const expiry = c.expiry_date ? new Date(c.expiry_date) : null;
                 const now = new Date();
-                const hours = Math.round((expiry.getTime() - now.getTime()) / (1000 * 60 * 60));
+                let hours = 0;
+                let parsedStatus = c.status;
+                
+                if (expiry && parsedStatus === 'valid' || parsedStatus === 'clearance_approved') {
+                    hours = Math.round((expiry.getTime() - now.getTime()) / (1000 * 60 * 60));
+                    if (hours < 0) parsedStatus = 'expired';
+                    else if (hours < 24) parsedStatus = 'expiring-soon';
+                    else parsedStatus = 'valid';
+                    
+                    if (c.status === 'clearance_approved') parsedStatus = 'clearance_approved';
+                }
 
                 return {
                     id: c.id.toString(),
                     clearanceId: `CLR-${c.id}`,
+                    vessel_id: c.vessel_id,
                     vessel: c.vessel ? c.vessel.name : 'Unknown',
                     // Full vessel object for PDF export
                     vesselData: c.vessel ? {
@@ -306,13 +317,28 @@ export const agentService = {
                     nextPort: c.next_port || 'Unknown',
                     issueTime: c.issue_date,
                     expiryTime: c.expiry_date,
-                    status: hours < 0 ? 'expired' : (hours < 24 ? 'expiring-soon' : 'valid'),
-                    hoursRemaining: hours
+                    status: c.status === 'pending_clearance' || c.status === 'rejected' ? c.status : parsedStatus,
+                    hoursRemaining: hours,
+                    certificate_path: c.certificate_path,
+                    rejection_reason: c.rejection_reason,
                 };
             });
         } catch (error) {
             console.error('Error fetching clearances', error);
             return [];
+        }
+    },
+
+    requestClearance: async (vesselName: string, nextPort: string) => {
+        try {
+            const response = await api.post('/agent/clearance/request', {
+                vessel_name: vesselName,
+                next_port: nextPort,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error requesting clearance', error);
+            throw error;
         }
     },
 
@@ -337,6 +363,16 @@ export const agentService = {
             return response.data;
         } catch (error) {
             console.error('Error updating clearance', error);
+            throw error;
+        }
+    },
+
+    executeDeparture: async (vesselId: number) => {
+        try {
+            const response = await api.post(`/agent/vessels/${vesselId}/depart`);
+            return response.data;
+        } catch (error) {
+            console.error('Error executing departure', error);
             throw error;
         }
     },

@@ -36,13 +36,13 @@ import { WharfAvailability } from './wharf/WharfAvailability';
 import { StorageManagement } from './wharf/StorageManagement';
 import { ContainerAssignment } from './wharf/ContainerAssignment';
 import { CapacityOverview } from './wharf/CapacityOverview';
-import { wharfService } from '../services/wharfService';
 import { TraderSidebar } from './trader/TraderSidebar';
 import { TraderDashboard } from './trader/TraderDashboard';
 import { MyContainers } from './trader/MyContainers';
 import { DischargeRequests } from './trader/DischargeRequests';
 import { TraderNotifications } from './trader/TraderNotifications';
-
+import { NotificationDropdown } from './NotificationDropdown';
+import { NotificationsPage } from './NotificationsPage';
 interface DashboardRouterProps {
   user: User;
   language: Language;
@@ -149,10 +149,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Notifications */}
-                <button className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                </button>
+                <NotificationDropdown user={user} language={language} onNavigate={handleNavigate} />
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
@@ -180,6 +177,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           {/* Page Content */}
           <main className="p-6">
             {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={handleNavigate} />}
+            {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'arrivals' && <ArrivalApprovals language={language} onNavigate={handleNavigate} />}
             {currentPage === 'vessel-history' && (
               <VesselHistory 
@@ -270,10 +268,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Notifications */}
-                <button className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-                </button>
+                <NotificationDropdown user={user} language={language} onNavigate={setCurrentPage} />
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
@@ -301,6 +296,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           {/* Page Content */}
           <main>
             {currentPage === 'dashboard' && <PortOfficerDashboard language={language} />}
+            {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'berthing' && <BerthingManagement language={language} />}
             {currentPage === 'vessels' && <ActiveVessels language={language} onNavigate={setCurrentPage} />}
             {currentPage === 'clearances' && <PortClearances language={language} />}
@@ -325,33 +321,6 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
   if (user.role === 'wharf') {
     const t = translations[language].dashboard;
     const isRTL = language === 'ar';
-    const [waitlistAlert, setWaitlistAlert] = useState<{ count: number; wharves: number } | null>(null);
-
-    // Reactive Waitlist Monitoring
-    const checkWaitlistStatus = async () => {
-      try {
-        const [wharvesData, anchorageData] = await Promise.all([
-          wharfService.getWharves(),
-          wharfService.getAnchorageRequests(),
-        ]);
-        const waitlistedCount = (anchorageData.requests || []).filter((r: any) => r.status === 'waiting').length;
-        const availableCount = (wharvesData || []).filter((w: any) => w.status === 'available').length;
-
-        if (waitlistedCount > 0 && availableCount > 0) {
-          setWaitlistAlert({ count: waitlistedCount, wharves: availableCount });
-        } else {
-          setWaitlistAlert(null);
-        }
-      } catch (error) {
-        console.error('Error monitoring waitlist:', error);
-      }
-    };
-
-    useEffect(() => {
-      checkWaitlistStatus();
-      const interval = setInterval(checkWaitlistStatus, 60000); // Check every minute
-      return () => clearInterval(interval);
-    }, []);
 
     return (
       <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
@@ -413,27 +382,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Notifications */}
-                <button 
-                  onClick={() => setCurrentPage('availability')}
-                  className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors group"
-                >
-                  <Bell className="w-5 h-5" />
-                  {waitlistAlert && (
-                    <>
-                      <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-[var(--bg-primary)]"></span>
-                      <div className="absolute top-full mt-2 right-0 w-64 p-3 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                        <p className="text-xs text-white font-medium leading-relaxed">
-                          {isRTL 
-                            ? `السعة متاحة: ${waitlistAlert.wharves} أرصفة شاغرة للسفن في قائمة الانتظار (${waitlistAlert.count}).` 
-                            : `Capacity available: ${waitlistAlert.wharves} wharves are free for waitlisted vessels (${waitlistAlert.count}).`}
-                        </p>
-                        <p className="text-[10px] text-blue-400 mt-2 font-bold uppercase tracking-tighter">
-                          {isRTL ? 'انقر للمراجعة' : 'Click to review'}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </button>
+                <NotificationDropdown user={user} language={language} onNavigate={setCurrentPage} />
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
@@ -461,6 +410,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           {/* Page Content */}
           <main>
             {currentPage === 'dashboard' && <WharfDashboard language={language} />}
+            {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'availability' && <WharfAvailability language={language} />}
             {currentPage === 'storage' && <StorageManagement language={language} />}
             {currentPage === 'containers' && <ContainerAssignment language={language} />}
@@ -544,13 +494,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </button>
 
                 {/* Notifications */}
-                <button
-                  onClick={() => setCurrentPage('notifications')}
-                  className="relative p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                </button>
+                <NotificationDropdown user={user} language={language} onNavigate={setCurrentPage} />
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
@@ -578,9 +522,9 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           {/* Page Content */}
           <main>
             {currentPage === 'dashboard' && <TraderDashboard language={language} userEmail={user.email} />}
+            {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'containers' && <MyContainers language={language} userEmail={user.email} />}
             {currentPage === 'discharge' && <DischargeRequests language={language} userEmail={user.email} userName={user.name} />}
-            {currentPage === 'notifications' && <TraderNotifications language={language} userEmail={user.email} />}
             {currentPage === 'settings' && (
               <AccountSettings 
                 user={user} 
@@ -610,6 +554,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         onToggleTheme={onToggleTheme}
       >
         {currentPage === 'dashboard' && <AgentDashboard language={language} onNavigate={setCurrentPage} />}
+        {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
         {currentPage === 'vessels' && <MyVessels language={language} onNavigate={setCurrentPage} />}
         {currentPage === 'arrivals' && <ArrivalNotifications language={language} />}
         {currentPage === 'anchorage' && <AnchorageRequests language={language} />}

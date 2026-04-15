@@ -106,6 +106,14 @@ class PortOfficerController extends Controller
 
         $vessel = Vessel::where('name', $request->vessel_name)->firstOrFail();
 
+        $existing = PortClearance::where('vessel_id', $vessel->id)
+            ->whereIn('status', ['valid', 'clearance_approved'])
+            ->exists();
+
+        if ($existing) {
+            return response()->json(['message' => 'Certificate already issued for this vessel'], 400);
+        }
+
         $clearance = PortClearance::create([
             'vessel_id' => $vessel->id,
             'officer_id' => $request->user()->id,
@@ -127,6 +135,88 @@ class PortOfficerController extends Controller
     public function getClearances()
     {
         return response()->json(PortClearance::with('vessel', 'officer')->get());
+    }
+
+    public function approveClearance(Request $request, $id)
+    {
+        $clearance = PortClearance::with('vessel')->findOrFail($id);
+        
+        $existing = PortClearance::where('vessel_id', $clearance->vessel_id)
+            ->where('id', '!=', $clearance->id)
+            ->whereIn('status', ['valid', 'clearance_approved'])
+            ->exists();
+
+        if ($existing) {
+            return response()->json(['message' => 'Certificate already issued for this vessel'], 400);
+        }
+
+        $clearance->update([
+            'status' => 'clearance_approved',
+            'officer_id' => $request->user()->id,
+            'issue_date' => now(),
+            'expiry_date' => now()->addHours(24),
+        ]);
+
+        // Generate PDF
+        $vessel = $clearance->vessel;
+        $html = "
+            <html>
+            <head><style>body { font-family: sans-serif; text-align: center; padding: 50px; } .header { font-size: 24px; font-weight: bold; margin-bottom: 20px;} .content { font-size: 16px; line-height: 1.6;}</style></head>
+            <body>
+                <div class='header'>PORT CLEARANCE CERTIFICATE</div>
+                <div class='content'>
+                    <p>This is to certify that the vessel <strong>{$vessel->name}</strong></p>
+                    <p>with IMO number <strong>{$vessel->imo_number}</strong></p>
+                    <p>has been granted clearance to depart for <strong>{$clearance->next_port}</strong>.</p>
+                    <br><br>
+                    <p>Issued on: <strong>{$clearance->issue_date->format('Y-m-d H:i:s')}</strong></p>
+                    <p>Valid until: <strong>{$clearance->expiry_date->format('Y-m-d H:i:s')}</strong></p>
+                    <br><br>
+                    <p>Authorized Officer: <strong>{$request->user()->name}</strong></p>
+                </div>
+            </body>
+            </html>
+        ";
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html);
+        $fileName = 'certificate_' . $vessel->id . '_' . time() . '.pdf';
+        
+        \Storage::disk('public')->put('certificates/' . $fileName, $pdf->output());
+        
+        $clearance->update([
+            'certificate_path' => '/storage/certificates/' . $fileName,
+        ]);
+
+        Log::create([
+            'user_id' => $request->user()->id,
+            'action' => 'approve_clearance',
+            'details' => "Approved clearance for vessel {$vessel->name}",
+        ]);
+
+        return response()->json($clearance);
+    }
+
+    public function rejectClearance(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string',
+        ]);
+
+        $clearance = PortClearance::with('vessel')->findOrFail($id);
+        
+        $clearance->update([
+            'status' => 'rejected',
+            'officer_id' => $request->user()->id,
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+
+        Log::create([
+            'user_id' => $request->user()->id,
+            'action' => 'reject_clearance',
+            'details' => "Rejected clearance for vessel {$clearance->vessel->name}. Reason: {$request->rejection_reason}",
+        ]);
+
+        return response()->json($clearance);
     }
 
     public function getLogs()

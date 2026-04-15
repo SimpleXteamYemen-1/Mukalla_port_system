@@ -157,6 +157,12 @@ class WharfController extends Controller
             'wharf_assigned_at' => now(),
         ]);
 
+        // Sync Vessel mapping
+        if ($anchorage->vessel) {
+            $anchorage->vessel->current_wharf_id = $wharf->id;
+            $anchorage->vessel->save();
+        }
+
         // Mark wharf as occupied
         $wharf->status = 'occupied';
         $wharf->save();

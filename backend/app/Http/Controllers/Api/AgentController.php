@@ -116,11 +116,48 @@ class AgentController extends Controller
     {
         // Only return clearances for vessels owned by the agent
         $vessels = Vessel::where('owner_id', $request->user()->id)->pluck('id');
-        return response()->json(PortClearance::whereIn('vessel_id', $vessels)->with('vessel', 'officer')->get());
+        $clearances = PortClearance::whereIn('vessel_id', $vessels)
+            ->with('vessel', 'officer')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->unique('vessel_id')
+            ->values();
+
+        return response()->json($clearances);
+    }
+
+    public function requestClearance(Request $request)
+    {
+        $request->validate([
+            'vessel_name' => 'required|string',
+            'next_port' => 'nullable|string',
+        ]);
+
+        $vessel = Vessel::where('name', $request->vessel_name)
+            ->where('owner_id', $request->user()->id)
+            ->firstOrFail();
+
+        // Ensure there is no existing pending clearance
+        if ($vessel->clearances()->where('status', 'pending_clearance')->exists()) {
+            return response()->json(['message' => 'Clearance already requested'], 400);
+        }
+
+        $clearance = PortClearance::create([
+            'vessel_id' => $vessel->id,
+            'officer_id' => null, // Allowed to be NULL in DB
+            'issue_date' => now(), // Dummy value, overwritten on approval
+            'expiry_date' => now()->addHours(24), // Dummy value, overwritten on approval
+            'status' => 'pending_clearance',
+            'next_port' => $request->next_port,
+        ]);
+
+        return response()->json($clearance, 201);
     }
 
     public function issueClearance(Request $request)
     {
+        // Existing legacy method, kept for backward compatibility if needed,
+        // but now the flow is through requestClearance -> approveClearance.
         $request->validate([
             'vessel_name' => 'required|string',
             'next_port' => 'nullable|string',
@@ -132,7 +169,7 @@ class AgentController extends Controller
 
         $clearance = PortClearance::create([
             'vessel_id' => $vessel->id,
-            'officer_id' => null, // Issued by agent or system
+            'officer_id' => null,
             'issue_date' => now(),
             'expiry_date' => now()->addHours(24),
             'status' => 'valid',
@@ -140,6 +177,48 @@ class AgentController extends Controller
         ]);
 
         return response()->json($clearance, 201);
+    }
+
+    public function executeDeparture(Request $request, $id)
+    {
+        $vessel = Vessel::where('id', $id)->where('owner_id', $request->user()->id)->firstOrFail();
+
+        // Must have an approved clearance
+        if (!$vessel->clearances()->where('status', 'clearance_approved')->exists()) {
+            return response()->json(['message' => 'Vessel cannot depart without approved clearance'], 403);
+        }
+
+        \DB::beginTransaction();
+        try {
+            // Wharf Automation
+            // Assuming Wharf is App\Models\Wharf
+            if ($vessel->current_wharf_id) {
+                \App\Models\Wharf::where('id', $vessel->current_wharf_id)->update(['status' => 'available']);
+            }
+
+            // Vessel State Update
+            $vessel->update([
+                'current_wharf_id' => null,
+                'status' => 'departed',
+                'etd' => now(),
+            ]);
+
+            // Trader Notification (Gracefully Skipped)
+            // ...
+
+            // Executive Notification (Log)
+            \App\Models\Log::create([
+                'user_id' => $request->user()->id,
+                'action' => 'vessel_departure',
+                'details' => "Vessel {$vessel->name} has successfully departed.",
+            ]);
+
+            \DB::commit();
+            return response()->json(['message' => 'Vessel has successfully departed']);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json(['message' => 'Departure execution failed', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function getDashboardStats(Request $request)

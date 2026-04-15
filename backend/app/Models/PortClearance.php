@@ -13,6 +13,8 @@ class PortClearance extends Model
         'expiry_date',
         'status',
         'next_port',
+        'certificate_path',
+        'rejection_reason',
     ];
 
     protected $casts = [

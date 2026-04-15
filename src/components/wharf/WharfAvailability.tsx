@@ -376,9 +376,19 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
               </div>
               <div className="mb-4">
                 <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">{isRTL ? 'الحالة' : 'Status'}</p>
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getWharfStatusBadge(wharf.status)}`}>
-                  {getWharfStatusLabel(wharf.status)}
-                </span>
+                <div className="flex flex-col gap-2">
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium w-fit ${getWharfStatusBadge(wharf.status)}`}>
+                    {getWharfStatusLabel(wharf.status)}
+                  </span>
+                  {wharf.status === 'occupied' && wharf.vessels && wharf.vessels.length > 0 && (
+                    <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center gap-2 border border-blue-100 dark:border-blue-900/30">
+                      <Ship className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-semibold text-blue-800 dark:text-blue-300 truncate">
+                        {wharf.vessels[0].name}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 <button

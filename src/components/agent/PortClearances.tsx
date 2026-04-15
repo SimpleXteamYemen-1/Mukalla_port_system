@@ -25,6 +25,8 @@ export function PortClearances({ language }: PortClearancesProps) {
     const [loading, setLoading] = useState(true);
     const [issuing, setIssuing] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [processingDepartures, setProcessingDepartures] = useState<Record<string, boolean>>({});
+    const [departedVessels, setDepartedVessels] = useState<Record<string, boolean>>({});
 
     const loadData = async () => {
         setLoading(true);
@@ -57,7 +59,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                 await agentService.updateClearance(editingId, nextPort);
                 alert(isRTL ? 'تم تعديل التصريح بنجاح!' : 'Clearance updated successfully!');
             } else {
-                await agentService.issueClearance(selectedVessel, nextPort);
+                await agentService.requestClearance(selectedVessel, nextPort);
                 alert(isRTL ? 'تم طلب التصريح بنجاح!' : 'Clearance requested successfully!');
             }
 
@@ -77,10 +79,27 @@ export function PortClearances({ language }: PortClearancesProps) {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'valid': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+            case 'valid': 
+            case 'clearance_approved': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+            case 'pending_clearance': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
             case 'expiring-soon': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-            case 'expired': return 'bg-red-500/10 text-red-500 border-red-500/20';
+            case 'expired': 
+            case 'rejected': return 'bg-red-500/10 text-red-500 border-red-500/20';
             default: return 'bg-[var(--secondary)]/50 text-[var(--text-secondary)] border-[var(--border)]';
+        }
+    };
+
+    const handleDeparture = async (vesselId: string) => {
+        setProcessingDepartures(prev => ({ ...prev, [vesselId]: true }));
+        try {
+            await agentService.executeDeparture(parseInt(vesselId));
+            setDepartedVessels(prev => ({ ...prev, [vesselId]: true }));
+            await loadData();
+        } catch (error: any) {
+            console.error('Error executing departure:', error);
+            alert(error.response?.data?.message || 'Failed to execute departure');
+        } finally {
+            setProcessingDepartures(prev => ({ ...prev, [vesselId]: false }));
         }
     };
 
@@ -198,7 +217,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 </div>
                             </div>
                             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(clearance.status)}`}>
-                                {clearance.status === 'valid' ? (t?.valid || 'Valid') : clearance.status === 'expired' ? (t?.expiredStatus || 'Expired') : (t?.expiringSoon || 'Expiring Soon')}
+                                {clearance.status === 'valid' ? (t?.valid || 'Valid') : clearance.status === 'expired' ? (t?.expiredStatus || 'Expired') : clearance.status === 'pending_clearance' ? (isRTL ? 'قيد الانتظار' : 'Pending') : clearance.status === 'rejected' ? (isRTL ? 'مرفوض' : 'Rejected') : clearance.status === 'clearance_approved' ? (isRTL ? 'طُبع' : 'Approved') : (t?.expiringSoon || 'Expiring Soon')}
                             </div>
                         </div>
 
@@ -261,21 +280,49 @@ export function PortClearances({ language }: PortClearancesProps) {
                                     QR Code
                                 </button>
                                 <button
-                                    onClick={() => exportClearancePdf({
-                                        id: parseInt(clearance.id),
-                                        status: clearance.status,
-                                        issue_date: clearance.issueTime,
-                                        expiry_date: clearance.expiryTime,
-                                        next_port: clearance.nextPort,
-                                        vessel: (clearance as any).vesselData || { name: clearance.vessel },
-                                        officer: (clearance as any).officer || null,
-                                    })}
+                                    onClick={() => {
+                                        if (clearance.certificate_path) {
+                                            window.open(`http://localhost:8000${clearance.certificate_path}`, '_blank');
+                                        } else {
+                                            exportClearancePdf({
+                                                id: parseInt(clearance.id),
+                                                status: clearance.status,
+                                                issue_date: clearance.issueTime,
+                                                expiry_date: clearance.expiryTime,
+                                                next_port: clearance.nextPort,
+                                                vessel: (clearance as any).vesselData || { name: clearance.vessel },
+                                                officer: (clearance as any).officer || null,
+                                            });
+                                        }
+                                    }}
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-sm font-bold transition-all"
-                                    title={isRTL ? 'تصدير PDF' : 'Export PDF'}
+                                    title={isRTL ? 'تنزيل PDF' : 'Download PDF'}
                                 >
                                     <Download className="w-4 h-4" />
                                     PDF
                                 </button>
+                                {clearance.status === 'clearance_approved' && clearance.certificate_path && (
+                                    <button
+                                        onClick={() => handleDeparture(clearance.vessel_id as string)}
+                                        disabled={processingDepartures[clearance.vessel_id as string] || departedVessels[clearance.vessel_id as string]}
+                                        className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-bold transition-all disabled:opacity-50 ${
+                                            departedVessels[clearance.vessel_id as string]
+                                            ? 'bg-[var(--surface-highlight)] text-[var(--text-disabled)] cursor-not-allowed border border-[var(--border)]'
+                                            : 'bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-md shadow-[var(--accent)]/20'
+                                        }`}
+                                    >
+                                        {processingDepartures[clearance.vessel_id as string] ? (
+                                            <LoadingIndicator type="line-spinner" size="xs" className="text-current" />
+                                        ) : (
+                                            <Ship className="w-4 h-4" />
+                                        )}
+                                        {processingDepartures[clearance.vessel_id as string] 
+                                            ? (isRTL ? 'جاري التنفيذ...' : 'Processing...') 
+                                            : departedVessels[clearance.vessel_id as string] 
+                                            ? (isRTL ? 'تم الخروج' : 'Departed') 
+                                            : (isRTL ? 'خروج السفينة' : 'Vessel Get Out')}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </div>
