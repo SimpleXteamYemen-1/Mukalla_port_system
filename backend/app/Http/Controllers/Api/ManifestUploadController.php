@@ -29,7 +29,8 @@ class ManifestUploadController extends Controller
             'manifests.*' => 'required|file', // Could strictly type mimes:pdf,jpg,png here
         ]);
 
-        $createdContainers = [];
+        $successfulUploads = [];
+        $failedUploads = [];
 
         foreach ($request->file('manifests') as $file) {
             $path = $file->store('manifests', 'public');
@@ -37,19 +38,34 @@ class ManifestUploadController extends Controller
             
             $extractionStatus = 'failed';
             $extractionErrors = ['General extraction error'];
+            $errorReason = 'General extraction error';
             $extractedData = [];
 
             try {
-                $extractedData = $this->extractionService->extractData($absolutePath);
+                $extractedData = $this->extractionService->extractData($absolutePath, $vessel);
                 $validation = $this->extractionService->validateExtraction($extractedData);
-                $extractionStatus = $validation['status'];
+                
+                // Map 'success' to 'extracted' as per new schema
+                $extractionStatus = $validation['status'] === 'success' ? 'extracted' : $validation['status'];
                 $extractionErrors = $validation['errors'];
+                $errorReason = $validation['error_reason'] ?? null;
             } catch (\Exception $e) {
                 Log::error("Extraction failed for {$path}: " . $e->getMessage());
                 $extractionErrors = [$e->getMessage()];
+                $errorReason = "Unrecognized PDF format or processing error";
             }
 
-            // Persistence: Always save the record so the Agent can manage it
+            if ($extractionStatus === 'failed' || $extractionStatus === 'incomplete') {
+                Storage::disk('public')->delete($path);
+                $failedUploads[] = [
+                    'file_name' => $file->getClientOriginalName(),
+                    'error_reason' => $errorReason,
+                    'extraction_errors' => $extractionErrors,
+                ];
+                continue;
+            }
+
+            // Persistence: Automatically save successfully extracted or incomplete valid records
             $container = Container::create([
                 'vessel_id' => $vessel->id,
                 'manifest_file_path' => $path,
@@ -59,25 +75,29 @@ class ManifestUploadController extends Controller
                 'storage_type' => $extractedData['storage_type'] ?? 'dry',
                 'consignee_name' => $extractedData['consignee_name'] ?? '',
                 'consignee_phone' => $extractedData['consignee_phone'] ?? '',
-                'trader_user_id' => null,
+                'trader_user_id' => $extractedData['trader_user_id'] ?? null,
                 'status' => 'pending',
                 'extraction_status' => $extractionStatus,
                 'extraction_errors' => $extractionErrors,
+                'error_reason' => $errorReason,
             ]);
 
-            $createdContainers[] = [
+            $successfulUploads[] = [
                 'id' => $container->id,
                 'file_name' => $file->getClientOriginalName(),
                 'path' => $path,
                 'extraction_status' => $extractionStatus,
                 'extraction_errors' => $extractionErrors,
+                'error_reason' => $errorReason,
                 'container' => $container
             ];
         }
 
         return response()->json([
-            'message' => count($createdContainers) . ' manifest(s) processed.',
-            'results' => $createdContainers
+            'message' => 'Processing complete.',
+            'successful_uploads' => $successfulUploads,
+            'failed_uploads' => $failedUploads,
+            'results' => $successfulUploads // Fallback for any legacy code expecting 'results'
         ], 200);
     }
 }

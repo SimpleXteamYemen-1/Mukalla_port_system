@@ -9,8 +9,9 @@ interface ContainerData {
   storage_type: string;
   consignee_name: string;
   manifest_file_path: string;
-  extraction_status?: string;
+  extraction_status?: 'pending' | 'extracted' | 'incomplete' | 'failed' | string;
   extraction_errors?: string[] | null;
+  error_reason?: string | null;
 }
 
 interface ManifestUploaderProps {
@@ -26,11 +27,13 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [extractedContainers, setExtractedContainers] = useState<ContainerData[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<any[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setSelectedFiles((prev) => [...prev, ...newFiles]);
+      setUploadErrors([]); // Clear errors when initiating a new upload
     }
   };
 
@@ -60,14 +63,19 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
 
       toast.success(isRTL ? 'تم الرفع ومعالجة الملفات بنجاح!' : 'Files uploaded and processed successfully!');
       
-      const results = response.data.results || [];
-      const flattenedContainers = results.map((r: any) => ({
+      const successfulUploads = response.data.successful_uploads || response.data.results || [];
+      const failedUploads = response.data.failed_uploads || [];
+
+      const flattenedContainers = successfulUploads.map((r: any) => ({
         ...r.container,
         extraction_status: r.extraction_status,
-        extraction_errors: r.extraction_errors
+        extraction_errors: r.extraction_errors,
+        error_reason: r.error_reason
       }));
 
+      // Update state arrays
       setExtractedContainers(flattenedContainers);
+      setUploadErrors(failedUploads);
       setSelectedFiles([]); // clear after successful upload
       
       if (onUploadSuccess) {
@@ -108,6 +116,29 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
             : 'Upload multiple PDF or Image manifests. The system will autonomously extract payload categorizations.'}
         </p>
       </div>
+
+      {uploadErrors.length > 0 && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/20 p-5 rounded-xl animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <strong className="text-red-500 font-semibold">{isRTL ? 'وثائق مرفوضة (لم يتم رفعها)' : 'Rejected Documents (Not Saved)'}</strong>
+            <span className="text-red-400 text-sm">({uploadErrors.length})</span>
+          </div>
+          <ul className="space-y-3">
+            {uploadErrors.map((err, i) => (
+              <li key={i} className="bg-[var(--bg-card)] border border-red-500/20 rounded-lg p-3 text-sm shadow-sm">
+                 <div className="flex items-start gap-2">
+                    <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                       <span className="text-[var(--text-primary)] font-semibold block mb-1">{err.file_name}</span>
+                       <span className="text-red-400 text-xs font-medium">{err.error_reason}</span>
+                    </div>
+                 </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {extractedContainers.length === 0 && (
         <div className="space-y-6">
@@ -228,11 +259,18 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
                                   {container.manifest_file_path.split('/').pop()}
                                 </span>
                               </div>
-                              {isFailed && container.extraction_errors && (
-                                <span className="text-[10px] text-red-500/80 italic leading-tight">
-                                  {isRTL ? 'خطأ: مفقود ' : 'Error: Missing '}
-                                  {container.extraction_errors.join(', ')}
-                                </span>
+                              {isFailed && container.error_reason && (
+                                <div className="mt-1 flex flex-col gap-1">
+                                  <div className="bg-red-500/10 border border-red-500/20 rounded-md p-2 mt-1">
+                                      <span className="text-[11px] text-red-500 font-bold uppercase flex items-center gap-1 mb-0.5">
+                                        <AlertCircle className="w-3 h-3" />
+                                        {isRTL ? 'خطأ في الاستخراج' : 'Extraction Error'}
+                                      </span>
+                                      <p className="text-[10px] text-red-400 font-medium leading-tight">
+                                        {container.error_reason}
+                                      </p>
+                                  </div>
+                                </div>
                               )}
                             </div>
                          </td>
@@ -241,7 +279,7 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
                          <td className="px-5 py-4">
                             <div className="flex flex-col gap-1.5">
                               <span className={`inline-flex items-center w-fit px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase
-                                ${container.extraction_status === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}
+                                ${container.extraction_status === 'extracted' || container.extraction_status === 'success' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}
                               `}>
                                 {container.extraction_status}
                               </span>

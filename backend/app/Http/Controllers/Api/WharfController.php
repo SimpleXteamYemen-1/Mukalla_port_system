@@ -42,7 +42,14 @@ class WharfController extends Controller
 
     public function getContainers(Request $request)
     {
-        $containers = Container::with('arrivalNotification')->get();
+        // Only return containers for vessels that have an APPROVED/ASSIGNED anchorage request
+        $anchoredVesselIds = AnchorageRequest::whereIn('status', ['approved', 'wharf_assigned', 'completed'])
+            ->pluck('vessel_id');
+
+        $containers = Container::whereIn('vessel_id', $anchoredVesselIds)
+            ->with('arrivalNotification')
+            ->get();
+            
         return response()->json($containers);
     }
 
