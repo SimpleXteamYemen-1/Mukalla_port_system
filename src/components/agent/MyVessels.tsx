@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { agentService } from '../../services/agentService';
-import { Ship, Plus, Search, Navigation, ChevronRight } from 'lucide-react';
+import { Ship, Plus, Search, Navigation, ChevronRight, Trash2 } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { toast } from 'react-toastify';
+import api from '../../services/api';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 
@@ -12,6 +14,7 @@ interface MyVesselsProps {
 
 export function MyVessels({ language, onNavigate }: MyVesselsProps) {
   const t = translations[language]?.agent?.vessels || translations.en.agent.vessels;
+  const isRTL = language === 'ar';
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [vessels, setVessels] = useState<any[]>([]);
@@ -34,6 +37,18 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
     };
     fetchVessels();
   }, []);
+
+  const handleDeleteVessel = async (id: number) => {
+    if (!window.confirm(isRTL ? 'هل أنت متأكد من إزالة هذه السفينة؟' : 'Are you sure you want to remove this vessel?')) return;
+    try {
+      await api.delete(`/agent/vessels/${id}`);
+      setVessels(vessels.filter(v => v.id !== id));
+      toast.success(isRTL ? 'تم إزالة السفينة بنجاح' : 'Vessel removed successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error(isRTL ? 'حدث خطأ أثناء الإزالة' : 'Failed to remove vessel');
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -159,17 +174,26 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
                       {vessel.location || 'At Sea'}
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      const url = new URL(window.location.href);
-                      url.searchParams.set('vesselId', vessel.imo_number);
-                      window.history.pushState({}, '', url);
-                      onNavigate('arrivals');
-                    }}
-                    className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 transition-all"
-                  >
-                    <ChevronRight className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleDeleteVessel(vessel.id)}
+                      className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shadow-sm"
+                      title={isRTL ? 'إزالة' : 'Remove'}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('vesselId', vessel.imo_number);
+                        window.history.pushState({}, '', url);
+                        onNavigate('arrivals');
+                      }}
+                      className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600 transition-all"
+                    >
+                      <ChevronRight className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))

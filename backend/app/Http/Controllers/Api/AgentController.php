@@ -72,6 +72,7 @@ class AgentController extends Controller
     public function getVessels(Request $request)
     {
         $vessels = Vessel::where('owner_id', $request->user()->id)
+            ->where('status', '!=', 'archived')
             ->with(['manifests', 'owner', 'containers'])
             ->latest()
             ->get();
@@ -281,6 +282,28 @@ class AgentController extends Controller
         $this->notifyUsers(['officer', 'executive'], 'Arrival Updated', "Agent has updated arrival details for vessel {$vessel->name}.");
 
         return response()->json($vessel);
+    }
+
+    public function deleteArrival(Request $request, $id)
+    {
+        $vessel = Vessel::where('id', $id)
+            ->where('owner_id', $request->user()->id)
+            ->firstOrFail();
+
+        // Check and silently delete any associated pending anchorage requests
+        $pendingAnchorage = AnchorageRequest::where('vessel_id', $vessel->id)
+            ->whereIn('status', ['pending', 'wharf_assigned', 'waiting'])
+            ->get();
+            
+        foreach ($pendingAnchorage as $anchorage) {
+            $anchorage->delete();
+        }
+
+        // Soft delete the vessel by marking it archived
+        $vessel->status = 'archived';
+        $vessel->save();
+
+        return response()->json(['message' => 'Vessel has been removed from active view.']);
     }
 
     public function updateManifest(Request $request, $id)

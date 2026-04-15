@@ -19,6 +19,7 @@ class Container extends Model
         'status',
         'extraction_status',
         'extraction_errors',
+        'error_reason',
     ];
 
     protected $casts = [

@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Edit endpoints
         Route::put('/agent/vessels/{id}', [AgentController::class, 'updateArrival']);
+        Route::delete('/agent/vessels/{id}', [AgentController::class, 'deleteArrival']);
         Route::put('/agent/manifests/{id}', [AgentController::class, 'updateManifest']);
         Route::delete('/agent/manifests/{id}', [AgentController::class, 'deleteManifest']);
         Route::put('/agent/anchorage/{id}', [AgentController::class, 'updateAnchorageRequest']);

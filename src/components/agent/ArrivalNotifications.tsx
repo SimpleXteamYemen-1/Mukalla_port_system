@@ -582,7 +582,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
           const hasManifest = notification.containers && notification.containers.length > 0;
           const hasManifestErrors = notification.status === 'draft' && (
             !hasManifest ||
-            notification.containers.some((c: any) => c.extraction_status !== 'success')
+            notification.containers.some((c: any) => c.extraction_status !== 'extracted')
           );
           const isRTL = language === 'ar';
           return (
@@ -731,7 +731,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     >
                       <UploadCloud className="w-5 h-5" />
                       {hasManifest
-                        ? (language === 'ar' ? 'رفع بيانات شحن إضافية' : 'Upload Additional Manifests')
+                        ? hasManifestErrors 
+                            ? (language === 'ar' ? 'عرض وحل أخطاء الاستخراج' : 'View & Resolve Extraction Errors')
+                            : (language === 'ar' ? 'رفع بيانات شحن إضافية' : 'Upload Additional Manifests')
                         : (language === 'ar' ? 'رفع بيانات الشحن (بوليصة الشحن)' : 'Upload Cargo Manifests')}
                     </button>
                   )}
