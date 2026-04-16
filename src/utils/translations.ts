@@ -297,7 +297,6 @@ export const translations = {
         userApprovals: 'طلبات تفعيل الحسابات',
         userDirectory: 'دليل المستخدمين',
       },
-      history: {},
       dashboard: {
         title: 'لوحة تحكم الإدارة التنفيذية',
         subtitle: 'نظرة عامة على الموافقات والقرارات',
@@ -976,7 +975,6 @@ export const translations = {
         userApprovals: 'User Approvals',
         userDirectory: 'User Directory',
       },
-      history: {},
       dashboard: {
         title: 'Executive Dashboard',
         subtitle: 'Overview of approvals and decisions',

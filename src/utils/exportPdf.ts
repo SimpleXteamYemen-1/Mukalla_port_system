@@ -45,7 +45,7 @@ function buildDocumentHtml(opts: {
   <title>${opts.docTypeLabel} — ${opts.vesselName}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; background: white; padding: 32px 36px; font-size: 12px; }
+    body { font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif; color: #111827; background: white; padding: 32px 36px; font-size: 12px; }
     @page { size: A4 portrait; margin: 14mm 12mm; }
     @media print { body { padding: 0; } button { display: none !important; } }
 
@@ -90,7 +90,7 @@ function buildDocumentHtml(opts: {
     .sig-field.right .sig-line { margin-left: auto; min-width: 160px; margin-top: 24px; }
     .hash-box { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px 16px; text-align: center; }
     .hash-label { font-size: 8px; text-transform: uppercase; font-weight: 700; color: #9ca3af; letter-spacing: 1px; margin-bottom: 4px; }
-    .hash-value { font-family: monospace; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: #374151; }
+    .hash-value { font-size: 12px; font-weight: 700; letter-spacing: 1.5px; color: #374151; }
     .disclaimer { font-size: 8px; color: #9ca3af; margin-top: 8px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
 
     /* ──── Footer ──── */

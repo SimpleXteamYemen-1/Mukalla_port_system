@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  :root, [dir="ltr"] {
+    --font-sans: 'Inter', sans-serif;
+    --base-line-height: 1.5;
+  }
+
+  [dir="rtl"] {
+    --font-sans: 'IBM Plex Sans Arabic', sans-serif;
+    --base-line-height: 1.7;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -111,6 +121,16 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    line-height: var(--base-line-height);
+  }
+
+  button, th, .btn {
+    font-weight: 500;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
   }
 
   /* Force OS Color Scheme Recognition */
