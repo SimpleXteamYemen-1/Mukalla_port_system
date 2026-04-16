@@ -7,6 +7,18 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'sans-serif'],
+      },
+      fontWeight: {
+        light: '400',
+        normal: '400',
+        medium: '500',
+        semibold: '500',
+        bold: '700',
+        extrabold: '700',
+        black: '700',
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

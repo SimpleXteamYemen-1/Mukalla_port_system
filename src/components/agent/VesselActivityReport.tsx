@@ -240,7 +240,7 @@ const PRINT_STYLE = `
   #vessel-report-printzone { position: fixed; inset: 0; padding: 0; overflow: visible; background: white; }
 
   /* Typography */
-  #vessel-report-printzone { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; }
+  #vessel-report-printzone { font-family: var(--font-sans); color: #111827; }
 
   /* Header section always on first page */
   #report-print-header { page-break-after: avoid; margin-bottom: 24px; border-bottom: 2px solid #1d4ed8; padding-bottom: 16px; }
@@ -570,7 +570,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
         <div id="vessel-report-printzone" ref={printZoneRef} style={{ display: 'none' }}>
           <style>{`
             @media print {
-              #vessel-report-printzone { display: block !important; background: white; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; color: #111827; }
+              #vessel-report-printzone { display: block !important; background: white; padding: 0; font-family: var(--font-sans); color: #111827; }
             }
           `}</style>
 
