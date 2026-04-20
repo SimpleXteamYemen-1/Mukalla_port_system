@@ -51,6 +51,8 @@ class PortOfficerController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'approve_arrival',
             'details' => "Approved vessel {$vessel->name} arrival",
         ]);
@@ -89,6 +91,8 @@ class PortOfficerController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'assign_berth',
             'details' => "Scheduled {$vessel->name} to {$wharf->name} from {$vessel->eta} to {$vessel->etd}",
         ]);
@@ -125,6 +129,8 @@ class PortOfficerController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'issue_clearance',
             'details' => "Issued clearance for vessel {$vessel->name} to {$request->next_port}",
         ]);
@@ -189,6 +195,8 @@ class PortOfficerController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'approve_clearance',
             'details' => "Approved clearance for vessel {$vessel->name}",
         ]);
@@ -212,6 +220,8 @@ class PortOfficerController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $clearance->vessel_id,
+            'vessel_name' => $clearance->vessel->name,
             'action' => 'reject_clearance',
             'details' => "Rejected clearance for vessel {$clearance->vessel->name}. Reason: {$request->rejection_reason}",
         ]);
@@ -221,7 +231,7 @@ class PortOfficerController extends Controller
 
     public function getLogs()
     {
-        return response()->json(Log::with('user')->latest()->take(50)->get());
+        return response()->json(Log::with(['user', 'vessel'])->latest()->take(50)->get());
     }
 
     public function getWharves()
@@ -251,6 +261,8 @@ class PortOfficerController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'berth_release',
             'details' => "Released {$vessel->name} from {$wharf->name}",
         ]);

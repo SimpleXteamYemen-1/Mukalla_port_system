@@ -195,18 +195,32 @@ export async function getLogs(): Promise<LogEntry[]> {
   try {
     const response = await api.get('/officer/logs');
     return response.data.map((l: any) => {
-      // Logic to extract vessel name from details since it's not a separate field
-      let vesselName = 'Vessel';
-      const details = l.details || '';
-      
-      if (details.includes('Scheduled ')) {
-        vesselName = details.split('Scheduled ')[1].split(' to ')[0];
-      } else if (details.includes('Approved vessel ')) {
-        vesselName = details.split('Approved vessel ')[1].split(' arrival')[0];
-      } else if (details.includes('Issued clearance for vessel ')) {
-        vesselName = details.split('Issued clearance for vessel ')[1].split(' to ')[0];
-      } else if (details.includes('Released ')) {
-        vesselName = details.split('Released ')[1].split(' from ')[0];
+      // Priority chain: static snapshot > FK relationship > string parsing > fallback
+      let vesselName = l.vessel_name || (l.vessel ? l.vessel.name : null);
+
+      // Fallback: parse vessel name from details for legacy logs
+      if (!vesselName) {
+        const details = l.details || '';
+        if (details.includes('Scheduled ')) {
+          vesselName = details.split('Scheduled ')[1]?.split(' to ')[0];
+        } else if (details.includes('Approved vessel ')) {
+          vesselName = details.split('Approved vessel ')[1]?.split(' arrival')[0];
+        } else if (details.includes('Issued clearance for vessel ')) {
+          vesselName = details.split('Issued clearance for vessel ')[1]?.split(' to ')[0];
+        } else if (details.includes('Approved clearance for vessel ')) {
+          vesselName = details.split('Approved clearance for vessel ')[1]?.split('.')[0]?.split(' Reason')[0];
+        } else if (details.includes('Rejected clearance for vessel ')) {
+          vesselName = details.split('Rejected clearance for vessel ')[1]?.split('.')[0];
+        } else if (details.includes('Released ')) {
+          vesselName = details.split('Released ')[1]?.split(' from ')[0];
+        } else if (details.includes('Vessel ')) {
+          vesselName = details.split('Vessel ')[1]?.split(' has ')[0];
+        } else if (details.includes('arrival for vessel ')) {
+          vesselName = details.split('arrival for vessel ')[1]?.split('.')[0]?.split(' ')[0];
+        } else if (details.includes('anchorage for vessel ')) {
+          vesselName = details.split('anchorage for vessel ')[1]?.split('.')[0];
+        }
+        vesselName = vesselName || 'Unknown Vessel';
       }
 
       return {
@@ -216,6 +230,8 @@ export async function getLogs(): Promise<LogEntry[]> {
         vessel: vesselName,
         details: l.details,
         officer: l.user ? l.user.name : 'Officer',
+        wharf: l.wharf,
+        clearanceId: l.clearance_id,
       };
     });
   } catch (error) {

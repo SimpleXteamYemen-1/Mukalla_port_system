@@ -209,6 +209,8 @@ class AgentController extends Controller
             // Executive Notification (Log)
             \App\Models\Log::create([
                 'user_id' => $request->user()->id,
+                'vessel_id' => $vessel->id,
+                'vessel_name' => $vessel->name,
                 'action' => 'vessel_departure',
                 'details' => "Vessel {$vessel->name} has successfully departed.",
             ]);
