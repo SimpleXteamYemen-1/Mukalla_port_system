@@ -52,12 +52,24 @@ interface DashboardRouterProps {
   onToggleTheme: () => void;
 }
 
+// All valid page keys per role — used to guard against stale ?tab= values on refresh
+const VALID_PAGES: Record<string, string[]> = {
+  executive: ['dashboard', 'notifications', 'arrivals', 'vessel-history', 'anchorage', 'user-approvals', 'user-directory', 'logs', 'reports', 'settings'],
+  officer:   ['dashboard', 'notifications', 'berthing', 'vessels', 'clearances', 'logs', 'report', 'settings'],
+  wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'containers', 'capacity', 'settings'],
+  trader:    ['dashboard', 'notifications', 'containers', 'discharge', 'settings'],
+  agent:     ['dashboard', 'notifications', 'vessels', 'arrivals', 'anchorage', 'manifests', 'clearances', 'tracker', 'report', 'settings'],
+};
+
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
   const [currentPage, setCurrentPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab') || 'dashboard';
+    const tab = params.get('tab') || 'dashboard';
+    // Guard: if the saved tab is unknown for this role, fall back to 'dashboard'
+    const validPages = VALID_PAGES[user.role] ?? [];
+    return validPages.includes(tab) ? tab : 'dashboard';
   });
 
   const [activeVesselId, setActiveVesselId] = useState<string | number | null>(() => {
@@ -200,6 +212,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 onToggleLanguage={onToggleLanguage} 
               />
             )}
+            {/* Catch-all: unknown page → show dashboard */}
+            {!VALID_PAGES.executive.includes(currentPage) && <ExecutiveDashboard language={language} onNavigate={handleNavigate} />}
           </main>
         </div>
       </div>
@@ -311,6 +325,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 onToggleLanguage={onToggleLanguage} 
               />
             )}
+            {/* Catch-all: unknown page → show dashboard */}
+            {!VALID_PAGES.officer.includes(currentPage) && <PortOfficerDashboard language={language} />}
           </main>
         </div>
       </div>
@@ -424,6 +440,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 onToggleLanguage={onToggleLanguage} 
               />
             )}
+            {/* Catch-all: unknown page → show dashboard */}
+            {!VALID_PAGES.wharf.includes(currentPage) && <WharfDashboard language={language} />}
           </main>
         </div>
       </div>
@@ -534,6 +552,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 onToggleLanguage={onToggleLanguage} 
               />
             )}
+            {/* Catch-all: unknown page → show dashboard */}
+            {!VALID_PAGES.trader.includes(currentPage) && <TraderDashboard language={language} userEmail={user.email} />}
           </main>
         </div>
       </div>
@@ -571,6 +591,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             onToggleLanguage={onToggleLanguage} 
           />
         )}
+        {/* Catch-all: unknown page → show dashboard */}
+        {!VALID_PAGES.agent.includes(currentPage) && <AgentDashboard language={language} onNavigate={setCurrentPage} />}
       </MainLayout>
     );
   }
