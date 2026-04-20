@@ -160,12 +160,12 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
                 <Field>
                   <div className="flex items-center justify-between">
                     <FieldLabel htmlFor="password" className={language === 'ar' ? 'mr-1' : 'ml-1'}>{t.password}</FieldLabel>
-                    <button
-                      type="button"
-                      className="text-xs font-bold text-primary hover:text-primary/80 transition-colors hover:underline"
+                    <a
+                      href="http://127.0.0.1:8000/forget-password"
+                       className="text-xs font-bold text-primary hover:text-primary/80 transition-colors hover:underline"
                     >
-                      {t.forgotPassword}
-                    </button>
+                     {t.forgotPassword}
+                    </a>
                   </div>
                   <div className="relative group">
                     <Lock className={cn("absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary", language === 'ar' ? 'right-3' : 'left-3')} />
