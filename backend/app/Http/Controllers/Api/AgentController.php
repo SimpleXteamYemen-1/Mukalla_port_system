@@ -524,4 +524,78 @@ class AgentController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function getVesselActivityReport(Request $request)
+    {
+        $vesselId = $request->get('vessel_id');
+        $date = $request->get('date');
+        $user = $request->user();
+
+        if (!$vesselId && !$date) {
+            return response()->json(['message' => 'Either Vessel or Date is required.'], 400);
+        }
+
+        $query = Vessel::where('owner_id', $user->id);
+
+        if ($vesselId) {
+            $vessels = $query->where('id', $vesselId)->get();
+        } else {
+            // Find all vessels that had any activity on this date
+            // Activity = Eta on this date OR Anchorage record on this date OR Clearance record on this date
+            $vessels = $query->where(function($q) use ($date) {
+                $q->whereDate('eta', $date)
+                  ->orWhereHas('clearances', function($cq) use ($date) {
+                      $cq->whereDate('created_at', $date)->orWhereDate('issue_date', $date);
+                  })
+                  ->orWhereHas('manifests', function($mq) use ($date) {
+                      $mq->whereDate('created_at', $date);
+                  });
+            })->get();
+        }
+
+        $reports = $vessels->map(function($v) use ($date) {
+            // 1. Arrival (The vessel record itself)
+            // If date is provided, we only show it as a match if it's relevant to that date
+            $arrival = $v;
+            
+            // 2. Anchorage
+            $anchorageQuery = $v->manifests()->where('agent_id', $v->owner_id); // Wait, AnchorageRequest uses agent_id and vessel_id
+            // Correction: AnchorageRequest::where('vessel_id', $v->id)
+            $anchorage = \App\Models\AnchorageRequest::where('vessel_id', $v->id)
+                ->with('wharf')
+                ->when($date, function($q) use ($date) {
+                    return $q->whereDate('created_at', $date)->orWhereDate('docking_time', $date);
+                })
+                ->latest()
+                ->first();
+
+            // 3. Clearance
+            $clearance = $v->clearances()
+                ->with('officer')
+                ->when($date, function($q) use ($date) {
+                    return $q->whereDate('created_at', $date)->orWhereDate('issue_date', $date);
+                })
+                ->latest()
+                ->first();
+
+            return [
+                'vessel' => [
+                    'id' => $v->id,
+                    'name' => $v->name,
+                    'imo' => $v->imo_number
+                ],
+                'date' => $date ?: now()->format('Y-m-d'),
+                'arrival' => $arrival,
+                'anchorage' => $anchorage,
+                'clearance' => $clearance
+            ];
+        });
+
+        // If a specific vessel was requested, return it directly (backward compatibility with frontend)
+        if ($vesselId && $reports->isNotEmpty()) {
+            return response()->json($reports->first());
+        }
+
+        return response()->json($reports);
+    }
 }

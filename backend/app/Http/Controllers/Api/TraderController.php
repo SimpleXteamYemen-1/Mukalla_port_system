@@ -12,8 +12,14 @@ class TraderController extends Controller
     public function getContainers(Request $request)
     {
         $user = $request->user();
-        $containers = Container::where('trader_user_id', $user->id)
-            ->orWhere('consignee_phone', $user->phone)
+        $containers = Container::where(function ($query) use ($user) {
+                $query->where('trader_user_id', $user->id)
+                      ->orWhere('consignee_phone', $user->phone);
+            })
+            ->whereHas('vessel', function ($q) {
+                // Vessel must be released from wharf (status 'ready' or similar terminal states)
+                $q->whereIn('status', ['ready', 'departed', 'cleared', 'completed']);
+            })
             ->with('arrivalNotification')
             ->get();
             
@@ -29,7 +35,10 @@ class TraderController extends Controller
 
         // Ensure container belongs to trader
         $container = Container::where('id', $request->container_id)
-            ->where('trader_email', $request->user()->email)
+            ->where(function ($query) use ($request) {
+                $query->where('trader_user_id', $request->user()->id)
+                      ->orWhere('consignee_phone', $request->user()->phone);
+            })
             ->firstOrFail();
 
         $discharge = DischargeRequest::create([
@@ -52,9 +61,16 @@ class TraderController extends Controller
 
     public function getDashboardStats(Request $request)
     {
-        $email = $request->user()->email;
-        // Need to query containers by trader email
-        $containers = Container::where('trader_email', $email)->get();
+        $user = $request->user();
+        // Calculate stats only for containers whose vessels are released
+        $containers = Container::where(function ($query) use ($user) {
+                $query->where('trader_user_id', $user->id)
+                      ->orWhere('consignee_phone', $user->phone);
+            })
+            ->whereHas('vessel', function ($q) {
+                $q->whereIn('status', ['ready', 'departed', 'cleared', 'completed']);
+            })
+            ->get();
         
         return response()->json([
             'arrived' => $containers->where('status', 'arrived')->count(),

@@ -27,6 +27,21 @@ export function StorageManagement({ language }: { language: Language }) {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'chemical' | 'frozen' | 'dry'>('chemical');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Reclassification Modal State
+  const [reclassifyConfig, setReclassifyConfig] = useState<{
+    isOpen: boolean;
+    container: ContainerData | null;
+    newType: 'chemical' | 'frozen' | 'dry';
+    newKeyword: string;
+    isSubmitting: boolean;
+  }>({
+    isOpen: false,
+    container: null,
+    newType: 'chemical',
+    newKeyword: '',
+    isSubmitting: false
+  });
 
   const fetchContainers = async () => {
     try {
@@ -56,6 +71,24 @@ export function StorageManagement({ language }: { language: Language }) {
     { id: 'frozen', icon: ThermometerSnowflake, label: isRTL ? 'منطقة التجميد' : 'Frozen Storage', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
     { id: 'dry', icon: Box, label: isRTL ? 'التخزين الجاف' : 'Dry Storage', color: 'text-slate-500', bg: 'bg-slate-500/10' },
   ] as const;
+
+  const handleReclassifySubmit = async () => {
+    if (!reclassifyConfig.container) return;
+    try {
+      setReclassifyConfig(prev => ({ ...prev, isSubmitting: true }));
+      await api.post(`/wharf/containers/${reclassifyConfig.container.id}/reclassify`, {
+        new_storage_type: reclassifyConfig.newType,
+        new_keyword: reclassifyConfig.newKeyword
+      });
+      // Refresh the list after success
+      await fetchContainers();
+      setReclassifyConfig(prev => ({ ...prev, isOpen: false, newKeyword: '' }));
+    } catch (err) {
+      console.error("Failed to reclassify container", err);
+    } finally {
+      setReclassifyConfig(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
 
   if (isLoading && containers.length === 0) {
     return (
@@ -161,6 +194,7 @@ export function StorageManagement({ language }: { language: Language }) {
                   <th className={`px-6 py-4 border-b border-[var(--secondary)]/10 text-${isRTL ? 'right' : 'left'}`}>{isRTL ? 'تحليل البضاعة' : 'Cargo Description'}</th>
                   <th className={`px-6 py-4 border-b border-[var(--secondary)]/10 text-${isRTL ? 'right' : 'left'}`}>{isRTL ? 'بيانات التاجر' : 'Verified Consignee'}</th>
                   <th className={`px-6 py-4 border-b border-[var(--secondary)]/10 text-${isRTL ? 'right' : 'left'}`}>{isRTL ? 'اللوجستيات' : 'Logistics'}</th>
+                  <th className={`px-6 py-4 border-b border-[var(--secondary)]/10 text-center`}>{isRTL ? 'إجراء' : 'Action'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--secondary)]/5 text-sm">
@@ -188,6 +222,20 @@ export function StorageManagement({ language }: { language: Language }) {
                              <MapPin className="w-3 h-3" /> {container.port_of_loading}
                            </span>
                        </div>
+                    </td>
+                    <td className="px-6 py-5 align-middle text-center">
+                       <button 
+                         onClick={() => setReclassifyConfig({ 
+                           isOpen: true, 
+                           container, 
+                           newType: container.storage_type, 
+                           newKeyword: '', 
+                           isSubmitting: false 
+                         })}
+                         className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
+                       >
+                         {isRTL ? 'تخزين خاطئ؟' : 'Wrong Storage?'}
+                       </button>
                     </td>
                   </tr>
                 ))}
@@ -219,6 +267,93 @@ export function StorageManagement({ language }: { language: Language }) {
             ))}
          </div>
       </div>
+
+      {/* Reclassification Modal */}
+      {reclassifyConfig.isOpen && reclassifyConfig.container && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--secondary)]/10 flex justify-between items-center bg-red-500/5">
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="font-black tracking-tight">{isRTL ? 'الإبلاغ عن مسار خاطئ' : 'Report Routing Error'}</h3>
+              </div>
+              <button 
+                onClick={() => setReclassifyConfig(prev => ({ ...prev, isOpen: false }))}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-5">
+              <div className="bg-[var(--secondary)]/5 p-4 rounded-xl border border-[var(--secondary)]/10">
+                <p className="text-xs uppercase tracking-widest text-[var(--text-secondary)] font-black mb-1">{isRTL ? 'وصف البضاعة المحلل' : 'Extracted Description'}</p>
+                <p className="text-sm font-bold text-[var(--text-primary)]">{reclassifyConfig.container.description_of_goods || 'N/A'}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] mb-2">
+                  {isRTL ? 'الوجهة الصحيحة' : 'Correct Destination'}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setReclassifyConfig(prev => ({ ...prev, newType: tab.id }))}
+                      className={`py-2 px-3 flex flex-col items-center gap-1.5 rounded-lg border text-xs font-bold transition-all ${
+                        reclassifyConfig.newType === tab.id 
+                          ? `bg-[var(--card)] shadow-sm ${tab.color} ${tab.id==='chemical'?'border-amber-500/50':tab.id==='frozen'?'border-cyan-500/50':'border-slate-500/50'}` 
+                          : 'border-[var(--secondary)]/20 text-[var(--text-secondary)] hover:bg-[var(--secondary)]/5'
+                      }`}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      <span>{tab.label.split(' ')[0]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] mb-2">
+                  {isRTL ? 'إضافة كلمة مفتاحية جديدة' : 'Add Missing Keyword'}
+                </label>
+                <input 
+                  type="text" 
+                  value={reclassifyConfig.newKeyword}
+                  onChange={(e) => setReclassifyConfig(prev => ({ ...prev, newKeyword: e.target.value }))}
+                  placeholder={isRTL ? 'مثال: أكياس، مبردة...' : 'e.g. frozen, vaccine...'}
+                  className="w-full px-4 py-2.5 bg-[var(--bg-primary)] border border-[var(--secondary)]/20 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm font-medium"
+                />
+                <p className="text-[10px] text-[var(--text-secondary)] mt-2 leading-relaxed opacity-80">
+                  {isRTL 
+                    ? 'سيتم إضافة هذه الكلمة لقاموس النظام لتوجيه الحاويات المشابهة مستقبلاً بشكل تلقائي.' 
+                    : 'Adding a specific keyword from the description will train the engine to route similar manifests to this sector automatically.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[var(--secondary)]/10 bg-[var(--secondary)]/5 flex justify-end gap-3">
+              <button 
+                onClick={() => setReclassifyConfig(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                {isRTL ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button 
+                onClick={handleReclassifySubmit}
+                disabled={reclassifyConfig.isSubmitting}
+                className="px-6 py-2 bg-blue-500 hover:bg-blue-600 active:scale-95 disabled:opacity-50 text-white text-sm font-black rounded-lg transition-all shadow-md shadow-blue-500/20 flex items-center gap-2"
+              >
+                {reclassifyConfig.isSubmitting ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  isRTL ? 'تأكيد التعديل' : 'Confirm & Train'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

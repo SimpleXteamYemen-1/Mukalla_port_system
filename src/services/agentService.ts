@@ -377,11 +377,13 @@ export const agentService = {
         }
     },
 
-    getVesselActivityReport: async (vesselId: number, date: string): Promise<import('./agentService').VesselActivityReport | null> => {
+    getVesselActivityReport: async (vesselId?: number | '', date?: string): Promise<VesselActivityReport | VesselActivityReport[] | null> => {
         try {
-            const response = await api.get('/agent/vessel-report', {
-                params: { vessel_id: vesselId, date },
-            });
+            const params: any = {};
+            if (vesselId) params.vessel_id = vesselId;
+            if (date) params.date = date;
+
+            const response = await api.get('/agent/vessel-report', { params });
             return response.data;
         } catch (error) {
             console.error('Error fetching vessel activity report', error);

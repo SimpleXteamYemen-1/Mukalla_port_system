@@ -5,6 +5,7 @@ namespace App\Services;
 use thiagoalessio\TesseractOCR\TesseractOCR;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use App\Models\StorageKeyword;
 
 class ManifestExtractionService
 {
@@ -85,8 +86,53 @@ class ManifestExtractionService
 
         // Optional Description Extract for Categorization (won't fail if empty)
         $extractedDescription = '';
-        if (preg_match('/description\s+of\s+goods\s*[:\-]?\s*([^\n\r]+)/i', $rawText, $matches)) {
-            $extractedDescription = trim($matches[1]);
+
+        // Edge case: Table extraction often jumbles description with other cells.
+        // We dynamically search for our known chemical, frozen, and dry goods keywords.
+        $dbKeywords = StorageKeyword::pluck('keyword')->toArray();
+        $knownGoodsKeywords = array_merge(
+            ['acid', 'toxin', 'toxic', 'fertilizer', 'chemical', 'hazardous', 'flammable', 'frozen', 'meat', 'chicken', 'refrigerated', 'fish', 'iron', 'steel', 'wood'],
+            $dbKeywords
+        );
+        $keywordRegex = implode('|', array_map('preg_quote', $knownGoodsKeywords));
+        
+        // Grab the phrase surrounding the matched keyword (up to 3 words before/after)
+        if (preg_match('/(?:\b[a-zA-Z_0-9]+\s+){0,3}(?:' . $keywordRegex . ')(?:\s+[a-zA-Z_0-9]+\b){0,3}/i', $rawText, $matches)) {
+            $match = trim($matches[0]);
+            
+            // If it grabbed a company name or header, aggressively split and take the preceding text
+            if (preg_match('/(shipper|exporter|consignee|date|company)/i', $match, $splitters)) {
+                $match = trim(preg_split('/(shipper|exporter|consignee|date|company)/i', $match)[0]);
+            }
+            
+            // Clean up trailing small words like "for", "Oman"
+            $match = trim(preg_replace('/\b(?:for|oman|the|of)\b$/i', '', $match));
+
+            if (strlen($match) >= 3) {
+                $extractedDescription = ucfirst(strtolower($match));
+            }
+        }
+
+        // Try to find the actual description, avoiding other headers
+        if (!$extractedDescription && preg_match('/description\s+of\s+goods\s*[:\-]?\s*([^\n\r]+)/i', $rawText, $matches)) {
+            $match = trim($matches[1]);
+            // If the matched text is just another header, we ignore it and search the body
+            if (!preg_match('/shipper|exporter|consignee|date/i', $match)) {
+                $extractedDescription = $match;
+            }
+        }
+
+        // If extraction failed or we caught a header, let's try a broader search for goods keywords
+        if (!$extractedDescription) {
+            if (preg_match('/(?:pallets?|boxes|containers?|frozen|fish|chicken|meat|supplies|goods|cargo)\s+of\s+([^\n\r]+)/i', $rawTextLower, $matches)) {
+                $match = trim($matches[0]);
+                // Ensure we don't accidentally grab company names
+                if (!str_contains(strtolower($match), 'company')) {
+                    $extractedDescription = $match;
+                }
+            } else if (preg_match('/(pallets?\s+of\s+[^\n\r]+)/i', $rawTextLower, $matches)) {
+                $extractedDescription = trim($matches[1]);
+            }
         }
 
         // Inverted Consignee Lookup
@@ -125,7 +171,7 @@ class ManifestExtractionService
             'description' => $extractedDescription,
             'consignee_name' => $extractedConsignee,
             'consignee_phone' => $extractedPhone,
-            'storage_type' => $this->categorizeGoods($extractedDescription),
+            'storage_type' => $this->categorizeGoods($rawTextLower, $extractedDescription),
             'trader_user_id' => $trader ? $trader->id : null,
         ];
     }
@@ -144,7 +190,7 @@ class ManifestExtractionService
 
             // Use Tesseract for images
             $ocr = new TesseractOCR($filePath);
-            
+
             // Windows fallback: if not in PATH, try common installation directories
             $commonPaths = [
                 'C:\Program Files\Tesseract-OCR\tesseract.exe',
@@ -157,19 +203,19 @@ class ManifestExtractionService
                     break;
                 }
             }
-            
+
             // Support English and fallback to standard
             $ocr->lang('eng', 'ara');
-            
+
             return $ocr->run();
         } catch (\Exception $e) {
             $msg = $e->getMessage();
             Log::error("Extraction Engine Failed: " . $msg);
-            
+
             if (\Str::contains($msg, 'tessdata') || \Str::contains($msg, 'traineddata')) {
                 throw new \Exception("CRITICAL ERROR: Tesseract is missing the English or Arabic Language packs! Please download 'eng.traineddata' and 'ara.traineddata' and place them in your C:\Program Files\Tesseract-OCR\tessdata folder.");
             }
-            
+
             return ""; // Fallback to empty to trigger the empty text guard
         }
     }
@@ -223,30 +269,37 @@ class ManifestExtractionService
     }
 
     /**
-     * Categorizes goods based on keyword matching in their description.
+     * Categorizes goods based on keyword matching.
      */
-    public function categorizeGoods($description)
+    public function categorizeGoods($rawText, $description = '')
     {
-        // 1. Empty Description Guard
-        if (!$description || strlen(trim((string)$description)) < 5) {
-            return 'dry';
-        }
+        // 1. Prepare texts
+        $rawTextLower = strtolower((string) $rawText);
+        $descriptionLower = strtolower((string) $description);
 
-        $description = strtolower((string)$description);
+        // Remove misleading shipper names from the raw text to prevent false positives
+        $rawTextLower = str_replace('company for chicken', '', $rawTextLower);
 
-        // 2. Strict Frozen Keyword Matching
-        $frozenKeywords = ['frozen', 'meat', 'chicken', '-18', 'refrigerated', 'temp'];
-        foreach ($frozenKeywords as $keyword) {
-            if (str_contains($description, $keyword)) {
-                return 'frozen';
+        // Prefer description if available, otherwise fallback to the sanitized raw text
+        $textToSearch = $descriptionLower ?: $rawTextLower;
+
+        // Combine hardcoded and dynamic DB keywords
+        $dbChemicalKeywords = StorageKeyword::where('storage_type', 'chemical')->pluck('keyword')->toArray();
+        $dbFrozenKeywords = StorageKeyword::where('storage_type', 'frozen')->pluck('keyword')->toArray();
+
+        // 2. Strict Chemical Keyword Matching
+        $chemicalKeywords = array_merge(['acid', 'toxin', 'chimcao', 'toxic', 'fertilizer', 'chemical', 'hazardous', 'flammable'], $dbChemicalKeywords);
+        foreach ($chemicalKeywords as $keyword) {
+            if (str_contains($textToSearch, strtolower($keyword))) {
+                return 'chemical';
             }
         }
 
-        // 3. Strict Chemical Keyword Matching
-        $chemicalKeywords = ['acid', 'toxin', 'fertilizer', 'chemical', 'hazardous', 'flammable'];
-        foreach ($chemicalKeywords as $keyword) {
-            if (str_contains($description, $keyword)) {
-                return 'chemical';
+        // 3. Strict Frozen Keyword Matching
+        $frozenKeywords = array_merge(['frozen', 'meat', 'chicken', '-18', 'refrigerated', 'temp', 'fish'], $dbFrozenKeywords);
+        foreach ($frozenKeywords as $keyword) {
+            if (str_contains($textToSearch, strtolower($keyword))) {
+                return 'frozen';
             }
         }
 

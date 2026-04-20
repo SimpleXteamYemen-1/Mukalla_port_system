@@ -262,6 +262,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
   const [selectedVesselId, setSelectedVesselId] = useState<number | ''>('');
   const [selectedDate, setSelectedDate] = useState('');
   const [report, setReport] = useState<VesselReport | null>(null);
+  const [reportList, setReportList] = useState<VesselReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingVessels, setLoadingVessels] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
@@ -316,11 +317,24 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
 
   // ── Fetch Report ──
   const handleSearch = async () => {
-    if (!selectedVesselId || !selectedDate) return;
+    if (!selectedVesselId && !selectedDate) return;
     setIsLoading(true);
     setHasSearched(true);
-    const result = await agentService.getVesselActivityReport(Number(selectedVesselId), selectedDate);
-    setReport(result);
+    setReport(null);
+    setReportList([]);
+
+    const result = await agentService.getVesselActivityReport(selectedVesselId, selectedDate);
+    
+    if (Array.isArray(result)) {
+      if (result.length === 1) {
+        setReport(result[0]);
+      } else {
+        setReportList(result);
+      }
+    } else {
+      setReport(result);
+    }
+    
     setIsLoading(false);
   };
 
@@ -426,7 +440,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
             <button
               id="btn-generate-preview"
               onClick={handleSearch}
-              disabled={!selectedVesselId || !selectedDate || isLoading}
+              disabled={(!selectedVesselId && !selectedDate) || isLoading}
               className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white font-bold shadow-md shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/30 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 min-w-[160px]"
             >
               {isLoading
@@ -461,102 +475,174 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
           </div>
         )}
 
-        {/* ── Report Preview ── */}
-        {hasSearched && !isLoading && report !== null && (
+        {/* ── Report Preview / Selection ── */}
+        {hasSearched && !isLoading && (
           <div className="space-y-5">
-            {/* Report meta bar */}
-            <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)]">
-              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <Ship className="w-4 h-4 text-[var(--primary)]" />
-                <span className="font-bold text-[var(--text-primary)]">{report.vessel?.name || 'Unknown Vessel'}</span>
-                <span className="text-[var(--text-muted)]">({report.vessel?.imo || 'N/A'})</span>
+            {/* Multiple Results Found */}
+            {reportList.length > 0 && !report && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/5 border border-blue-500/20 text-blue-400 text-sm font-bold">
+                  <Info className="w-4 h-4" />
+                  {isRTL ? `تم العثور على ${reportList.length} سفن نشطة في هذا التاريخ` : `Found ${reportList.length} active vessels on this date`}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {reportList.map(r => (
+                    <div 
+                      key={r.vessel.id}
+                      onClick={() => setReport(r)}
+                      className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:border-blue-500/50 hover:bg-blue-500/5 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-blue-500/10"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Ship className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-[var(--text-muted)] -rotate-90" />
+                      </div>
+                      <h4 className="font-black text-[var(--text-primary)] text-lg mb-1">{r.vessel.name}</h4>
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] font-bold mb-4">
+                        <Hash className="w-3 h-3" /> {r.vessel.imo}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {r.arrival && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase">Arrival</span>
+                        )}
+                        {r.anchorage && (
+                          <span className="px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 text-[10px] font-black uppercase">Anchorage</span>
+                        )}
+                        {r.clearance && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">Clearance</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <span className="text-[var(--border)]">·</span>
-              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <Calendar className="w-4 h-4 text-[var(--primary)]" />
-                <span className="font-semibold">{fmtDate(report.date)}</span>
-              </div>
-              <span className="text-[var(--border)]">·</span>
-              <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <Printer className="w-4 h-4 text-[var(--primary)]" />
-                <span>{isRTL ? 'تاريخ الاستخراج:' : 'Generated:'} {new Date().toLocaleString()}</span>
-              </div>
-            </div>
+            )}
 
-            {/* Module 1 — Arrival Notification */}
-            <ModuleSection
-              index={1}
-              icon={Ship}
-              title={isRTL ? 'بلاغ الوصول' : 'Arrival Notification'}
-              subtitle={isRTL ? 'الطوابع الزمنية، إعلانات الشحن وحالة الأمان' : 'Timestamps, cargo declarations and security status'}
-              status={report.arrival?.status ?? null}
-              isMissing={!report.arrival}
-              accentClass="from-blue-600 to-cyan-500"
-              iconBgClass="bg-gradient-to-br from-blue-600 to-cyan-500"
-            >
-              <ArrivalCard data={report.arrival!} />
-            </ModuleSection>
+            {/* Single Report Preview */}
+            {report && (
+              <>
+                {/* Back button if search returned multiple results */}
+                {reportList.length > 1 && (
+                  <button 
+                    onClick={() => setReport(null)}
+                    className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-2"
+                  >
+                    ← {isRTL ? 'العودة للنتائج' : 'Back to Results'}
+                  </button>
+                )}
 
-            {/* Module 2 — Anchorage Request */}
-            <ModuleSection
-              index={2}
-              icon={Anchor}
-              title={isRTL ? 'طلب الرسو' : 'Anchorage Request'}
-              subtitle={isRTL ? 'إحداثيات الموضع، المدة المطلوبة وسجلات الحالة' : 'Position coordinates, requested duration and status logs'}
-              status={report.anchorage?.status ?? null}
-              isMissing={!report.anchorage}
-              accentClass="from-violet-600 to-purple-500"
-              iconBgClass="bg-gradient-to-br from-violet-600 to-purple-500"
-            >
-              <AnchorageCard data={report.anchorage!} />
-            </ModuleSection>
+                {/* Report meta bar */}
+                <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)]">
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Ship className="w-4 h-4 text-[var(--primary)]" />
+                    <span className="font-bold text-[var(--text-primary)]">{report.vessel?.name || 'Unknown Vessel'}</span>
+                    <span className="text-[var(--text-muted)]">({report.vessel?.imo || 'N/A'})</span>
+                  </div>
+                  <span className="text-[var(--border)]">·</span>
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Calendar className="w-4 h-4 text-[var(--primary)]" />
+                    <span className="font-semibold">{fmtDate(report.date)}</span>
+                  </div>
+                  <span className="text-[var(--border)]">·</span>
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Printer className="w-4 h-4 text-[var(--primary)]" />
+                    <span>{isRTL ? 'تاريخ الاستخراج:' : 'Generated:'} {new Date().toLocaleString()}</span>
+                  </div>
+                </div>
 
-            {/* Module 3 — Port Clearance */}
-            <ModuleSection
-              index={3}
-              icon={FileCheck}
-              title={isRTL ? 'تصريح الميناء' : 'Port Clearance'}
-              subtitle={isRTL ? 'رموز التفويض الرسمية، جاهزية المغادرة وختم الامتثال' : 'Official authorization codes, departure readiness and compliance stamps'}
-              status={report.clearance?.status ?? null}
-              isMissing={!report.clearance}
-              accentClass="from-emerald-600 to-teal-500"
-              iconBgClass="bg-gradient-to-br from-emerald-600 to-teal-500"
-            >
-              <ClearanceCard data={report.clearance!} />
-            </ModuleSection>
-
-            {/* Bottom Export CTA */}
-            {canExport && (
-              <div className="flex justify-end pt-2">
-                <button
-                  id="btn-extract-pdf-bottom"
-                  onClick={handleExportPDF}
-                  className="flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300"
+                {/* Module 1 — Arrival Notification */}
+                <ModuleSection
+                  index={1}
+                  icon={Ship}
+                  title={isRTL ? 'بلاغ الوصول' : 'Arrival Notification'}
+                  subtitle={isRTL ? 'الطوابع الزمنية، إعلانات الشحن وحالة الأمان' : 'Timestamps, cargo declarations and security status'}
+                  status={report.arrival?.status ?? null}
+                  isMissing={!report.arrival}
+                  accentClass="from-blue-600 to-cyan-500"
+                  iconBgClass="bg-gradient-to-br from-blue-600 to-cyan-500"
                 >
-                  <Download className="w-5 h-5" />
-                  {isRTL ? 'استخراج التقرير كـ PDF' : 'Extract as PDF'}
-                  <span className="text-blue-200 text-sm font-medium ml-1">
-                    · Report_{report.vessel.name.replace(/\s+/g, '_')}_{report.date}.pdf
-                  </span>
-                </button>
+                  <ArrivalCard data={report.arrival!} />
+                </ModuleSection>
+
+                {/* Module 2 — Anchorage Request */}
+                <ModuleSection
+                  index={2}
+                  icon={Anchor}
+                  title={isRTL ? 'طلب الرسو' : 'Anchorage Request'}
+                  subtitle={isRTL ? 'إحداثيات الموضع، المدة المطلوبة وسجلات الحالة' : 'Position coordinates, requested duration and status logs'}
+                  status={report.anchorage?.status ?? null}
+                  isMissing={!report.anchorage}
+                  accentClass="from-violet-600 to-purple-500"
+                  iconBgClass="bg-gradient-to-br from-violet-600 to-purple-500"
+                >
+                  <AnchorageCard data={report.anchorage!} />
+                </ModuleSection>
+
+                {/* Module 3 — Port Clearance */}
+                <ModuleSection
+                  index={3}
+                  icon={FileCheck}
+                  title={isRTL ? 'تصريح الميناء' : 'Port Clearance'}
+                  subtitle={isRTL ? 'رموز التفويض الرسمية، جاهزية المغادرة وختم الامتثال' : 'Official authorization codes, departure readiness and compliance stamps'}
+                  status={report.clearance?.status ?? null}
+                  isMissing={!report.clearance}
+                  accentClass="from-emerald-600 to-teal-500"
+                  iconBgClass="bg-gradient-to-br from-emerald-600 to-teal-500"
+                >
+                  <ClearanceCard data={report.clearance!} />
+                </ModuleSection>
+
+                {/* Bottom Export CTA */}
+                {canExport && (
+                  <div className="flex justify-end pt-2">
+                    <button
+                      id="btn-extract-pdf-bottom"
+                      onClick={handleExportPDF}
+                      className="flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-base shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300"
+                    >
+                      <Download className="w-5 h-5" />
+                      {isRTL ? 'استخراج التقرير كـ PDF' : 'Extract as PDF'}
+                      <span className="text-blue-200 text-sm font-medium ml-1">
+                        · Report_{report.vessel.name.replace(/\s+/g, '_')}_{report.date}.pdf
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* No Results found on specific date */}
+            {hasSearched && reportList.length === 0 && !report && (
+              <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/20">
+                <AlertTriangle className="w-12 h-12 text-rose-500 opacity-20 mb-4" />
+                <h3 className="text-xl font-black text-[var(--text-secondary)] mb-2">
+                  {isRTL ? 'لا توجد نتائج' : 'No Activity Found'}
+                </h3>
+                <p className="text-[var(--text-muted)] text-sm max-w-sm text-center">
+                  {isRTL 
+                    ? 'لم نجد أي سجلات وصول أو رسو أو تصريح لهذا التاريخ.'
+                    : 'We couldn\'t find any arrival, anchorage, or clearance records for the selected parameters.'}
+                </p>
               </div>
             )}
           </div>
         )}
 
         {/* ── Empty State ── */}
-        {!hasSearched && (
+        {!hasSearched && !isLoading && (
           <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/20">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-600/20 to-indigo-700/20 flex items-center justify-center mb-5 shadow-inner">
               <FileText className="w-9 h-9 text-[var(--primary)] opacity-60" />
             </div>
             <h3 className="text-xl font-black text-[var(--text-secondary)] mb-2">
-              {isRTL ? 'ابدأ بتحديد السفينة والتاريخ' : 'Select a Vessel & Date to Begin'}
+              {isRTL ? 'ابدأ بتحديد السفينة أو التاريخ' : 'Select a Vessel or Date to Begin'}
             </h3>
             <p className="text-[var(--text-muted)] text-sm max-w-sm text-center">
               {isRTL
-                ? 'اختر السفينة وحدد التاريخ ثم اضغط "عرض التقرير" لرؤية ملخص الوثائق الثلاث.'
-                : 'Choose a vessel, pick a date, then click "Generate Preview" to see the consolidated document summary.'}
+                ? 'اختر السفينة أو حدد التاريخ (أو كليهما) ثم اضغط "عرض التقرير" لاستخراج ملخص الوثائق.'
+                : 'Choose a vessel or pick a date (or both), then click "Generate Preview" to see the consolidated document summary.'}
             </p>
           </div>
         )}

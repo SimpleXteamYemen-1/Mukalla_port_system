@@ -204,4 +204,38 @@ class WharfController extends Controller
 
         return response()->json($anchorage->fresh(['vessel', 'wharf']));
     }
+
+    /**
+     * Reclassify a container's storage type and optionally log a new keyword.
+     */
+    public function reclassifyContainer(Request $request, $id)
+    {
+        $request->validate([
+            'new_storage_type' => 'required|in:chemical,frozen,dry',
+            'new_keyword' => 'nullable|string|max:100',
+        ]);
+
+        $container = Container::findOrFail($id);
+        
+        // Update container storage type
+        $container->storage_type = $request->new_storage_type;
+        $container->save();
+
+        // If a new keyword is provided, save it for future extractions
+        if ($request->filled('new_keyword')) {
+            $keyword = strtolower(trim($request->new_keyword));
+            
+            // Check if it exists already to prevent duplicates
+            \App\Models\StorageKeyword::firstOrCreate(
+                ['keyword' => $keyword],
+                ['storage_type' => $request->new_storage_type]
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Container reclassified successfully.',
+            'container' => $container
+        ]);
+    }
 }

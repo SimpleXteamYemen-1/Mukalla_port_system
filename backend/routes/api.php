@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/wharf/{id}/status', [WharfController::class, 'updateWharfStatus']);
         Route::post('/wharf/assign-container', [WharfController::class, 'assignContainer']);
         Route::post('/wharf/containers/{id}/log', [WharfController::class, 'logContainerOperation']);
+        Route::post('/wharf/containers/{id}/reclassify', [WharfController::class, 'reclassifyContainer']);
         // NEW: Anchorage request workflow endpoints
         Route::get('/wharf/anchorage-requests', [WharfController::class, 'getAnchorageRequests']);
         Route::post('/wharf/anchorage-requests/{id}/approve', [WharfController::class, 'approveAnchorageRequest']);
