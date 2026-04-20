@@ -19,7 +19,7 @@ class WharfSeeder extends Seeder
         ];
 
         foreach ($wharves as $wharf) {
-            Wharf::create($wharf);
+            Wharf::firstOrCreate(['name' => $wharf['name']], $wharf);
         }
     }
 }

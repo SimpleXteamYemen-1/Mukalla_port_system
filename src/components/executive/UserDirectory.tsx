@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from 'react-toastify';
+
 import type { ReactNode, InputHTMLAttributes, SelectHTMLAttributes } from 'react';
 import {
   Users, Search, Filter, Edit2, Trash2, RefreshCw,
@@ -85,20 +87,7 @@ function RoleBadge({ role, language }: { role: string; language: Language }) {
   );
 }
 
-// ─── Toast ─────────────────────────────────────────────────────────────────────
-function Toast({ toast }: { toast: { type: 'success' | 'error'; message: string } | null }) {
-  if (!toast) return null;
-  return (
-    <div className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border animate-in slide-in-from-top-2 text-sm font-medium ${
-      toast.type === 'success'
-        ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/80 dark:text-green-50 dark:border-green-800'
-        : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/80 dark:text-red-50 dark:border-red-800'
-    }`}>
-      {toast.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0" /> : <AlertTriangle className="w-5 h-5 shrink-0" />}
-      <span>{toast.message}</span>
-    </div>
-  );
-}
+// ─── Spinner ──────────────────────────────────────────────────────────────────
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 function Spinner({ size = 'sm' }: { size?: 'sm' | 'md' }) {
@@ -138,8 +127,7 @@ export function UserDirectory({ language }: UserDirectoryProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Toast
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  // Edit form
 
   // Create form
   const [createForm, setCreateForm] = useState({ name: '', email: '', role: '', organization: '', password: '', password_confirmation: '' });
@@ -149,12 +137,8 @@ export function UserDirectory({ language }: UserDirectoryProps) {
   const [editForm, setEditForm] = useState({ name: '', email: '', role: '', organization: '', status: '', phone: '' });
   const [pendingSuspend, setPendingSuspend] = useState(false);
 
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
-
   // ── Fetch ──────────────────────────────────────────────────────────────────
+
   const fetchUsers = useCallback(async (page = currentPage) => {
     setIsLoading(true);
     try {
@@ -170,8 +154,9 @@ export function UserDirectory({ language }: UserDirectoryProps) {
       setCurrentPage(res.current_page);
       setLastPage(res.last_page);
     } catch {
-      showToast('error', isAR ? 'فشل تحميل المستخدمين' : 'Failed to load users.');
+      toast.error(isAR ? 'فشل تحميل المستخدمين' : 'Failed to load users.');
     } finally {
+
       setIsLoading(false);
     }
   }, [search, filterRole, filterStatus, currentPage, isAR]);
@@ -206,20 +191,22 @@ export function UserDirectory({ language }: UserDirectoryProps) {
       setUsers(prev => [res.user, ...prev]);
       setTotal(t => t + 1);
       closeModal();
-      showToast('success', res.password_reset
+      toast.success(res.password_reset
         ? (isAR ? 'تم إنشاء الحساب وإرسال رابط تعيين كلمة المرور' : 'Account created. Password reset link sent.')
         : (isAR ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully.')
       );
     } catch (err: any) {
+
       if (err?.response?.status === 422) {
         const apiErrors = err.response.data?.errors ?? {};
         const mapped: Record<string, string> = {};
         Object.entries(apiErrors).forEach(([k, v]) => { mapped[k] = (v as string[])[0]; });
         setFieldErrors(mapped);
       } else {
-        showToast('error', isAR ? 'فشل إنشاء الحساب' : 'Failed to create account.');
+        toast.error(isAR ? 'فشل إنشاء الحساب' : 'Failed to create account.');
       }
     } finally {
+
       setIsSubmitting(false);
     }
   };
@@ -266,17 +253,19 @@ export function UserDirectory({ language }: UserDirectoryProps) {
       const msg = res.tokens_revoked
         ? (isAR ? 'تم تعليق الحساب وإلغاء جميع الجلسات النشطة' : 'Account suspended. All active sessions revoked.')
         : (isAR ? 'تم تحديث بيانات المستخدم' : 'User updated successfully.');
-      showToast('success', msg);
+      toast.success(msg);
     } catch (err: any) {
+
       if (err?.response?.status === 422) {
         const apiErrors = err.response.data?.errors ?? {};
         const mapped: Record<string, string> = {};
         Object.entries(apiErrors).forEach(([k, v]) => { mapped[k] = (v as string[])[0]; });
         setFieldErrors(mapped);
       } else {
-        showToast('error', isAR ? 'فشل تحديث المستخدم' : 'Failed to update user.');
+        toast.error(isAR ? 'فشل تحديث المستخدم' : 'Failed to update user.');
       }
     } finally {
+
       setIsSubmitting(false);
     }
   };
@@ -295,10 +284,11 @@ export function UserDirectory({ language }: UserDirectoryProps) {
       setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
       setTotal(t => t - 1);
       closeModal();
-      showToast('success', isAR ? 'تم إلغاء وصول المستخدم والحفاظ على السجلات التاريخية' : 'User access revoked. Historical records preserved.');
+      toast.success(isAR ? 'تم إلغاء وصول المستخدم والحفاظ على السجلات التاريخية' : 'User access revoked. Historical records preserved.');
     } catch {
-      showToast('error', isAR ? 'فشل حذف المستخدم' : 'Failed to delete user.');
+      toast.error(isAR ? 'فشل حذف المستخدم' : 'Failed to delete user.');
     } finally {
+
       setIsSubmitting(false);
     }
   };
@@ -322,9 +312,8 @@ export function UserDirectory({ language }: UserDirectoryProps) {
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6" dir={isAR ? 'rtl' : 'ltr'}>
-      <Toast toast={toast} />
-
       {/* ── Header ── */}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">

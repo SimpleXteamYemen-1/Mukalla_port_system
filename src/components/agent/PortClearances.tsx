@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, Edit2, Download, RefreshCw } from 'lucide-react';
@@ -40,8 +42,10 @@ export function PortClearances({ language }: PortClearancesProps) {
                 .map((v: Vessel) => v.name);
             setAvailableVessels(dockedVessels);
         } catch (error) {
+            toast.error(isRTL ? 'فشل تحميل بيانات التصاريح' : 'Failed to load clearances data');
             console.error('Error loading clearances:', error);
         } finally {
+
             setLoading(false);
         }
     };
@@ -57,10 +61,10 @@ export function PortClearances({ language }: PortClearancesProps) {
         try {
             if (editingId) {
                 await agentService.updateClearance(editingId, nextPort);
-                alert(isRTL ? 'تم تعديل التصريح بنجاح!' : 'Clearance updated successfully!');
+                toast.success(isRTL ? 'تم تعديل التصريح بنجاح!' : 'Clearance updated successfully!');
             } else {
                 await agentService.requestClearance(selectedVessel, nextPort);
-                alert(isRTL ? 'تم طلب التصريح بنجاح!' : 'Clearance requested successfully!');
+                toast.success(isRTL ? 'تم طلب التصريح بنجاح!' : 'Clearance requested successfully!');
             }
 
             await loadData();
@@ -71,8 +75,9 @@ export function PortClearances({ language }: PortClearancesProps) {
             setEditingId(null);
         } catch (error: any) {
             console.error('Error issuing clearance:', error);
-            alert(error.message || 'Failed to request clearance');
+            toast.error(error.message || (isRTL ? 'فشل طلب التصريح' : 'Failed to request clearance'));
         } finally {
+
             setIssuing(false);
         }
     };
@@ -94,10 +99,11 @@ export function PortClearances({ language }: PortClearancesProps) {
         try {
             await agentService.executeDeparture(parseInt(vesselId));
             setDepartedVessels(prev => ({ ...prev, [vesselId]: true }));
+            toast.success(isRTL ? 'تم تسجيل خروج السفينة بنجاح!' : 'Vessel departure executed successfully!');
             await loadData();
         } catch (error: any) {
             console.error('Error executing departure:', error);
-            alert(error.response?.data?.message || 'Failed to execute departure');
+            toast.error(error.response?.data?.message || (isRTL ? 'فشل تنفيذ الخروج' : 'Failed to execute departure'));
         } finally {
             setProcessingDepartures(prev => ({ ...prev, [vesselId]: false }));
         }

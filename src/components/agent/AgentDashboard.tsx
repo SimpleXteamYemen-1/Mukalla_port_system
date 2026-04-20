@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Ship, Bell, Anchor, AlertCircle, TrendingUp, Clock, Plus, Activity, FileText, Download } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
@@ -38,8 +40,10 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
         setUpcomingArrivals(arrivals);
         setVessels(vesselsData || []);
       } catch (error) {
+        toast.error(language === 'ar' ? 'فشل تحميل بيانات لوحة التحكم' : 'Failed to fetch dashboard data');
         console.error('Failed to fetch dashboard data', error);
       }
+
     };
     fetchData();
   }, []);
@@ -93,12 +97,22 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
     setExportingType(docType);
 
     try {
-      const data = await agentService.getVesselActivityReport(Number(activeVesselId), '2000-01-01');
+      const result = await agentService.getVesselActivityReport(Number(activeVesselId), '2000-01-01');
 
-      if (!data) {
-        alert(language === 'ar' ? 'فشل جلب بيانات الوثيقة.' : 'Failed to fetch document data.');
+      if (!result) {
+        toast.error(language === 'ar' ? 'فشل جلب بيانات الوثيقة.' : 'Failed to fetch document data.');
         return;
       }
+
+
+      // Handle both single object and array responses
+      const data = Array.isArray(result) ? result[0] : result;
+
+      if (!data) {
+        toast.info(language === 'ar' ? 'لم يتم العثور على بيانات لهذه السفينة.' : 'No data found for this vessel.');
+        return;
+      }
+
 
       if (docType === 'arrival' && data.arrival) {
         exportArrivalPdf({
@@ -147,16 +161,18 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
           officer: data.clearance.officer,
         });
       } else {
-        alert(
+        toast.warning(
           language === 'ar'
             ? `لا توجد وثيقة ${docType} لهذه السفينة بعد.`
             : `No ${docType} document exists for this vessel yet.`,
         );
       }
+
     } catch (err) {
       console.error('Export failed:', err);
-      alert(language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
     } finally {
+
       setIsExporting(false);
       setExportingType('');
     }

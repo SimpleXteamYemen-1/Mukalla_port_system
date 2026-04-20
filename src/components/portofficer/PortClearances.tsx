@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
@@ -29,8 +31,10 @@ export function PortClearances({ language }: PortClearancesProps) {
       const dockedVessels = vesselsData.filter(v => v.status !== 'awaiting').map(v => v.name);
       setAvailableVessels(dockedVessels);
     } catch (error) {
+      toast.error(isRTL ? 'فشل تحميل بيانات التصاريح' : 'Failed to load clearances data');
       console.error('Error loading clearances:', error);
     } finally {
+
       setLoading(false);
     }
   };
@@ -42,14 +46,16 @@ export function PortClearances({ language }: PortClearancesProps) {
     setIssuing(true);
     try {
       await issueClearance(selectedVessel, nextPort, 'Port Officer');
+      toast.success(isRTL ? 'تم إصدار التصريح بنجاح!' : 'Clearance issued successfully!');
       await loadData();
       setShowIssueForm(false);
       setSelectedVessel('');
       setNextPort('');
     } catch (error: any) {
       console.error('Error issuing clearance:', error);
-      alert(error.message || 'Failed to issue clearance');
+      toast.error(error.message || (isRTL ? 'فشل إصدار التصريح' : 'Failed to issue clearance'));
     } finally {
+
       setIssuing(false);
     }
   };
@@ -93,20 +99,28 @@ export function PortClearances({ language }: PortClearancesProps) {
   const handleApprove = async (id: string) => {
     try {
       await approveClearance(id);
-      alert(isRTL ? 'تم الموافقة على التصريح' : 'Clearance approved');
+      toast.success(isRTL ? 'تم الموافقة على التصريح' : 'Clearance approved');
       loadData();
-    } catch (e) { console.error(e); alert('Error'); }
+    } catch (e) {
+      console.error(e);
+      toast.error(isRTL ? 'خطأ أثناء الموافقة' : 'Error during approval');
+    }
   };
+
 
   const handleReject = async (id: string) => {
     const reason = prompt(isRTL ? 'أدخل سبب الرفض' : 'Enter rejection reason:');
     if (!reason) return;
     try {
       await rejectClearance(id, reason);
-      alert(isRTL ? 'تم رفض التصريح' : 'Clearance rejected');
+      toast.success(isRTL ? 'تم رفض التصريح' : 'Clearance rejected');
       loadData();
-    } catch (e) { console.error(e); alert('Error'); }
+    } catch (e) {
+      console.error(e);
+      toast.error(isRTL ? 'خطأ أثناء الرفض' : 'Error during rejection');
+    }
   };
+
 
   const getHoursColor = (hours: number) =>
     hours < 0 ? 'text-red-700 dark:text-red-400' : hours < 6 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400';

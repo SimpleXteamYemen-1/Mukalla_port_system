@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { Anchor, Ship, AlertTriangle, CheckCircle, Calendar, Clock, Inbox, RefreshCw } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
@@ -33,8 +35,10 @@ export function BerthingManagement({ language }: BerthingManagementProps) {
       setWharves(wharvesData);
       setScheduledAnchorage(anchorageData);
     } catch (error) {
+      toast.error(isRTL ? 'فشل تحميل بيانات الجدولة' : 'Failed to load scheduling data');
       console.error('Error loading berthing data:', error);
     } finally {
+
       setLoading(false);
     }
   };
@@ -70,8 +74,10 @@ export function BerthingManagement({ language }: BerthingManagementProps) {
       const etaISO = new Date(etaInput).toISOString();
       const etdISO = new Date(etdInput).toISOString();
       await assignBerth(selectedVessel.id, selectedWharf.id, etaISO, etdISO, 'Port Officer');
+      toast.success(isRTL ? 'تم تعيين الرصيف بنجاح!' : 'Berth assigned successfully!');
       await loadData();
       setShowConfirmModal(false);
+
       setSelectedVessel(null);
       setSelectedWharf(null);
       setEtaInput('');
@@ -83,9 +89,10 @@ export function BerthingManagement({ language }: BerthingManagementProps) {
         setShowConfirmModal(false);
         setShowConflictWarning(true);
       } else {
-        alert('Failed to assign berth');
+        toast.error(isRTL ? 'فشل تعيين الرصيف' : 'Failed to assign berth');
       }
     } finally {
+
       setAssigning(false);
     }
   };
