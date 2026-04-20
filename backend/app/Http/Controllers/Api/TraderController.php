@@ -7,20 +7,28 @@ use Illuminate\Http\Request;
 use App\Models\Container;
 use App\Models\DischargeRequest;
 
+use Illuminate\Support\Facades\DB;
+
 class TraderController extends Controller
 {
     public function getContainers(Request $request)
     {
         $user = $request->user();
-        $containers = Container::where(function ($query) use ($user) {
-                $query->where('trader_user_id', $user->id)
-                      ->orWhere('consignee_phone', $user->phone);
-            })
+        $userName = strtolower(trim($user->name));
+        
+        $containers = Container::whereRaw('LOWER(TRIM(consignee_name)) = ?', [$userName])
             ->whereHas('vessel', function ($q) {
-                // Vessel must be released from wharf (status 'ready' or similar terminal states)
-                $q->whereIn('status', ['ready', 'departed', 'cleared', 'completed']);
+                // Include all active states where a trader should track their assets
+                $q->whereIn(DB::raw('LOWER(status)'), [
+                    'anchored', 
+                    'wharf_assigned', 
+                    'wharf assigned', 
+                    'approved', 
+                    'scheduled', 
+                    'docked'
+                ]);
             })
-            ->with('arrivalNotification')
+            ->with(['vessel.wharf', 'arrivalNotification'])
             ->get();
             
         return response()->json($containers);

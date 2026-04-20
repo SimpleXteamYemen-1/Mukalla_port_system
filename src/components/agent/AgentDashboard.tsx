@@ -1,10 +1,57 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Ship, Bell, Anchor, AlertCircle, TrendingUp, Clock, Plus, Activity, FileText, Download } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { agentService, AgentStats, Activity as AgentActivity, Arrival } from '../../services/agentService';
 import { exportArrivalPdf, exportAnchoragePdf, exportClearancePdf } from '../../utils/exportPdf';
+
+// ─── Lightweight Toast System ─────────────────────────────────────────────────
+type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+interface ToastItem { id: number; message: string; variant: ToastVariant }
+
+function AgentToast({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: number) => void }) {
+  if (toasts.length === 0) return null;
+  const variantStyles: Record<ToastVariant, string> = {
+    success: 'bg-emerald-600 border-emerald-500',
+    error:   'bg-red-600   border-red-500',
+    warning: 'bg-amber-500 border-amber-400',
+    info:    'bg-blue-600  border-blue-500',
+  };
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none" aria-live="polite">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-sm font-semibold text-white min-w-[280px] max-w-sm animate-in slide-in-from-bottom-4 fade-in duration-300 ${variantStyles[t.variant]}`}
+        >
+          <span className="flex-1 leading-snug">{t.message}</span>
+          <button onClick={() => onDismiss(t.id)} className="opacity-70 hover:opacity-100 transition-opacity ml-1 shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function useAgentToast() {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const counter = useRef(0);
+
+  const showToast = useCallback((message: string, variant: ToastVariant = 'info', duration = 4500) => {
+    const id = ++counter.current;
+    setToasts((prev) => [...prev, { id, message, variant }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return { toasts, showToast, dismissToast };
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface AgentDashboardProps {
   language: Language;
@@ -13,6 +60,7 @@ interface AgentDashboardProps {
 
 export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
   const t = translations[language]?.agent?.dashboard || translations.en.agent.dashboard;
+  const { toasts, showToast, dismissToast } = useAgentToast();
 
   const [statsData, setStatsData] = useState<AgentStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<AgentActivity[]>([]);
@@ -93,11 +141,19 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
     setExportingType(docType);
 
     try {
-      const data = await agentService.getVesselActivityReport(Number(activeVesselId), '2000-01-01');
+      // Omit the `date` param intentionally -- sending a dummy date like '2000-01-01'
+      // activates the backend's when($date) filter and suppresses all historical records.
+      // Without a date the query fetches the latest anchorage and clearance for the vessel
+      // unconditionally, regardless of whether the vessel is active, departed, or archived.
+      const data = await agentService.getVesselActivityReport(Number(activeVesselId));
 
+      // Guard: API returned null / network failure before we could get data
       if (!data) {
-        alert(language === 'ar' ? 'فشل جلب بيانات الوثيقة.' : 'Failed to fetch document data.');
-        return;
+        showToast(
+          language === 'ar' ? 'فشل جلب بيانات الوثيقة. يرجى المحاولة لاحقاً.' : 'Failed to fetch document data. Please try again.',
+          'error',
+        );
+        return; // finally will still run — isExporting resets correctly
       }
 
       if (docType === 'arrival' && data.arrival) {
@@ -147,16 +203,30 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
           officer: data.clearance.officer,
         });
       } else {
-        alert(
+        // Document for this phase has not been created yet — show a warning toast
+        const docLabel: Record<string, { ar: string; en: string }> = {
+          arrival:   { ar: 'بلاغ الوصول',  en: 'Arrival Notification' },
+          anchorage: { ar: 'طلب الرسو',    en: 'Anchorage Request' },
+          clearance: { ar: 'تصريح المغادرة', en: 'Port Clearance' },
+        };
+        const label = docLabel[docType]?.[language] ?? docType;
+        showToast(
           language === 'ar'
-            ? `لا توجد وثيقة ${docType} لهذه السفينة بعد.`
-            : `No ${docType} document exists for this vessel yet.`,
+            ? `لا توجد وثيقة «${label}» لهذه السفينة بعد.`
+            : `No «${label}» document exists for this vessel yet.`,
+          'warning',
         );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Export failed:', err);
-      alert(language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
+      // Prefer the server's error message if present; fall back to a generic string
+      const serverMsg: string =
+        err?.response?.data?.message ||
+        err?.message ||
+        (language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
+      showToast(serverMsg, 'error');
     } finally {
+      // Always reset loading state — even if an early return fired above
       setIsExporting(false);
       setExportingType('');
     }
@@ -164,6 +234,8 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
 
   return (
     <div className="space-y-8 p-1">
+      {/* ── Toast Notifications ──────────────────────────────────── */}
+      <AgentToast toasts={toasts} onDismiss={dismissToast} />
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

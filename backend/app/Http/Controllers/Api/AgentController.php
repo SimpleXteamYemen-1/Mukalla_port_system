@@ -71,6 +71,10 @@ class AgentController extends Controller
 
     public function getVessels(Request $request)
     {
+        // Include ALL non-archived vessels, including 'departed' ones.
+        // Departed vessels must remain visible in the export dropdown so the agent
+        // can still pull their Anchorage Request and Port Clearance PDFs as
+        // permanent historical records after the vessel has left the port.
         $vessels = Vessel::where('owner_id', $request->user()->id)
             ->where('status', '!=', 'archived')
             ->with(['manifests', 'owner', 'containers'])
@@ -136,6 +140,23 @@ class AgentController extends Controller
         $vessel = Vessel::where('name', $request->vessel_name)
             ->where('owner_id', $request->user()->id)
             ->firstOrFail();
+
+        // ── Workflow Sequence Guard ─────────────────────────────────────────
+        // A Port Clearance can only be requested AFTER the vessel has
+        // completed the Anchorage phase (AnchorageRequest status must be
+        // 'wharf_assigned' or 'approved').  Vessels that are only
+        // 'arrival approved' and have NOT been anchored are rejected here.
+        $anchoredRequest = AnchorageRequest::where('vessel_id', $vessel->id)
+            ->whereIn('status', ['wharf_assigned', 'approved'])
+            ->exists();
+
+        if (!$anchoredRequest) {
+            return response()->json([
+                'message' => 'Port Clearance cannot be requested until the vessel has completed the Anchorage phase. Please ensure an Anchorage Request has been approved first.',
+                'error_code' => 'ANCHORAGE_NOT_COMPLETED',
+            ], 422);
+        }
+        // ───────────────────────────────────────────────────────────────────
 
         // Ensure there is no existing pending clearance
         if ($vessel->clearances()->where('status', 'pending_clearance')->exists()) {
@@ -537,22 +558,30 @@ class AgentController extends Controller
             return response()->json(['message' => 'Either Vessel or Date is required.'], 400);
         }
 
-        $query = Vessel::where('owner_id', $user->id);
-
         if ($vesselId) {
-            $vessels = $query->where('id', $vesselId)->get();
+            // ── Export / historical-access mode ──────────────────────────────────
+            // When fetching by vessel_id (document export), we deliberately do NOT
+            // filter on status. A vessel that has 'departed' or is 'archived' must
+            // still expose its Anchorage Request and Port Clearance records as
+            // permanent historical documents. Restricting by status here would make
+            // those documents unreachable after the departure lifecycle step.
+            $vessels = Vessel::where('owner_id', $user->id)
+                ->where('id', $vesselId)
+                ->get();
         } else {
-            // Find all vessels that had any activity on this date
-            // Activity = Eta on this date OR Anchorage record on this date OR Clearance record on this date
-            $vessels = $query->where(function($q) use ($date) {
-                $q->whereDate('eta', $date)
-                  ->orWhereHas('clearances', function($cq) use ($date) {
-                      $cq->whereDate('created_at', $date)->orWhereDate('issue_date', $date);
-                  })
-                  ->orWhereHas('manifests', function($mq) use ($date) {
-                      $mq->whereDate('created_at', $date);
-                  });
-            })->get();
+            // ── Date-filtered report mode ─────────────────────────────────────────
+            // Only active / non-archived vessels relevant to the requested date.
+            $vessels = Vessel::where('owner_id', $user->id)
+                ->where('status', '!=', 'archived')
+                ->where(function($q) use ($date) {
+                    $q->whereDate('eta', $date)
+                      ->orWhereHas('clearances', function($cq) use ($date) {
+                          $cq->whereDate('created_at', $date)->orWhereDate('issue_date', $date);
+                      })
+                      ->orWhereHas('manifests', function($mq) use ($date) {
+                          $mq->whereDate('created_at', $date);
+                      });
+                })->get();
         }
 
         $reports = $vessels->map(function($v) use ($date) {
@@ -560,9 +589,10 @@ class AgentController extends Controller
             // If date is provided, we only show it as a match if it's relevant to that date
             $arrival = $v;
             
-            // 2. Anchorage
-            $anchorageQuery = $v->manifests()->where('agent_id', $v->owner_id); // Wait, AnchorageRequest uses agent_id and vessel_id
-            // Correction: AnchorageRequest::where('vessel_id', $v->id)
+            // ── 2. Anchorage ─────────────────────────────────────────────────────
+            // Queried strictly by vessel_id FK — no status filter.
+            // when($date) only activates in date-report mode; in export mode ($date is
+            // null) it is skipped and the latest record is returned unconditionally.
             $anchorage = \App\Models\AnchorageRequest::where('vessel_id', $v->id)
                 ->with('wharf')
                 ->when($date, function($q) use ($date) {
@@ -571,7 +601,8 @@ class AgentController extends Controller
                 ->latest()
                 ->first();
 
-            // 3. Clearance
+            // ── 3. Clearance ─────────────────────────────────────────────────────
+            // Same pattern: FK-only lookup, date filter applied only when requested.
             $clearance = $v->clearances()
                 ->with('officer')
                 ->when($date, function($q) use ($date) {
