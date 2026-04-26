@@ -13,7 +13,7 @@ class ExecutiveController extends Controller
 {
     public function getLogs(Request $request)
     {
-        return response()->json(Log::with('user')->latest()->take(50)->get());
+        return response()->json(Log::with(['user', 'vessel'])->latest()->take(50)->get());
     }
 
     public function getReports(Request $request)
@@ -282,6 +282,8 @@ class ExecutiveController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'approve_arrival',
             'details' => "Executive approved arrival for vessel {$vessel->name}",
         ]);
@@ -311,6 +313,8 @@ class ExecutiveController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $vessel->id,
+            'vessel_name' => $vessel->name,
             'action' => 'reject_arrival',
             'details' => "Executive rejected arrival for vessel {$vessel->name}. Reason: {$request->reason}",
         ]);
@@ -362,6 +366,8 @@ class ExecutiveController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $anchorage->vessel_id,
+            'vessel_name' => $anchorage->vessel->name,
             'action' => 'approve_anchorage',
             'details' => "Approved anchorage for vessel {$anchorage->vessel->name}",
         ]);
@@ -382,6 +388,8 @@ class ExecutiveController extends Controller
 
         Log::create([
             'user_id' => $request->user()->id,
+            'vessel_id' => $anchorage->vessel_id,
+            'vessel_name' => $anchorage->vessel->name,
             'action' => 'reject_anchorage',
             'details' => "Rejected anchorage for vessel {$anchorage->vessel->name}",
         ]);

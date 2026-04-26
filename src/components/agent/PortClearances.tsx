@@ -3,11 +3,14 @@ import { toast } from 'react-toastify';
 
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
-import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, Edit2, Download, RefreshCw } from 'lucide-react';
+import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, Edit2, Download, RefreshCw, Lock } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { exportClearancePdf } from '../../utils/exportPdf';
 import { Clearance } from '../../utils/portOfficerApi';
 import { agentService, Vessel } from '../../services/agentService';
+
+/** Anchorage statuses that mean a vessel has completed the anchoring phase */
+const ANCHORED_STATUSES = ['wharf_assigned', 'approved'] as const;
 
 interface PortClearancesProps {
     language: Language;
@@ -23,7 +26,7 @@ export function PortClearances({ language }: PortClearancesProps) {
     const [selectedClearance, setSelectedClearance] = useState<Clearance | null>(null);
     const [showQRModal, setShowQRModal] = useState(false);
     const [clearances, setClearances] = useState<Clearance[]>([]);
-    const [availableVessels, setAvailableVessels] = useState<string[]>([]);
+    const [availableVessels, setAvailableVessels] = useState<Pick<Vessel, 'id' | 'name'>[]>([]);
     const [loading, setLoading] = useState(true);
     const [issuing, setIssuing] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -33,14 +36,32 @@ export function PortClearances({ language }: PortClearancesProps) {
     const loadData = async () => {
         setLoading(true);
         try {
-            const clearancesData = await agentService.getClearances();
+            const [clearancesData, vesselsData, anchorageData] = await Promise.all([
+                agentService.getClearances(),
+                agentService.getVessels(),
+                agentService.getAnchorageRequests(),
+            ]);
             setClearances(clearancesData);
 
-            const vesselsData = await agentService.getVessels();
-            const dockedVessels = vesselsData
-                .filter((v: Vessel) => v.status !== 'awaiting')
-                .map((v: Vessel) => v.name);
-            setAvailableVessels(dockedVessels);
+            // ── Workflow Sequence Filter ────────────────────────────────────
+            // Only vessels that have an APPROVED anchorage request
+            // (status: 'wharf_assigned' | 'approved') are eligible for a
+            // Port Clearance.  Vessels that only have an approved *arrival*
+            // but have NOT yet progressed through the Anchorage phase are
+            // deliberately excluded to enforce the pipeline:
+            //   Arrival → Anchorage → Clearance
+            const anchoredVesselIds = new Set<number>(
+                anchorageData
+                    .filter((a: any) => ANCHORED_STATUSES.includes(a.status))
+                    .map((a: any) => a.vessel_id)
+            );
+
+            const eligibleVessels: Pick<Vessel, 'id' | 'name'>[] = (vesselsData as Vessel[])
+                .filter((v) => anchoredVesselIds.has(v.id))
+                .map((v) => ({ id: v.id, name: v.name }));
+            // ───────────────────────────────────────────────────────────────
+
+            setAvailableVessels(eligibleVessels);
         } catch (error) {
             toast.error(isRTL ? 'فشل تحميل بيانات التصاريح' : 'Failed to load clearances data');
             console.error('Error loading clearances:', error);
@@ -380,17 +401,31 @@ export function PortClearances({ language }: PortClearancesProps) {
                                     className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] disabled:opacity-60"
                                 >
                                     <option value="">
-                                        {t?.selectVesselPlaceholder || 'Select a vessel...'}
+                                        {availableVessels.length === 0
+                                            ? (isRTL ? 'لا توجد سفن جاهزة للتخليص' : 'No vessels eligible for clearance')
+                                            : (t?.selectVesselPlaceholder || 'Select a vessel...')}
                                     </option>
-                                    {editingId && !availableVessels.includes(selectedVessel) && (
+                                    {editingId && !availableVessels.some(v => v.name === selectedVessel) && (
                                         <option value={selectedVessel}>{selectedVessel}</option>
                                     )}
                                     {availableVessels.map((vessel) => (
-                                        <option key={vessel} value={vessel}>
-                                            {vessel}
+                                        <option key={vessel.id} value={vessel.name}>
+                                            {vessel.name}
                                         </option>
                                     ))}
                                 </select>
+
+                                {/* Show a hint when no vessels have completed the anchorage step */}
+                                {availableVessels.length === 0 && !editingId && (
+                                    <div className="mt-2 flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                        <Lock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                        <p className="text-amber-600 dark:text-amber-400 text-xs font-medium leading-snug">
+                                            {isRTL
+                                                ? 'لا توجد سفن أكملت مرحلة الرسو بعد. يجب الموافقة على طلب الرسو أولاً قبل تقديم طلب التخليص.'
+                                                : 'No vessels have completed the Anchorage phase yet. An Anchorage Request must be approved before a Port Clearance can be requested.'}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <div>

@@ -8,6 +8,53 @@ import { translations } from '../../utils/translations';
 import { agentService, AgentStats, Activity as AgentActivity, Arrival } from '../../services/agentService';
 import { exportArrivalPdf, exportAnchoragePdf, exportClearancePdf } from '../../utils/exportPdf';
 
+// ─── Lightweight Toast System ─────────────────────────────────────────────────
+type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+interface ToastItem { id: number; message: string; variant: ToastVariant }
+
+function AgentToast({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: number) => void }) {
+  if (toasts.length === 0) return null;
+  const variantStyles: Record<ToastVariant, string> = {
+    success: 'bg-emerald-600 border-emerald-500',
+    error:   'bg-red-600   border-red-500',
+    warning: 'bg-amber-500 border-amber-400',
+    info:    'bg-blue-600  border-blue-500',
+  };
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none" aria-live="polite">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-sm font-semibold text-white min-w-[280px] max-w-sm animate-in slide-in-from-bottom-4 fade-in duration-300 ${variantStyles[t.variant]}`}
+        >
+          <span className="flex-1 leading-snug">{t.message}</span>
+          <button onClick={() => onDismiss(t.id)} className="opacity-70 hover:opacity-100 transition-opacity ml-1 shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function useAgentToast() {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const counter = useRef(0);
+
+  const showToast = useCallback((message: string, variant: ToastVariant = 'info', duration = 4500) => {
+    const id = ++counter.current;
+    setToasts((prev) => [...prev, { id, message, variant }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return { toasts, showToast, dismissToast };
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface AgentDashboardProps {
   language: Language;
   onNavigate: (page: string) => void;
@@ -15,6 +62,7 @@ interface AgentDashboardProps {
 
 export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
   const t = translations[language]?.agent?.dashboard || translations.en.agent.dashboard;
+  const { toasts, showToast, dismissToast } = useAgentToast();
 
   const [statsData, setStatsData] = useState<AgentStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<AgentActivity[]>([]);
@@ -108,6 +156,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       // Handle both single object and array responses
       const data = Array.isArray(result) ? result[0] : result;
 
+      // Guard: API returned null / network failure before we could get data
       if (!data) {
         toast.info(language === 'ar' ? 'لم يتم العثور على بيانات لهذه السفينة.' : 'No data found for this vessel.');
         return;
@@ -163,8 +212,9 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       } else {
         toast.warning(
           language === 'ar'
-            ? `لا توجد وثيقة ${docType} لهذه السفينة بعد.`
-            : `No ${docType} document exists for this vessel yet.`,
+            ? `لا توجد وثيقة «${label}» لهذه السفينة بعد.`
+            : `No «${label}» document exists for this vessel yet.`,
+          'warning',
         );
       }
 
@@ -180,6 +230,8 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
 
   return (
     <div className="space-y-8 p-1">
+      {/* ── Toast Notifications ──────────────────────────────────── */}
+      <AgentToast toasts={toasts} onDismiss={dismissToast} />
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

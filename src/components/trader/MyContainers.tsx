@@ -16,9 +16,19 @@ interface ContainerData {
   consignee_name: string;
   consignee_phone: string;
   status: string;
+  vessel?: {
+    id: number;
+    name: string;
+    wharf?: {
+      name: string;
+    };
+  };
   arrival_notification?: {
     id: number;
     name: string;
+    wharf?: {
+      name: string;
+    };
   };
 }
 
@@ -46,17 +56,26 @@ export function MyContainers({ language, userEmail }: { language: Language; user
   }, []);
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'cleared':
+    const s = status.toLowerCase();
+    switch (s) {
+      case 'discharged':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-500 border border-green-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-            <CheckSquare className="w-3.5 h-3.5" /> {isRTL ? 'متاحة للاستلام' : 'Cleared for Pickup'}
+            <CheckSquare className="w-3.5 h-3.5" /> {isRTL ? 'تم التفريغ' : 'Discharged'}
           </span>
         );
+      case 'in storage':
+      case 'in_storage':
       case 'in_wharf':
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-            <MapPin className="w-3.5 h-3.5" /> {isRTL ? 'في المخزن' : 'Routed to Block'}
+            <MapPin className="w-3.5 h-3.5" /> {isRTL ? 'في التخزين' : 'In Storage'}
+          </span>
+        );
+      case 'cleared':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
+             <CheckSquare className="w-3.5 h-3.5" /> {isRTL ? 'جاهزة للاستلام' : 'Ready for Pickup'}
           </span>
         );
       case 'arrived':
@@ -68,7 +87,7 @@ export function MyContainers({ language, userEmail }: { language: Language; user
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
-            <Clock className="w-3.5 h-3.5" /> {isRTL ? 'قيد المراجعة' : 'Pending Allocation'}
+            <Clock className="w-3.5 h-3.5" /> {isRTL ? 'قيد المراجعة' : 'Pending'}
           </span>
         );
     }
@@ -144,9 +163,8 @@ export function MyContainers({ language, userEmail }: { language: Language; user
             className={`${isRTL ? 'pr-10' : 'pl-10'} pr-8 py-2.5 bg-[var(--card)] border border-[var(--secondary)]/30 rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer min-w-[180px]`}
           >
             <option value="all">{isRTL ? 'جميع الحالات' : 'All Status'}</option>
-            <option value="arrived">{isRTL ? 'وصلت' : 'Arrived'}</option>
-            <option value="in_wharf">{isRTL ? 'في المخزن' : 'Routed to Block'}</option>
-            <option value="cleared">{isRTL ? 'متاحة للاستلام' : 'Cleared'}</option>
+            <option value="Discharged">{isRTL ? 'تم التفريغ' : 'Discharged'}</option>
+            <option value="In Storage">{isRTL ? 'في التخزين' : 'In Storage'}</option>
           </select>
         </div>
       </div>
@@ -197,14 +215,28 @@ export function MyContainers({ language, userEmail }: { language: Language; user
                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/10 p-2 rounded-full border border-blue-500/20">
-                       <Calendar className="w-4 h-4 text-blue-500" />
-                    </div>
-                    <div>
-                        <span className="text-[10px] text-[var(--text-secondary)] block uppercase font-bold">{isRTL ? 'تاريخ الرسو' : 'Arrival Date'}</span>
-                        <span className="text-sm font-black text-[var(--text-primary)]">{container.arrival_date}</span>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                      <div className="bg-blue-500/10 p-2 rounded-full border border-blue-500/20">
+                         <Calendar className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div>
+                          <span className="text-[10px] text-[var(--text-secondary)] block uppercase font-bold">{isRTL ? 'تاريخ الرسو' : 'Arrival Date'}</span>
+                          <span className="text-sm font-black text-[var(--text-primary)]">{container.arrival_date}</span>
+                      </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                      <div className="bg-amber-500/10 p-2 rounded-full border border-amber-500/20">
+                         <MapPin className="w-4 h-4 text-amber-500" />
+                      </div>
+                      <div>
+                          <span className="text-[10px] text-[var(--text-secondary)] block uppercase font-bold">{isRTL ? 'موقع الرصيف' : 'Wharf Location'}</span>
+                          <span className="text-sm font-black text-[var(--text-primary)]">
+                            {container.vessel?.wharf?.name || container.arrival_notification?.wharf?.name || (isRTL ? 'قيد التخصيص' : 'TBD')}
+                          </span>
+                      </div>
+                  </div>
                 </div>
               </div>
             </div>

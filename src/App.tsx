@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { echo } from './utils/echo';
-import api from './services/api';
+import api, { LANG_KEY } from './services/api';
 import { useIdleTimer } from './hooks/useIdleTimer';
 
 export type Language = 'ar' | 'en';
@@ -31,7 +31,10 @@ export interface User {
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'dashboard'>('login');
-  const [language, setLanguage] = useState<Language>('ar');
+  // ── Language: boot from localStorage, fall back to 'ar'
+  const [language, setLanguage] = useState<Language>(
+    () => (localStorage.getItem(LANG_KEY) as Language) ?? 'ar'
+  );
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -79,7 +82,12 @@ function App() {
   useIdleTimer(handleLogout, 300000, !!user);
 
   const toggleLanguage = () => {
-    setLanguage(prev => prev === 'ar' ? 'en' : 'ar');
+    setLanguage(prev => {
+      const next = prev === 'ar' ? 'en' : 'ar';
+      // Persist the new choice and sync axis interceptor immediately
+      localStorage.setItem(LANG_KEY, next);
+      return next;
+    });
   };
 
   useEffect(() => {
