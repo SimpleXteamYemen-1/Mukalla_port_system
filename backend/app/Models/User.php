@@ -38,6 +38,7 @@ class User extends Authenticatable
         'rejection_reason',
         'verified',
         'phone',
+        'signature',
         'avatar_url',
         'theme',
         'language',

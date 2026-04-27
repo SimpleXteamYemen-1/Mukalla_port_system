@@ -19,7 +19,16 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|string|exists:roles,name',
+            'signature' => 'nullable|string',
         ]);
+
+        $signatureUrl = null;
+        if ($request->signature) {
+            $signatureUrl = $this->saveSignatureBase64($request->signature);
+            if (!$signatureUrl) {
+                return response()->json(['message' => 'Invalid signature format'], 422);
+            }
+        }
 
         $user = User::create([
             'name' => $request->name,
@@ -28,6 +37,7 @@ class AuthController extends Controller
             'role' => $request->role,
             'status' => User::STATUS_PENDING,
             'verified' => false,
+            'signature' => $signatureUrl,
         ]);
 
         $user->assignRole($request->role);
@@ -36,6 +46,25 @@ class AuthController extends Controller
             'message' => 'Registration request submitted. Your account is under Executive Management review.',
             'user' => $user,
         ], 202);
+    }
+
+    private function saveSignatureBase64($base64Image)
+    {
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+            $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
+            $type = strtolower($type[1]);
+            
+            if (!in_array($type, ['png', 'jpg', 'jpeg', 'gif'])) {
+                return null;
+            }
+
+            $image = base64_decode($base64Image);
+            $fileName = 'signatures/' . uniqid() . '.' . $type;
+            
+            Storage::disk('public')->put($fileName, $image);
+            return Storage::url($fileName);
+        }
+        return null;
     }
 
     public function login(Request $request)
@@ -189,5 +218,28 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    public function updateSignature(Request $request)
+    {
+        $request->validate([
+            'signature' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        
+        $signatureUrl = $this->saveSignatureBase64($request->signature);
+        
+        if (!$signatureUrl) {
+            return response()->json(['message' => 'Invalid signature format'], 422);
+        }
+
+        $user->signature = $signatureUrl;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Signature updated successfully',
+            'signature' => $user->signature,
+        ]);
     }
 }

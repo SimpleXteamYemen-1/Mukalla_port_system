@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, User as UserIcon, Globe, Anchor, Building, Che
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language, User, UserRole } from '../App';
 import { translations } from '../utils/translations';
+import { SignaturePad } from './SignaturePad';
 import api from '../services/api';
 import { cn } from "@/components/ui/utils"
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,7 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
     confirmPassword: '',
     role: '' as UserRole | '',
     organization: '',
+    signature: null as string | null,
     agreeToTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -113,6 +115,7 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
         password_confirmation: formData.confirmPassword,
         role: formData.role,
         organization: formData.organization,
+        signature: formData.signature,
       });
 
       const { user } = response.data || {};
@@ -357,6 +360,22 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
                       {errors.organization && <p className="text-destructive text-[11px] font-semibold mt-1">{errors.organization}</p>}
                     </Field>
                   )}
+
+                  {/* Digital Signature Field (Optional) */}
+                  <Field className="md:col-span-2">
+                    <FieldLabel className={language === 'ar' ? 'text-right' : 'text-left'}>
+                      {language === 'ar' ? 'التوقيع الرقمي (اختياري حالياً)' : 'Digital Signature (Optional for now)'}
+                    </FieldLabel>
+                    <SignaturePad 
+                      language={language}
+                      onSignatureChange={(signatureBase64) => setFormData({ ...formData, signature: signatureBase64 })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {language === 'ar' 
+                        ? 'سيتم استخدام توقيعك للوثائق الرسمية.' 
+                        : 'Your signature will be used for official documents.'}
+                    </p>
+                  </Field>
                 </div>
 
                 {/* Terms & Conditions */}

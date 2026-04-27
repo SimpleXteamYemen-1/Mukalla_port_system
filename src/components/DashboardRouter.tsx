@@ -64,6 +64,22 @@ const VALID_PAGES: Record<string, string[]> = {
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
   const t = translations[language]?.dashboard || translations.en.dashboard;
   const isRTL = language === 'ar';
+  const hasSignature = !!user.signature;
+
+  // Persist signature and name for PDF exports without prop drilling
+  useEffect(() => {
+    if (user.signature) {
+      localStorage.setItem('user_signature', user.signature);
+    } else {
+      localStorage.removeItem('user_signature');
+    }
+    if (user.name) {
+      localStorage.setItem('user_name', user.name);
+    } else {
+      localStorage.removeItem('user_name');
+    }
+  }, [user.signature, user.name]);
+
   const [currentPage, setCurrentPage] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab') || 'dashboard';
@@ -187,7 +203,28 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           </header>
 
           {/* Page Content */}
-          <main className="p-6">
+          <main className="p-6 relative">
+            {!hasSignature && currentPage !== 'settings' && (
+              <div className="absolute inset-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-xl m-6">
+                <div className="bg-[var(--bg-card)] border border-amber-500/30 p-8 rounded-2xl shadow-2xl max-w-md text-center animate-in zoom-in-95 duration-300">
+                  <Shield className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                    {language === 'ar' ? 'تفعيل الحساب مطلوب' : 'Account Activation Required'}
+                  </h3>
+                  <p className="text-[var(--text-secondary)] text-sm mb-6">
+                    {language === 'ar'
+                      ? 'لإكمال تفعيل حسابك واستخدام النظام، يرجى إضافة توقيعك الرقمي من إعدادات الحساب.'
+                      : 'To activate your account and use the system, please add your digital signature in Account Settings.'}
+                  </p>
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
+                  </button>
+                </div>
+              </div>
+            )}
             {currentPage === 'dashboard' && <ExecutiveDashboard language={language} onNavigate={handleNavigate} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'arrivals' && <ArrivalApprovals language={language} onNavigate={handleNavigate} />}
@@ -308,7 +345,28 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           </header>
 
           {/* Page Content */}
-          <main>
+          <main className="p-6 relative">
+            {!hasSignature && currentPage !== 'settings' && (
+              <div className="absolute inset-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-xl m-6">
+                <div className="bg-[var(--bg-card)] border border-amber-500/30 p-8 rounded-2xl shadow-2xl max-w-md text-center animate-in zoom-in-95 duration-300">
+                  <Shield className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                    {language === 'ar' ? 'تفعيل الحساب مطلوب' : 'Account Activation Required'}
+                  </h3>
+                  <p className="text-[var(--text-secondary)] text-sm mb-6">
+                    {language === 'ar'
+                      ? 'لإكمال تفعيل حسابك واستخدام النظام، يرجى إضافة توقيعك الرقمي من إعدادات الحساب.'
+                      : 'To activate your account and use the system, please add your digital signature in Account Settings.'}
+                  </p>
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
+                  </button>
+                </div>
+              </div>
+            )}
             {currentPage === 'dashboard' && <PortOfficerDashboard language={language} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'berthing' && <BerthingManagement language={language} />}
@@ -424,7 +482,28 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           </header>
 
           {/* Page Content */}
-          <main>
+          <main className="p-6 relative">
+            {!hasSignature && currentPage !== 'settings' && (
+              <div className="absolute inset-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-xl m-6">
+                <div className="bg-[var(--bg-card)] border border-amber-500/30 p-8 rounded-2xl shadow-2xl max-w-md text-center animate-in zoom-in-95 duration-300">
+                  <Shield className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                    {language === 'ar' ? 'تفعيل الحساب مطلوب' : 'Account Activation Required'}
+                  </h3>
+                  <p className="text-[var(--text-secondary)] text-sm mb-6">
+                    {language === 'ar'
+                      ? 'لإكمال تفعيل حسابك واستخدام النظام، يرجى إضافة توقيعك الرقمي من إعدادات الحساب.'
+                      : 'To activate your account and use the system, please add your digital signature in Account Settings.'}
+                  </p>
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
+                  </button>
+                </div>
+              </div>
+            )}
             {currentPage === 'dashboard' && <WharfDashboard language={language} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'availability' && <WharfAvailability language={language} />}
@@ -538,7 +617,28 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
           </header>
 
           {/* Page Content */}
-          <main>
+          <main className="p-6 relative">
+            {!hasSignature && currentPage !== 'settings' && (
+              <div className="absolute inset-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-xl m-6">
+                <div className="bg-[var(--bg-card)] border border-amber-500/30 p-8 rounded-2xl shadow-2xl max-w-md text-center animate-in zoom-in-95 duration-300">
+                  <Shield className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                    {language === 'ar' ? 'تفعيل الحساب مطلوب' : 'Account Activation Required'}
+                  </h3>
+                  <p className="text-[var(--text-secondary)] text-sm mb-6">
+                    {language === 'ar'
+                      ? 'لإكمال تفعيل حسابك واستخدام النظام، يرجى إضافة توقيعك الرقمي من إعدادات الحساب.'
+                      : 'To activate your account and use the system, please add your digital signature in Account Settings.'}
+                  </p>
+                  <button 
+                    onClick={() => setCurrentPage('settings')}
+                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
+                  </button>
+                </div>
+              </div>
+            )}
             {currentPage === 'dashboard' && <TraderDashboard language={language} userEmail={user.email} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'containers' && <MyContainers language={language} userEmail={user.email} />}
@@ -573,7 +673,29 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         theme={theme}
         onToggleTheme={onToggleTheme}
       >
-        {currentPage === 'dashboard' && <AgentDashboard language={language} onNavigate={setCurrentPage} />}
+        <div className="relative min-h-screen">
+          {!hasSignature && currentPage !== 'settings' && (
+            <div className="absolute inset-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-xl m-6">
+              <div className="bg-[var(--bg-card)] border border-amber-500/30 p-8 rounded-2xl shadow-2xl max-w-md text-center animate-in zoom-in-95 duration-300">
+                <Shield className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                  {language === 'ar' ? 'تفعيل الحساب مطلوب' : 'Account Activation Required'}
+                </h3>
+                <p className="text-[var(--text-secondary)] text-sm mb-6">
+                  {language === 'ar'
+                    ? 'لإكمال تفعيل حسابك واستخدام النظام، يرجى إضافة توقيعك الرقمي من إعدادات الحساب.'
+                    : 'To activate your account and use the system, please add your digital signature in Account Settings.'}
+                </p>
+                <button 
+                  onClick={() => setCurrentPage('settings')}
+                  className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                >
+                  {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
+                </button>
+              </div>
+            </div>
+          )}
+          {currentPage === 'dashboard' && <AgentDashboard language={language} onNavigate={setCurrentPage} />}
         {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
         {currentPage === 'vessels' && <MyVessels language={language} onNavigate={setCurrentPage} />}
         {currentPage === 'arrivals' && <ArrivalNotifications language={language} />}
@@ -593,6 +715,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         )}
         {/* Catch-all: unknown page → show dashboard */}
         {!VALID_PAGES.agent.includes(currentPage) && <AgentDashboard language={language} onNavigate={setCurrentPage} />}
+        </div>
       </MainLayout>
     );
   }

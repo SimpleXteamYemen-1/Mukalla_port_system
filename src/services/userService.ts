@@ -94,4 +94,17 @@ export const userService = {
       throw error;
     }
   },
+
+  /**
+   * Update user signature
+   */
+  updateSignature: async (signatureBase64: string) => {
+    try {
+      const response = await api.put('/user/signature', { signature: signatureBase64 });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating signature:', error);
+      throw error;
+    }
+  },
 };

@@ -32,6 +32,8 @@ function buildDocumentHtml(opts: {
   vesselFlag?: string | null;
   rows: string;
   extraBlocks?: string;
+  signatureUrl?: string | null;
+  userName?: string | null;
 }): string {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', { dateStyle: 'long' });
@@ -152,7 +154,7 @@ function buildDocumentHtml(opts: {
     <div class="sig-grid">
       <div class="sig-field">
         <label>Authenticated Agent</label>
-        <div class="sig-line">&nbsp;</div>
+        <div class="sig-line">${opts.userName || '&nbsp;'}</div>
       </div>
       <div class="sig-field">
         <label>Extraction Timestamp</label>
@@ -160,7 +162,9 @@ function buildDocumentHtml(opts: {
       </div>
       <div class="sig-field right">
         <label>Official Signature / Stamp</label>
-        <div class="sig-line"></div>
+        <div class="sig-line">
+          ${opts.signatureUrl ? `<img src="${opts.signatureUrl}" style="max-height: 40px; margin-top: -10px; display: block; margin-left: auto;" alt="Signature" />` : ''}
+        </div>
       </div>
     </div>
     <div class="hash-box">
@@ -200,6 +204,33 @@ function openPrintWindow(html: string, filename: string) {
   win.document.write(html);
   win.document.close();
   win.document.title = filename;
+}
+
+function getSignatureUrl(): string | null {
+  let sig = localStorage.getItem('user_signature');
+  if (!sig) return null;
+  
+  // Clean up any whitespaces or newlines that might break the data URI
+  sig = sig.trim().replace(/\n|\r/g, '');
+
+  // If it's already a Data URI, return as is
+  if (sig.startsWith('data:image')) {
+    return sig;
+  }
+
+  // If it's an absolute URL, return as is
+  if (sig.startsWith('http://') || sig.startsWith('https://')) {
+    return sig;
+  }
+
+  // If it's a relative path (e.g. /storage/signatures/...)
+  // Append the backend URL (defaulting to localhost:8000 based on standard setup)
+  if (sig.startsWith('/')) {
+    return `http://localhost:8000${sig}`;
+  }
+
+  // Otherwise, assume it's raw base64 and prefix it
+  return `data:image/png;base64,${sig}`;
 }
 
 // ─── Public Exports ────────────────────────────────────────────────────────
@@ -270,6 +301,8 @@ export function exportArrivalPdf(n: ArrivalExportData) {
     vesselFlag: n.flag,
     rows,
     extraBlocks: extra,
+    signatureUrl: getSignatureUrl(),
+    userName: localStorage.getItem('user_name'),
   });
 
   openPrintWindow(html, filename);
@@ -307,6 +340,8 @@ export function exportAnchoragePdf(r: AnchorageExportData) {
     vesselFlag: r.vessel?.flag,
     rows,
     extraBlocks: extra,
+    signatureUrl: getSignatureUrl(),
+    userName: localStorage.getItem('user_name'),
   });
 
   openPrintWindow(html, filename);
@@ -338,6 +373,8 @@ export function exportClearancePdf(c: ClearanceExportData) {
     vesselType: c.vessel?.type,
     vesselFlag: c.vessel?.flag,
     rows,
+    signatureUrl: getSignatureUrl(),
+    userName: localStorage.getItem('user_name'),
   });
 
   openPrintWindow(html, filename);
