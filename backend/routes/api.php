@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/avatar', [AuthController::class, 'updateAvatar']);
     Route::put('/user/preferences', [AuthController::class, 'updatePreferences']);
     Route::put('/user/password', [AuthController::class, 'updatePassword']);
+    Route::put('/user/signature', [AuthController::class, 'updateSignature']);
 
     // Agent Routes
     Route::group(['middleware' => ['role:agent']], function () {

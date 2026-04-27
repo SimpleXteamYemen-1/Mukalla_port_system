@@ -18,7 +18,7 @@ interface Wharf {
 
 interface AnchorageRequest {
   id: number;
-  vessel: { id: number; name: string; type: string; imo_number: string };
+  vessel: { id: number; name: string; type: string; imo_number: string; priority?: string; priority_reason?: string; purpose?: string; };
   docking_time: string;
   duration: string;
   reason: string;
@@ -135,6 +135,24 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
     return isRTL ? 'مشغول' : 'Occupied';
   };
 
+  const getPriorityColor = (priority?: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-900/50';
+      case 'medium': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-900/50';
+      case 'low':
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+    }
+  };
+
+  const getPriorityLabel = (priority?: string) => {
+    if (!priority) return 'LOW';
+    if (isRTL) {
+      const arMap: Record<string, string> = { 'high': 'عالي', 'medium': 'متوسط', 'low': 'منخفض' };
+      return arMap[priority.toLowerCase()] || priority.toUpperCase();
+    }
+    return priority.toUpperCase();
+  };
+
   return (
     <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Header */}
@@ -213,7 +231,14 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                       </div>
                     </div>
                   </div>
-                  <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expandedRequest === request.id ? 'rotate-180' : ''}`} />
+                  <div className="flex items-center gap-3">
+                    {request.vessel?.priority && (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getPriorityColor(request.vessel.priority)} uppercase tracking-wider`}>
+                        {isRTL ? 'الأولوية:' : 'PRIORITY:'} {getPriorityLabel(request.vessel.priority)}
+                      </span>
+                    )}
+                    <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expandedRequest === request.id ? 'rotate-180' : ''}`} />
+                  </div>
                 </div>
 
                 {expandedRequest === request.id && (
@@ -222,7 +247,9 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                       <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
                         {isRTL ? 'السبب / الغرض' : 'Reason / Purpose'}
                       </p>
-                      <p className="text-slate-900 dark:text-slate-50 text-sm">{request.reason}</p>
+                      <p className="text-slate-900 dark:text-slate-50 text-sm">
+                        {request.vessel?.priority_reason || request.vessel?.purpose || request.reason}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -286,9 +313,14 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                   <div className="flex items-center gap-4">
                     <div className={`p-2 rounded-lg border ${
                       req.status === 'wharf_assigned' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-900/30' :
+                      req.status === 'left_wharf' ? 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700' :
                       'bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-900/30'
                     }`}>
-                      <Ship className={`w-4 h-4 ${req.status === 'wharf_assigned' ? 'text-blue-700 dark:text-blue-400' : 'text-amber-700 dark:text-amber-400'}`} />
+                      <Ship className={`w-4 h-4 ${
+                        req.status === 'wharf_assigned' ? 'text-blue-700 dark:text-blue-400' : 
+                        req.status === 'left_wharf' ? 'text-slate-400 dark:text-slate-500' :
+                        'text-amber-700 dark:text-amber-400'
+                      }`} />
                     </div>
                     <div>
                       <p className="text-slate-900 dark:text-slate-50 font-medium text-sm">{req.vessel?.name}</p>
@@ -302,10 +334,13 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                       req.status === 'wharf_assigned' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                       req.status === 'waiting' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      req.status === 'left_wharf' ? 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700' :
                       'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
                     }`}>
                       {req.status === 'wharf_assigned' ? (isRTL ? 'رصيف معين' : 'Wharf Assigned') :
-                       req.status === 'waiting' ? (isRTL ? 'قائمة انتظار' : 'Waitlisted') : req.status}
+                       req.status === 'waiting' ? (isRTL ? 'قائمة انتظار' : 'Waitlisted') : 
+                       req.status === 'left_wharf' ? (isRTL ? 'غادرت الرصيف' : 'Left Wharf') :
+                       req.status}
                     </span>
                     {req.status === 'waiting' && (
                       <button

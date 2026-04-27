@@ -219,6 +219,11 @@ class AgentController extends Controller
                 \App\Models\Wharf::where('id', $vessel->current_wharf_id)->update(['status' => 'available']);
             }
 
+            // Update Anchorage Request status to Left Wharf
+            \App\Models\AnchorageRequest::where('vessel_id', $vessel->id)
+                ->where('status', 'wharf_assigned')
+                ->update(['status' => 'left_wharf']);
+
             // Vessel State Update
             $vessel->update([
                 'current_wharf_id' => null,

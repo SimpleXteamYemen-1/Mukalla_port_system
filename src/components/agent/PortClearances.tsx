@@ -10,7 +10,7 @@ import { Clearance } from '../../utils/portOfficerApi';
 import { agentService, Vessel } from '../../services/agentService';
 
 /** Anchorage statuses that mean a vessel has completed the anchoring phase */
-const ANCHORED_STATUSES = ['wharf_assigned', 'approved'] as const;
+const ANCHORED_STATUSES = ['wharf_assigned'] as const;
 
 interface PortClearancesProps {
     language: Language;

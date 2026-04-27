@@ -27,6 +27,7 @@ export interface User {
   rejection_reason?: string;
   phone?: string;
   avatar_url?: string;
+  signature?: string | null;
 }
 
 function App() {

@@ -10,8 +10,10 @@ import {
   Check, 
   Moon, 
   Sun, 
-  Globe 
+  Globe,
+  PenTool
 } from 'lucide-react';
+import { SignaturePad } from './SignaturePad';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
@@ -71,6 +73,8 @@ export function AccountSettings({
     newPassword: '',
     confirmPassword: '',
   });
+
+  const [signatureBase64, setSignatureBase64] = useState<string | null>(null);
 
   // Fetch real user data on mount
   useEffect(() => {
@@ -171,6 +175,25 @@ export function AccountSettings({
       setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || (language === 'ar' ? 'فشل تغيير كلمة المرور' : 'Password change failed');
+      toast.error(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateSignature = async () => {
+    if (!signatureBase64) {
+      toast.error(language === 'ar' ? 'الرجاء رسم التوقيع أولاً' : 'Please draw your signature first');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await userService.updateSignature(signatureBase64);
+      toast.success(language === 'ar' ? 'تم حفظ التوقيع بنجاح' : 'Signature saved successfully');
+      // Reload to update global user state
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || (language === 'ar' ? 'فشل حفظ التوقيع' : 'Failed to save signature');
       toast.error(errorMsg);
     } finally {
       setIsLoading(false);
@@ -364,6 +387,52 @@ export function AccountSettings({
                     </Button>
                   </CardFooter>
                 </form>
+              </Card>
+
+              {/* Digital Signature Card */}
+              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50 mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PenTool className="w-5 h-5 text-[var(--primary)]" />
+                    {language === 'ar' ? 'التوقيع الرقمي' : 'Digital Signature'}
+                  </CardTitle>
+                  <CardDescription>
+                    {language === 'ar' 
+                      ? 'أضف توقيعك لاعتماد الوثائق والتصاريح رسمياً.' 
+                      : 'Add your signature to officially authorize documents and clearances.'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SignaturePad 
+                    language={language}
+                    initialSignature={user.signature}
+                    onSignatureChange={setSignatureBase64}
+                  />
+                  {!user.signature && (
+                    <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                      <p className="text-amber-600 dark:text-amber-500 text-sm font-medium">
+                        {language === 'ar' 
+                          ? 'تنبيه: يجب إضافة توقيعك لتفعيل حسابك واستخدام النظام.' 
+                          : 'Notice: You must add your signature to activate your account and use the system.'}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-end border-t border-[var(--secondary)]/30 pt-6">
+                  <Button 
+                    type="button" 
+                    onClick={handleUpdateSignature} 
+                    disabled={isLoading || !signatureBase64} 
+                    className="gap-2"
+                  >
+                    {isLoading ? (
+                      <LoadingIndicator type="line-spinner" size="xs" className="text-white" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    {isLoading ? t.saving : t.saveChanges}
+                  </Button>
+                </CardFooter>
               </Card>
             </TabsContent>
 

@@ -72,6 +72,24 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
     return <Lock className="w-4 h-4 text-slate-400" />;
   };
 
+  const getPriorityColor = (priority?: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-900/50';
+      case 'medium': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-900/50';
+      case 'low':
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+    }
+  };
+
+  const getPriorityLabel = (priority?: string) => {
+    if (!priority) return 'LOW';
+    if (language === 'ar') {
+      const arMap: Record<string, string> = { 'high': 'عالي', 'medium': 'متوسط', 'low': 'منخفض' };
+      return arMap[priority.toLowerCase()] || priority.toUpperCase();
+    }
+    return priority.toUpperCase();
+  };
+
   return (
     <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">
       {/* Header */}
@@ -151,8 +169,8 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                         <div className="text-slate-400 dark:text-slate-500 text-xs mt-0.5">{t.arrivalRef}: AN-{request.vessel_id}</div>
                       </div>
                     </div>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                      {t.priority}: MEDIUM
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${getPriorityColor(request.vessel?.priority)}`}>
+                      {t.priority}: {getPriorityLabel(request.vessel?.priority)}
                     </span>
                   </div>
 
@@ -217,7 +235,9 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                   {/* Reason */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
                     <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t.reason}</div>
-                    <div className="text-slate-900 dark:text-slate-50 text-sm">{request.reason}</div>
+                    <div className="text-slate-900 dark:text-slate-50 text-sm">
+                      {request.vessel?.priority_reason || request.vessel?.purpose || request.reason}
+                    </div>
                   </div>
 
                   {/* Actions */}
