@@ -1,6 +1,6 @@
 import React from 'react';
 import { Language } from '../../App';
-import { LayoutDashboard, Anchor, Package, BoxSelect, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Anchor, Package, BoxSelect, BarChart3, History } from 'lucide-react';
 import { UnifiedSidebar, MenuItem } from '../layout/UnifiedSidebar';
 
 interface WharfSidebarProps {
@@ -17,7 +17,8 @@ export function WharfSidebar({ language, currentPage, onNavigate }: WharfSidebar
     { id: 'availability', label: isRTL ? 'توفر الأرصفة' : 'Wharf Availability', icon: Anchor },
     { id: 'storage', label: isRTL ? 'إدارة التخزين' : 'Storage Management', icon: Package },
     { id: 'containers', label: isRTL ? 'تعيين الحاويات' : 'Container Assignment', icon: BoxSelect },
-    { id: 'capacity', label: isRTL ? 'نظرة عامة على السعة' : 'Capacity Overview', icon: BarChart3 }
+    { id: 'capacity', label: isRTL ? 'نظرة عامة على السعة' : 'Capacity Overview', icon: BarChart3 },
+    { id: 'vessel-history', label: isRTL ? 'سجل السفن' : 'Vessel History', icon: History }
   ];
 
   return (

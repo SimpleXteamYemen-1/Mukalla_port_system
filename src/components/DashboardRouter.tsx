@@ -20,9 +20,12 @@ import { ArrivalApprovals } from './executive/ArrivalApprovals';
 import { AnchorageApprovals } from './executive/AnchorageApprovals';
 import { DecisionLogs } from './executive/DecisionLogs';
 import { ReportsAnalytics } from './executive/ReportsAnalytics';
+import { EmergencyExits } from './executive/EmergencyExits';
 import { UserApprovals } from './executive/UserApprovals';
 import { UserDirectory } from './executive/UserDirectory';
-import { VesselHistory } from './executive/VesselHistory';
+import { VesselHistory as ExecutiveVesselHistory } from './executive/VesselHistory';
+import { VesselHistory as OfficerVesselHistory } from './portofficer/VesselHistory';
+import { VesselHistory as WharfVesselHistory } from './wharf/VesselHistory';
 import { PortOfficerSidebar } from './portofficer/PortOfficerSidebar';
 import { PortOfficerDashboard } from './portofficer/PortOfficerDashboard';
 import { BerthingManagement } from './portofficer/BerthingManagement';
@@ -54,9 +57,9 @@ interface DashboardRouterProps {
 
 // All valid page keys per role — used to guard against stale ?tab= values on refresh
 const VALID_PAGES: Record<string, string[]> = {
-  executive: ['dashboard', 'notifications', 'arrivals', 'vessel-history', 'anchorage', 'user-approvals', 'user-directory', 'logs', 'reports', 'settings'],
-  officer:   ['dashboard', 'notifications', 'berthing', 'vessels', 'clearances', 'logs', 'report', 'settings'],
-  wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'containers', 'capacity', 'settings'],
+  executive: ['dashboard', 'notifications', 'arrivals', 'vessel-history', 'anchorage', 'user-approvals', 'user-directory', 'logs', 'reports', 'emergency-exits', 'settings'],
+  officer:   ['dashboard', 'notifications', 'berthing', 'vessels', 'clearances', 'logs', 'report', 'vessel-history', 'settings'],
+  wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'containers', 'capacity', 'vessel-history', 'settings'],
   trader:    ['dashboard', 'notifications', 'containers', 'discharge', 'settings'],
   agent:     ['dashboard', 'notifications', 'vessels', 'arrivals', 'anchorage', 'manifests', 'clearances', 'tracker', 'report', 'settings'],
 };
@@ -192,7 +195,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'arrivals' && <ArrivalApprovals language={language} onNavigate={handleNavigate} />}
             {currentPage === 'vessel-history' && (
-              <VesselHistory 
+              <ExecutiveVesselHistory 
                 language={language} 
                 vesselId={activeVesselId || ''} 
                 onNavigate={handleNavigate} 
@@ -203,6 +206,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'user-directory' && <UserDirectory language={language} />}
             {currentPage === 'logs' && <DecisionLogs language={language} />}
             {currentPage === 'reports' && <ReportsAnalytics language={language} />}
+            {currentPage === 'emergency-exits' && <EmergencyExits language={language} onNavigate={handleNavigate} />}
             {currentPage === 'settings' && (
               <AccountSettings 
                 user={user} 
@@ -258,6 +262,8 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {currentPage === 'vessels' && (isRTL ? 'السفن النشطة' : 'Active Vessels')}
                   {currentPage === 'clearances' && (isRTL ? 'تصاريح المغادرة' : 'Port Clearances')}
                   {currentPage === 'logs' && (isRTL ? 'السجلات التشغيلية' : 'Operational Logs')}
+                  {currentPage === 'report' && (isRTL ? 'تقرير التنظيمي' : 'Regulatory Report')}
+                  {currentPage === 'vessel-history' && (isRTL ? 'سجل السفن' : 'Vessel History')}
                 </h2>
               </div>
 
@@ -316,6 +322,13 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'clearances' && <PortClearances language={language} />}
             {currentPage === 'logs' && <OperationalLogs language={language} />}
             {currentPage === 'report' && <PortReport language={language} />}
+            {currentPage === 'vessel-history' && (
+              <OfficerVesselHistory 
+                language={language} 
+                vesselId={activeVesselId || ''} 
+                onNavigate={setCurrentPage} 
+              />
+            )}
             {currentPage === 'settings' && (
               <AccountSettings 
                 user={user} 
@@ -374,6 +387,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {currentPage === 'storage' && (isRTL ? 'إدارة التخزين' : 'Storage Management')}
                   {currentPage === 'containers' && (isRTL ? 'تعيين الحاويات' : 'Container Assignment')}
                   {currentPage === 'capacity' && (isRTL ? 'نظرة عامة على السعة' : 'Capacity Overview')}
+                  {currentPage === 'vessel-history' && (isRTL ? 'سجل السفن' : 'Vessel History')}
                 </h2>
               </div>
 
@@ -431,6 +445,13 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'storage' && <StorageManagement language={language} />}
             {currentPage === 'containers' && <ContainerAssignment language={language} />}
             {currentPage === 'capacity' && <CapacityOverview language={language} />}
+            {currentPage === 'vessel-history' && (
+              <WharfVesselHistory 
+                language={language} 
+                vesselId={activeVesselId || ''} 
+                onNavigate={setCurrentPage} 
+              />
+            )}
             {currentPage === 'settings' && (
               <AccountSettings 
                 user={user} 

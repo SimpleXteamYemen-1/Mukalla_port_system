@@ -59,6 +59,80 @@ interface ArrivalNotificationsProps {
   language: Language;
 }
 
+interface ExitReasonModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  vesselName: string;
+  exitReason: string;
+  setExitReason: (val: string) => void;
+  isExiting: boolean;
+  t: any;
+  language: Language;
+}
+
+const ExitReasonModal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  vesselName, 
+  exitReason, 
+  setExitReason, 
+  isExiting, 
+  t, 
+  language 
+}: ExitReasonModalProps) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)]/30 p-8 w-full max-auto max-w-lg shadow-2xl animate-in zoom-in duration-300">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+            <XCircle className="w-6 h-6 text-red-500" />
+          </div>
+          <h3 className="text-2xl font-black text-[var(--text-primary)]">{t.leaveVesselConfirmTitle}</h3>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-[var(--text-secondary)] font-medium">
+            {language === 'ar' 
+              ? `أنت على وشك سحب السفينة ${vesselName}. يرجى ذكر السبب.`
+              : `You are about to withdraw vessel ${vesselName}. Please provide a reason.`}
+          </p>
+
+          <div>
+            <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.leaveVesselReasonLabel}</label>
+            <textarea
+              value={exitReason}
+              onChange={(e) => setExitReason(e.target.value)}
+              placeholder={t.leaveVesselReasonPlaceholder}
+              rows={4}
+              className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-4 mt-8">
+          <button
+            onClick={onConfirm}
+            disabled={isExiting || !exitReason.trim()}
+            className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black rounded-xl transition-all shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
+          >
+            {isExiting ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
+            {t.leaveVessel}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-[var(--secondary)]/10 hover:bg-[var(--secondary)]/20 text-[var(--text-primary)] font-bold rounded-xl transition-all"
+          >
+            {t.cancel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const t = translations[language]?.agent?.arrivals || translations.en.agent.arrivals;
 
@@ -88,6 +162,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedManifestId, setExpandedManifestId] = useState<number | null>(null);
   const [highlightedImo, setHighlightedImo] = useState<string | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [selectedVesselForExit, setSelectedVesselForExit] = useState<any>(null);
+  const [exitReason, setExitReason] = useState('');
+  const [isExiting, setIsExiting] = useState(false);
 
   const {
     register,
@@ -101,6 +179,29 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     resolver: zodResolver(arrivalSchema),
     defaultValues: initialValues,
   });
+
+  const handleEmergencyExit = async () => {
+    if (!selectedVesselForExit || !exitReason.trim()) return;
+
+    setIsExiting(true);
+    try {
+      await agentService.emergencyExit(selectedVesselForExit.id, exitReason);
+      toast.success(t.leaveVesselSuccess);
+      setShowExitModal(false);
+      setExitReason('');
+      setSelectedVesselForExit(null);
+      loadArrivals();
+    } catch (error: any) {
+      console.error('Emergency exit error:', error);
+      const backendMessage = error.response?.data?.message;
+      const backendError = error.response?.data?.error;
+      
+      const msg = backendMessage || backendError || (language === 'ar' ? 'فشل عملية الخروج' : 'Emergency exit failed');
+      toast.error(msg);
+    } finally {
+      setIsExiting(false);
+    }
+  };
 
   useEffect(() => {
     const subscription = watch((value) => {
@@ -319,6 +420,21 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
   return (
     <div className="space-y-6">
+      <ExitReasonModal 
+        isOpen={showExitModal}
+        onClose={() => {
+          setShowExitModal(false);
+          setExitReason('');
+          setSelectedVesselForExit(null);
+        }}
+        onConfirm={handleEmergencyExit}
+        vesselName={selectedVesselForExit?.name || ''}
+        exitReason={exitReason}
+        setExitReason={setExitReason}
+        isExiting={isExiting}
+        t={t}
+        language={language}
+      />
       <div className="flex items-center justify-between mb-8 group">
         <div>
           <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">{t.title}</h1>
@@ -677,6 +793,29 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <Edit2 className="w-5 h-5 text-[var(--primary)]" />
                     </button>
                   ) : null}
+
+                  {/* Emergency Exit Button */}
+                  {(notification.status === 'awaiting' || notification.status === 'approved' || notification.status === 'draft') && (
+                    <button
+                      onClick={() => {
+                        // Business Rule: Check if anchorage requested
+                        // Note: In a real scenario, the backend would provide 'has_anchorage_request' boolean
+                        // For now, we rely on the specific blocking logic requested
+                        if (notification.anchorage_request || notification.status === 'anchored') {
+                          toast.warning(t.leaveVesselAnchorageAlert);
+                          return;
+                        }
+                        setSelectedVesselForExit(notification);
+                        setShowExitModal(true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition-all"
+                      title={t.leaveVessel}
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      {t.leaveVessel}
+                    </button>
+                  )}
+
                   <button
                     onClick={() => exportArrivalPdf({
                       vessel_name: notification.name || notification.vessel_name || 'Unknown Vessel',

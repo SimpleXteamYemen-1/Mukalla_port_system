@@ -23,11 +23,14 @@ class Vessel extends Model
         'priority_reason',
         'priority_document_path',
         'rejection_reason',
+        'exit_reason',
+        'emergency_departed_at',
     ];
 
     protected $casts = [
         'eta' => 'datetime',
         'etd' => 'datetime',
+        'emergency_departed_at' => 'datetime',
     ];
 
     public function owner()

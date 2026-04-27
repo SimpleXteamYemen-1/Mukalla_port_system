@@ -16,6 +16,7 @@ use App\Services\AgentService;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Log;
 
 class AgentController extends Controller
 {
@@ -118,9 +119,10 @@ class AgentController extends Controller
 
     public function getClearances(Request $request)
     {
-        // Only return clearances for vessels owned by the agent
+        // Only return non-archived clearances for vessels owned by the agent
         $vessels = Vessel::where('owner_id', $request->user()->id)->pluck('id');
-        $clearances = PortClearance::whereIn('vessel_id', $vessels)
+        $clearances = PortClearance::visible()
+            ->whereIn('vessel_id', $vessels)
             ->with('vessel', 'officer')
             ->orderBy('created_at', 'desc')
             ->get()
@@ -224,17 +226,23 @@ class AgentController extends Controller
                 'etd' => now(),
             ]);
 
+            // Stamp departure time on active clearances for the 24h archive grace period
+            PortClearance::where('vessel_id', $vessel->id)
+                ->where('status', 'clearance_approved')
+                ->update(['departed_at' => now()]);
+
             // Trader Notification (Gracefully Skipped)
             // ...
 
             // Executive Notification (Log)
-            \App\Models\Log::create([
+            $log = \App\Models\Log::create([
                 'user_id' => $request->user()->id,
                 'vessel_id' => $vessel->id,
                 'vessel_name' => $vessel->name,
                 'action' => 'vessel_departure',
                 'details' => "Vessel {$vessel->name} has successfully departed.",
             ]);
+            event(new \App\Events\VesselOperationLogged($log, $request->user()->name));
 
             \DB::commit();
             return response()->json(['message' => 'Vessel has successfully departed']);
@@ -642,5 +650,80 @@ class AgentController extends Controller
         }
 
         return response()->json($reports);
+    }
+
+    public function emergencyExit(Request $request, $id)
+    {
+        $request->validate([
+            'exit_reason' => 'required|string',
+        ]);
+
+        $vessel = Vessel::where('id', $id)
+            ->where('owner_id', $request->user()->id)
+            ->first();
+
+        if (!$vessel) {
+            return response()->json(['message' => 'Vessel not found or unauthorized access.'], 404);
+        }
+
+        // Guard: vessel must be in pre-anchorage state
+        if (!in_array($vessel->status, ['awaiting', 'approved', 'draft', 'rejected'])) {
+            return response()->json([
+                'message' => "Vessel cannot be withdrawn in its current state ({$vessel->status}).",
+                'error_code' => 'INVALID_STATUS',
+            ], 422);
+        }
+
+        // Guard: no anchorage request must exist for this vessel
+        $hasAnchorageRequest = AnchorageRequest::where('vessel_id', $vessel->id)->exists();
+        if ($hasAnchorageRequest) {
+            return response()->json([
+                'message' => 'Cannot withdraw vessel — anchorage process has already been initiated. The vessel must go through the standard port clearance process.',
+                'error_code' => 'ANCHORAGE_EXISTS',
+            ], 422);
+        }
+
+        \DB::beginTransaction();
+        try {
+            $vessel->update([
+                'status' => 'emergency_departed',
+                'exit_reason' => $request->exit_reason,
+                'emergency_departed_at' => now(),
+            ]);
+
+            // Create a log entry
+            $log = Log::create([
+                'user_id' => $request->user()->id,
+                'vessel_id' => $vessel->id,
+                'vessel_name' => $vessel->name,
+                'action' => 'emergency_exit',
+                'details' => "Vessel {$vessel->name} has been withdrawn (emergency exit). Reason: {$request->exit_reason}",
+            ]);
+
+            // Attempt event broadcasting and notifications, but don't fail the whole transaction if they fail
+            try {
+                event(new \App\Events\VesselOperationLogged($log, $request->user()->name));
+                
+                $this->notifyUsers(
+                    ['executive'],
+                    'Emergency Vessel Exit',
+                    "Vessel {$vessel->name} (IMO: {$vessel->imo_number}) has been withdrawn by agent {$request->user()->name}. Reason: {$request->exit_reason}"
+                );
+            } catch (\Exception $e) {
+                \Log::error("Post-exit actions failed: " . $e->getMessage());
+            }
+
+            \DB::commit();
+            return response()->json([
+                'message' => 'Vessel has been successfully withdrawn.',
+                'vessel' => $vessel->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json([
+                'message' => 'Emergency exit failed: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

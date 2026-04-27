@@ -1,7 +1,7 @@
 import React from 'react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
-import { LayoutDashboard, Anchor, Ship, FileCheck, FileText } from 'lucide-react';
+import { LayoutDashboard, Anchor, Ship, FileCheck, FileText, History } from 'lucide-react';
 import { UnifiedSidebar, MenuItem } from '../layout/UnifiedSidebar';
 
 interface PortOfficerSidebarProps {
@@ -19,7 +19,8 @@ export function PortOfficerSidebar({ language, currentPage, onNavigate }: PortOf
     { id: 'vessels', label: isRTL ? 'السفن النشطة' : 'Active Vessels', icon: Ship },
     { id: 'clearances', label: isRTL ? 'تصاريح المغادرة' : 'Port Clearances', icon: FileCheck },
     { id: 'logs', label: isRTL ? 'السجلات التشغيلية' : 'Operational Logs', icon: FileText },
-    { id: 'report', label: isRTL ? 'تقرير التنظيمي' : 'Regulatory Report', icon: FileText }
+    { id: 'report', label: isRTL ? 'تقرير التنظيمي' : 'Regulatory Report', icon: FileText },
+    { id: 'vessel-history', label: isRTL ? 'سجل السفن' : 'Vessel History', icon: History }
   ];
 
   return (

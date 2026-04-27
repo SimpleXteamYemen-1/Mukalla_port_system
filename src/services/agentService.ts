@@ -392,4 +392,16 @@ export const agentService = {
             return null;
         }
     },
+
+    emergencyExit: async (vesselId: number, exitReason: string) => {
+        try {
+            const response = await api.post(`/agent/vessels/${vesselId}/emergency-exit`, {
+                exit_reason: exitReason,
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error executing emergency exit', error);
+            throw error;
+        }
+    },
 };

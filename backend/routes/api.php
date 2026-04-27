@@ -48,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/agent/clearances', [AgentController::class, 'getClearances']);
         Route::post('/agent/clearance', [AgentController::class, 'issueClearance']);
         Route::post('/agent/vessels/{id}/depart', [AgentController::class, 'executeDeparture']);
+        Route::post('/agent/vessels/{id}/emergency-exit', [AgentController::class, 'emergencyExit']);
         Route::get('/agent/vessel-report', [AgentController::class, 'getVesselActivityReport']);
 
         // Edit endpoints
@@ -75,6 +76,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // NEW: Scheduled anchorage handoffs from Wharf worker
         Route::get('/officer/scheduled-anchorage', [PortOfficerController::class, 'getScheduledAnchorage']);
         Route::get('/officer/report', [PortOfficerController::class, 'getPortReport']);
+        // Vessel History (reuses ExecutiveController)
+        Route::get('/officer/vessels-list', [ExecutiveController::class, 'getAllVessels']);
+        Route::get('/officer/vessels/{id}/history', [ExecutiveController::class, 'getVesselHistory']);
     });
 
     // Wharf Routes
@@ -92,6 +96,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/wharf/anchorage-requests', [WharfController::class, 'getAnchorageRequests']);
         Route::post('/wharf/anchorage-requests/{id}/approve', [WharfController::class, 'approveAnchorageRequest']);
         Route::post('/wharf/anchorage-requests/{id}/waitlist', [WharfController::class, 'waitlistAnchorageRequest']);
+        // Vessel History (reuses ExecutiveController)
+        Route::get('/wharf/vessels-list', [ExecutiveController::class, 'getAllVessels']);
+        Route::get('/wharf/vessels/{id}/history', [ExecutiveController::class, 'getVesselHistory']);
     });
 
     // Trader Routes
@@ -121,6 +128,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/executive/anchorage/{id}/approve', [ExecutiveController::class, 'approveAnchorage']);
         Route::post('/executive/anchorage/{id}/reject', [ExecutiveController::class, 'rejectAnchorage']);
         Route::get('/executive/decisions', [ExecutiveController::class, 'getRecentDecisions']);
+        Route::get('/executive/emergency-exits', [ExecutiveController::class, 'getEmergencyExits']);
 
         // ── Admin: User Management ────────────────────────────────────────────
         Route::get('/admin/users',                [AdminController::class, 'index']);    // list + filter

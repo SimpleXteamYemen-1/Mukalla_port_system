@@ -21,6 +21,7 @@ export function ExecutiveSidebar({ currentPage, onNavigate, language }: Executiv
     { id: 'user-directory', label: t.menu.userDirectory,     icon: ShieldCheck },
     { id: 'logs',           label: t.menu.decisionLogs,      icon: FileText },
     { id: 'reports',        label: t.menu.reportsAnalytics,  icon: BarChart3 },
+    { id: 'emergency-exits', label: t.menu.emergencyExits,   icon: ShieldCheck },
     { id: 'vessel-history', label: language === 'ar' ? 'سجل السفن' : 'Vessel History', icon: History },
   ];
 

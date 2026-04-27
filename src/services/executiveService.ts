@@ -50,6 +50,17 @@ export interface RecentDecision {
     time: string;
 }
 
+export interface EmergencyExit {
+    id: number;
+    vesselName: string;
+    imoNumber: string;
+    agentName: string;
+    exitTimestamp: string;
+    exitReason: string;
+    vesselType: string;
+    flag: string;
+}
+
 export const executiveService = {
     getDashboardStats: async () => {
         try {
@@ -210,5 +221,15 @@ export const executiveService = {
             console.error('Error loading vessel history:', error);
             throw error;
         }
-    }
+    },
+
+    getEmergencyExits: async (): Promise<EmergencyExit[]> => {
+        try {
+            const response = await api.get('/executive/emergency-exits');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching emergency exits:', error);
+            return [];
+        }
+    },
 };

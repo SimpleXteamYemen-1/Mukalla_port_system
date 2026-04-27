@@ -4,6 +4,8 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
+import { echo } from '../../utils/echo';
+import { Radio } from 'lucide-react';
 
 interface VesselHistoryProps {
   language: Language;
@@ -64,6 +66,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
   const [vesselSearchText, setVesselSearchText] = useState('');
   const [loadingVessels, setLoadingVessels] = useState(false);
   const [vesselSearchDebounce, setVesselSearchDebounce] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [liveCount, setLiveCount] = useState(0);
 
   // Sort history items chronologically by timestamp (descending, newest first)
   const sortHistoryByDate = useCallback((items: any[]) => {
@@ -150,6 +153,21 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
     } else {
       setShowSelector(true);
     }
+  }, [activeVesselId]);
+
+  // Real-time Echo listener
+  useEffect(() => {
+    if (!activeVesselId) return;
+    const channel = echo.channel('port-operations');
+    const handler = (event: any) => {
+      if (String(event.vessel_id) === String(activeVesselId)) {
+        setHistoryItems(prev => [event, ...prev]);
+        setLiveCount(c => c + 1);
+        setTimeout(() => setLiveCount(c => Math.max(0, c - 1)), 5000);
+      }
+    };
+    channel.listen('.vessel.operation.logged', handler);
+    return () => { channel.stopListening('.vessel.operation.logged', handler); };
   }, [activeVesselId]);
 
   const handleSearch = (e: React.FormEvent) => {

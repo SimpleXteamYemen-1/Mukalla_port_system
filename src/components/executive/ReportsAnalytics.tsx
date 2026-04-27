@@ -279,7 +279,12 @@ export function ReportsAnalytics({ language }: ReportsAnalyticsProps) {
             },
             {
               label: t.reportType, value: reportType, setter: setReportType,
-              options: [{ value: 'Performance', label: t.performance }, { value: 'Decisions', label: t.decisions }, { value: 'Rejections', label: t.rejections }, { value: 'Comprehensive', label: t.comprehensive }]
+              options: [
+                { value: 'Performance', label: t.performance },
+                { value: 'Operational', label: t.operational },
+                { value: 'Rejections', label: t.rejections },
+                { value: 'Comprehensive', label: t.comprehensive }
+              ]
             },
             {
               label: t.format, value: format, setter: setFormat,

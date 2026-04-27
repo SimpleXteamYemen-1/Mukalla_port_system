@@ -9,6 +9,7 @@ use App\Models\Wharf;
 use App\Models\PortClearance;
 use App\Models\Log;
 use App\Models\AnchorageRequest;
+use App\Events\VesselOperationLogged;
 
 class PortOfficerController extends Controller
 {
@@ -33,7 +34,7 @@ class PortOfficerController extends Controller
             'active_vessels' => Vessel::whereIn('status', ['docked', 'loading', 'unloading', 'ready'])->count(),
             'awaiting_berth' => Vessel::where('status', 'awaiting')->count(),
             // Assuming 'pending' clearances mean requests, but here counting valid ones for now
-            'pending_clearances' => PortClearance::where('status', 'valid')->count(),
+            'pending_clearances' => PortClearance::visible()->where('status', 'valid')->count(),
         ]);
     }
 
@@ -49,13 +50,14 @@ class PortOfficerController extends Controller
         $vessel->status = 'approved';
         $vessel->save();
 
-        Log::create([
+        $log = Log::create([
             'user_id' => $request->user()->id,
             'vessel_id' => $vessel->id,
             'vessel_name' => $vessel->name,
             'action' => 'approve_arrival',
             'details' => "Approved vessel {$vessel->name} arrival",
         ]);
+        event(new VesselOperationLogged($log, $request->user()->name));
 
         return response()->json($vessel);
     }
@@ -89,13 +91,14 @@ class PortOfficerController extends Controller
         $vessel->status = 'scheduled';
         $vessel->save();
 
-        Log::create([
+        $log = Log::create([
             'user_id' => $request->user()->id,
             'vessel_id' => $vessel->id,
             'vessel_name' => $vessel->name,
             'action' => 'assign_berth',
             'details' => "Scheduled {$vessel->name} to {$wharf->name} from {$vessel->eta} to {$vessel->etd}",
         ]);
+        event(new VesselOperationLogged($log, $request->user()->name));
 
         return response()->json($vessel);
     }
@@ -127,20 +130,21 @@ class PortOfficerController extends Controller
             'next_port' => $request->next_port,
         ]);
 
-        Log::create([
+        $log = Log::create([
             'user_id' => $request->user()->id,
             'vessel_id' => $vessel->id,
             'vessel_name' => $vessel->name,
             'action' => 'issue_clearance',
             'details' => "Issued clearance for vessel {$vessel->name} to {$request->next_port}",
         ]);
+        event(new VesselOperationLogged($log, $request->user()->name));
 
         return response()->json($clearance, 201);
     }
 
     public function getClearances()
     {
-        return response()->json(PortClearance::with('vessel', 'officer')->get());
+        return response()->json(PortClearance::visible()->with('vessel', 'officer')->get());
     }
 
     public function approveClearance(Request $request, $id)
@@ -193,13 +197,14 @@ class PortOfficerController extends Controller
             'certificate_path' => '/storage/certificates/' . $fileName,
         ]);
 
-        Log::create([
+        $log = Log::create([
             'user_id' => $request->user()->id,
             'vessel_id' => $vessel->id,
             'vessel_name' => $vessel->name,
             'action' => 'approve_clearance',
             'details' => "Approved clearance for vessel {$vessel->name}",
         ]);
+        event(new VesselOperationLogged($log, $request->user()->name));
 
         return response()->json($clearance);
     }
@@ -218,13 +223,14 @@ class PortOfficerController extends Controller
             'rejection_reason' => $request->rejection_reason,
         ]);
 
-        Log::create([
+        $log = Log::create([
             'user_id' => $request->user()->id,
             'vessel_id' => $clearance->vessel_id,
             'vessel_name' => $clearance->vessel->name,
             'action' => 'reject_clearance',
             'details' => "Rejected clearance for vessel {$clearance->vessel->name}. Reason: {$request->rejection_reason}",
         ]);
+        event(new VesselOperationLogged($log, $request->user()->name));
 
         return response()->json($clearance);
     }
@@ -259,13 +265,14 @@ class PortOfficerController extends Controller
             $wharf->save();
         }
 
-        Log::create([
+        $log = Log::create([
             'user_id' => $request->user()->id,
             'vessel_id' => $vessel->id,
             'vessel_name' => $vessel->name,
             'action' => 'berth_release',
             'details' => "Released {$vessel->name} from {$wharf->name}",
         ]);
+        event(new VesselOperationLogged($log, $request->user()->name));
 
         return response()->json($vessel);
     }

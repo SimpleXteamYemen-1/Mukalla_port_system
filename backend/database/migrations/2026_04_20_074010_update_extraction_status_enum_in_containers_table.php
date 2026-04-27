@@ -12,7 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE containers MODIFY COLUMN extraction_status ENUM('success', 'extracted', 'incomplete', 'failed') DEFAULT 'failed'");
+        Schema::table('containers', function (Blueprint $table) {
+            // For SQLite, enum is handled as a string. change() will handle the modification gracefully.
+            $table->string('extraction_status')->default('failed')->change();
+        });
     }
 
     /**
@@ -20,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE containers MODIFY COLUMN extraction_status ENUM('success', 'incomplete', 'failed') DEFAULT 'failed'");
+        Schema::table('containers', function (Blueprint $table) {
+            $table->string('extraction_status')->default('failed')->change();
+        });
     }
 };
