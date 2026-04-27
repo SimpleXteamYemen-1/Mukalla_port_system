@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Users, CheckCircle, XCircle, Clock, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
@@ -26,7 +28,7 @@ export function UserApprovals({ language }: UserApprovalsProps) {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [rejectModal, setRejectModal] = useState<{ userId: number; userName: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
 
   const fetchPendingUsers = async () => {
     setIsLoading(true);
@@ -42,19 +44,16 @@ export function UserApprovals({ language }: UserApprovalsProps) {
 
   useEffect(() => { fetchPendingUsers(); }, []);
 
-  const showToast = (type: 'success' | 'error', message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
 
   const handleApprove = async (userId: number) => {
     setActionLoading(userId);
     try {
       await executiveService.approveUser(userId);
       setPendingUsers(prev => prev.filter(u => u.id !== userId));
-      showToast('success', t.successApprove);
+      toast.success(t.successApprove);
     } catch (error) {
-      showToast('error', 'Failed to approve user.');
+      toast.error('Failed to approve user.');
+
     } finally {
       setActionLoading(null);
     }
@@ -66,11 +65,12 @@ export function UserApprovals({ language }: UserApprovalsProps) {
     try {
       await executiveService.rejectUser(rejectModal.userId, rejectReason);
       setPendingUsers(prev => prev.filter(u => u.id !== rejectModal.userId));
-      showToast('success', t.successReject);
+      toast.success(t.successReject);
       setRejectModal(null);
       setRejectReason('');
     } catch (error) {
-      showToast('error', 'Failed to reject user.');
+      toast.error('Failed to reject user.');
+
     } finally {
       setActionLoading(null);
     }
@@ -90,17 +90,8 @@ export function UserApprovals({ language }: UserApprovalsProps) {
 
   return (
     <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-lg shadow-lg border ${
-          toast.type === 'success' ? 'bg-green-100 dark:bg-green-900/30 border-green-200 dark:border-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-          <span className="font-medium text-sm">{toast.message}</span>
-        </div>
-      )}
-
       {/* Header */}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>

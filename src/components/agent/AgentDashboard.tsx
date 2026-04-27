@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'react-toastify';
+
 import { Ship, Bell, Anchor, AlertCircle, TrendingUp, Clock, Plus, Activity, FileText, Download } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
@@ -86,8 +88,10 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
         setUpcomingArrivals(arrivals);
         setVessels(vesselsData || []);
       } catch (error) {
+        toast.error(language === 'ar' ? 'فشل تحميل بيانات لوحة التحكم' : 'Failed to fetch dashboard data');
         console.error('Failed to fetch dashboard data', error);
       }
+
     };
     fetchData();
   }, []);
@@ -141,20 +145,23 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
     setExportingType(docType);
 
     try {
-      // Omit the `date` param intentionally -- sending a dummy date like '2000-01-01'
-      // activates the backend's when($date) filter and suppresses all historical records.
-      // Without a date the query fetches the latest anchorage and clearance for the vessel
-      // unconditionally, regardless of whether the vessel is active, departed, or archived.
-      const data = await agentService.getVesselActivityReport(Number(activeVesselId));
+      const result = await agentService.getVesselActivityReport(Number(activeVesselId), '2000-01-01');
+
+      if (!result) {
+        toast.error(language === 'ar' ? 'فشل جلب بيانات الوثيقة.' : 'Failed to fetch document data.');
+        return;
+      }
+
+
+      // Handle both single object and array responses
+      const data = Array.isArray(result) ? result[0] : result;
 
       // Guard: API returned null / network failure before we could get data
       if (!data) {
-        showToast(
-          language === 'ar' ? 'فشل جلب بيانات الوثيقة. يرجى المحاولة لاحقاً.' : 'Failed to fetch document data. Please try again.',
-          'error',
-        );
-        return; // finally will still run — isExporting resets correctly
+        toast.info(language === 'ar' ? 'لم يتم العثور على بيانات لهذه السفينة.' : 'No data found for this vessel.');
+        return;
       }
+
 
       if (docType === 'arrival' && data.arrival) {
         exportArrivalPdf({
@@ -203,30 +210,25 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
           officer: data.clearance.officer,
         });
       } else {
-        // Document for this phase has not been created yet — show a warning toast
-        const docLabel: Record<string, { ar: string; en: string }> = {
-          arrival:   { ar: 'بلاغ الوصول',  en: 'Arrival Notification' },
-          anchorage: { ar: 'طلب الرسو',    en: 'Anchorage Request' },
-          clearance: { ar: 'تصريح المغادرة', en: 'Port Clearance' },
+        const labels = {
+          arrival: language === 'ar' ? 'بلاغ الوصول' : 'Arrival Approval',
+          anchorage: language === 'ar' ? 'طلب الرسو' : 'Anchorage Request',
+          clearance: language === 'ar' ? 'تصريح مغادرة' : 'Port Clearance'
         };
-        const label = docLabel[docType]?.[language] ?? docType;
-        showToast(
+        const label = labels[docType];
+
+        toast.warning(
           language === 'ar'
             ? `لا توجد وثيقة «${label}» لهذه السفينة بعد.`
-            : `No «${label}» document exists for this vessel yet.`,
-          'warning',
+            : `No «${label}» document exists for this vessel yet.`
         );
       }
-    } catch (err: any) {
+
+    } catch (err) {
       console.error('Export failed:', err);
-      // Prefer the server's error message if present; fall back to a generic string
-      const serverMsg: string =
-        err?.response?.data?.message ||
-        err?.message ||
-        (language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
-      showToast(serverMsg, 'error');
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
     } finally {
-      // Always reset loading state — even if an early return fired above
+
       setIsExporting(false);
       setExportingType('');
     }

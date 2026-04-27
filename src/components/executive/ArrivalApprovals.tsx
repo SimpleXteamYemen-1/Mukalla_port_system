@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Ship, CheckCircle2, XCircle, AlertTriangle, Calendar, User as UserIcon, Clock, FileText, Loader2, ExternalLink, AlertCircle, X } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
@@ -35,6 +37,7 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
       setRequests(data);
     } catch (err) {
       setError(language === 'ar' ? 'فشل تحميل الطلبات' : 'Failed to load requests');
+      toast.error(language === 'ar' ? 'فشل تحميل طلبات الوصول.' : 'Failed to load arrival requests.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -46,9 +49,11 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
       setIsProcessing(true);
       await executiveService.approveArrival(id);
       setRequests(requests.filter(r => r.vesselId !== id));
+      toast.success(language === 'ar' ? 'تمت الموافقة على طلب الوصول بنجاح!' : 'Arrival request approved successfully!');
     } catch (err) {
       console.error('Error approving:', err);
-      alert(language === 'ar' ? 'حدث خطأ أثناء الموافقة' : 'An error occurred during approval');
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الموافقة' : 'An error occurred during approval');
+
     } finally {
       setIsProcessing(false);
     }
@@ -62,20 +67,22 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
 
   const confirmReject = async () => {
     if (!rejectionReason.trim() || !selectedRequest) {
-      alert(language === 'ar' ? 'يرجى إدخال سبب الرفض' : 'Please enter rejection reason');
+      toast.warning(language === 'ar' ? 'يرجى إدخال سبب الرفض' : 'Please enter rejection reason');
       return;
     }
     try {
       setIsProcessing(true);
       await executiveService.rejectArrival(selectedRequest, rejectionReason, selectedManifests);
       setRequests(requests.filter(r => r.vesselId !== selectedRequest));
+      toast.success(language === 'ar' ? 'تم رفض طلب الوصول.' : 'Arrival request rejected.');
       setShowRejectModal(false);
       setRejectionReason('');
       setSelectedManifests([]);
       setSelectedRequest(null);
     } catch (err) {
       console.error('Error rejecting:', err);
-      alert(language === 'ar' ? 'حدث خطأ أثناء الرفض' : 'An error occurred during rejection');
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الرفض' : 'An error occurred during rejection');
+
     } finally {
       setIsProcessing(false);
     }

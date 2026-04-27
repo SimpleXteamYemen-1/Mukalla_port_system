@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { Ship, Eye, FileCheck, Clock, Anchor, Search, XCircle, CheckCircle, X, RefreshCw } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
@@ -27,8 +29,10 @@ export function ActiveVessels({ language, onNavigate }: ActiveVesselsProps) {
       const vesselsData = await getVessels();
       setVessels(vesselsData);
     } catch (error) {
+      toast.error(isRTL ? 'فشل تحميل بيانات السفن' : 'Failed to load vessels data');
       console.error('Error loading vessels:', error);
     } finally {
+
       setLoading(false);
     }
   };
@@ -40,13 +44,15 @@ export function ActiveVessels({ language, onNavigate }: ActiveVesselsProps) {
     setReleasing(true);
     try {
       await releaseBerth(vesselToRelease.id, vesselToRelease.currentWharf, 'Port Officer');
+      toast.success(isRTL ? 'تم تحرير الرصيف بنجاح!' : 'Berth released successfully!');
       await loadData();
       setShowReleaseModal(false);
       setVesselToRelease(null);
     } catch (error: any) {
       console.error('Error releasing berth:', error);
-      alert(error.message || 'Failed to release berth');
+      toast.error(error.message || (isRTL ? 'فشل تحرير الرصيف' : 'Failed to release berth'));
     } finally {
+
       setReleasing(false);
     }
   };

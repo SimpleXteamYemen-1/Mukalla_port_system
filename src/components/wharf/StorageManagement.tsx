@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { Package, ThermometerSnowflake, FlaskConical, Box, AlertTriangle, Search, Calendar, RefreshCw, MapPin } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
@@ -49,8 +51,10 @@ export function StorageManagement({ language }: { language: Language }) {
       const res = await api.get('/wharf/containers');
       setContainers(res.data);
     } catch (err) {
+      toast.error(isRTL ? 'فشل تحميل بيانات المخازن' : 'Failed to load storage data');
       console.error(err);
     } finally {
+
       setIsLoading(false);
     }
   };
@@ -82,10 +86,13 @@ export function StorageManagement({ language }: { language: Language }) {
       });
       // Refresh the list after success
       await fetchContainers();
+      toast.success(isRTL ? 'تمت إعادة تصنيف الحاوية بنجاح!' : 'Container reclassified successfully!');
       setReclassifyConfig(prev => ({ ...prev, isOpen: false, newKeyword: '' }));
     } catch (err) {
+      toast.error(isRTL ? 'فشل إعادة تصنيف الحاوية' : 'Failed to reclassify container');
       console.error("Failed to reclassify container", err);
     } finally {
+
       setReclassifyConfig(prev => ({ ...prev, isSubmitting: false }));
     }
   };

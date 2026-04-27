@@ -13,38 +13,21 @@ class AgentService
      */
     public function processArrival(array $data, $userId)
     {
-        $vessel = Vessel::where('imo_number', $data['imo_number'])->first();
-
-        if (!$vessel) {
-            $newVessel = Vessel::create([
-                'imo_number' => $data['imo_number'],
-                'name' => $data['name'],
-                'type' => $data['type'],
-                'flag' => $data['flag'] ?? 'Unknown',
-                'owner_id' => $userId,
-                'eta' => $data['eta'],
-                'status' => 'draft',
-                'purpose' => $data['purpose'] ?? 'Cargo Handling',
-                'cargo' => $data['cargo'] ?? null,
-                'priority' => $data['priority'] ?? 'Low',
-                'priority_reason' => $data['priority_reason'] ?? null,
-                'priority_document_path' => $data['priority_document_path'] ?? null,
-            ]);
-
-            return $newVessel;
-        }
-
-        $vessel->update([
+        return Vessel::create([
+            'imo_number' => $data['imo_number'],
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'expected_containers' => $data['expected_containers'] ?? null,
+            'flag' => $data['flag'] ?? 'Unknown',
+            'owner_id' => $userId,
             'eta' => $data['eta'],
             'status' => 'draft',
-            'purpose' => $data['purpose'] ?? $vessel->purpose,
-            'cargo' => $data['cargo'] ?? $vessel->cargo,
-            'priority' => $data['priority'] ?? $vessel->priority,
-            'priority_reason' => $data['priority_reason'] ?? $vessel->priority_reason,
-            'priority_document_path' => $data['priority_document_path'] ?? $vessel->priority_document_path,
+            'purpose' => $data['purpose'] ?? 'Cargo Handling',
+            'cargo' => $data['cargo'] ?? null,
+            'priority' => $data['priority'] ?? 'Low',
+            'priority_reason' => $data['priority_reason'] ?? null,
+            'priority_document_path' => $data['priority_document_path'] ?? null,
         ]);
-
-        return $vessel;
     }
 
     /**

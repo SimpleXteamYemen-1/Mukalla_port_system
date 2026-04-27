@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { FileText, Package, Calendar, CheckCircle2, XCircle, Clock, RefreshCw, Send } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
@@ -78,8 +80,10 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
       setRequests(mappedRequests);
       setContainers(mappedContainers);
     } catch (error) {
+      toast.error(isRTL ? 'فشل تحميل بيانات طلبات التفريغ' : 'Failed to load discharge requests data');
       console.error('Error loading discharge requests:', error);
     } finally {
+
       setLoading(false);
     }
   };
@@ -92,23 +96,26 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
     e.preventDefault();
 
     if (!selectedContainer || !requestedDate) {
-      alert(isRTL ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
+      toast.warning(isRTL ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
       return;
     }
+
 
     setSubmitting(true);
     try {
       await traderService.requestDischarge(parseInt(selectedContainer), requestedDate, notes);
-      alert(isRTL ? 'تم تقديم الطلب بنجاح' : 'Request submitted successfully');
+      toast.success(isRTL ? 'تم تقديم الطلب بنجاح' : 'Request submitted successfully');
       setShowForm(false);
+
       setSelectedContainer('');
       setRequestedDate('');
       setNotes('');
       await loadData();
     } catch (error) {
       console.error('Error submitting discharge request:', error);
-      alert(isRTL ? 'حدث خطأ أثناء تقديم الطلب' : 'Error submitting request');
+      toast.error(isRTL ? 'حدث خطأ أثناء تقديم الطلب' : 'Error submitting request');
     } finally {
+
       setSubmitting(false);
     }
   };

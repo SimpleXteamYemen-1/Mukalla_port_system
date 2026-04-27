@@ -1,4 +1,6 @@
 import { useState, FormEvent } from 'react';
+import { toast } from 'react-toastify';
+
 import { Eye, EyeOff, Mail, Lock, User as UserIcon, Globe, Anchor, Building, CheckCircle2 } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language, User, UserRole } from '../App';
@@ -114,8 +116,10 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
       });
 
       const { user } = response.data || {};
-
+      
+      toast.success(isPendingApproval ? (language === 'ar' ? 'تم استلام طلبك وهو قيد المراجعة.' : 'Request received and under review.') : (language === 'ar' ? 'تم التسجيل بنجاح!' : 'Registration successful!'));
       setShowSuccess(true);
+
       
       if (response.status === 202) {
         setIsPendingApproval(true);
@@ -142,7 +146,9 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
       } else {
         setErrors({ ...errors, general: 'Registration failed. Please try again.' });
       }
+      toast.error(language === 'ar' ? 'فشل التسجيل. يرجى مراجعة الأخطاء المذكورة.' : 'Registration failed. Please review the errors.');
     }
+
   };
 
   const passwordStrength = formData.password ? getPasswordStrength(formData.password) : null;

@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-toastify';
+
 import { Language } from '../../App';
 import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Download } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
@@ -88,9 +90,11 @@ export function PortClearances({ language }: PortClearancesProps) {
       const dockedVessels = vesselsData.filter(v => v.status !== 'awaiting').map(v => v.name);
       setAvailableVessels(dockedVessels);
     } catch (error) {
+      toast.error(isRTL ? 'فشل تحميل بيانات التصاريح' : 'Failed to load clearances data');
       console.error('Error loading clearances:', error);
       showToast(isRTL ? 'فشل تحميل البيانات' : 'Failed to load clearances', 'error');
     } finally {
+
       setLoading(false);
     }
   };
@@ -102,6 +106,7 @@ export function PortClearances({ language }: PortClearancesProps) {
     setIssuing(true);
     try {
       await issueClearance(selectedVessel, nextPort, 'Port Officer');
+      toast.success(isRTL ? 'تم إصدار التصريح بنجاح!' : 'Clearance issued successfully!');
       await loadData();
       setShowIssueForm(false);
       setSelectedVessel('');
@@ -109,8 +114,9 @@ export function PortClearances({ language }: PortClearancesProps) {
       showToast(isRTL ? 'تم إصدار التصريح بنجاح' : 'Clearance issued successfully', 'success');
     } catch (error: any) {
       console.error('Error issuing clearance:', error);
-      showToast(error.message || (isRTL ? 'فشل إصدار التصريح' : 'Failed to issue clearance'), 'error');
+      toast.error(error.message || (isRTL ? 'فشل إصدار التصريح' : 'Failed to issue clearance'));
     } finally {
+
       setIssuing(false);
     }
   };
@@ -225,13 +231,16 @@ export function PortClearances({ language }: PortClearancesProps) {
     switch (status) {
       case 'valid':
       case 'clearance_approved': return <CheckCircle className="w-5 h-5 text-green-700 dark:text-green-400" />;
-      case 'pending_clearance':  return <Clock        className="w-5 h-5 text-blue-700 dark:text-blue-400" />;
-      case 'expiring-soon':      return <Clock        className="w-5 h-5 text-amber-700 dark:text-amber-400" />;
-      case 'expired':
-      case 'rejected':           return <AlertCircle  className="w-5 h-5 text-red-700 dark:text-red-400" />;
-      default:                   return <Clock        className="w-5 h-5 text-slate-400" />;
+      case 'pending_clearance': return <Clock className="w-5 h-5 text-blue-700 dark:text-blue-400" />;
+      case 'expiring-soon': return <Clock className="w-5 h-5 text-amber-700 dark:text-amber-400" />;
+      case 'expired': 
+      case 'rejected': return <AlertCircle className="w-5 h-5 text-red-700 dark:text-red-400" />;
+      default: return <Clock className="w-5 h-5 text-slate-400" />;
     }
   };
+
+
+
 
   const getHoursColor = (hours: number) =>
     hours < 0 ? 'text-red-700 dark:text-red-400' : hours < 6 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400';

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
+
 import { CheckCircle2, XCircle, Search, Filter, Download, Calendar, User as UserIcon } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
@@ -52,7 +54,8 @@ export function DecisionLogs({ language }: DecisionLogsProps) {
     return labels[decision]?.[language] || decision;
   };
 
-  const exportToCSV = () => { alert(language === 'ar' ? 'تصدير السجلات...' : 'Exporting logs...'); };
+  const exportToCSV = () => { toast.info(language === 'ar' ? 'تصدير السجلات...' : 'Exporting logs...'); };
+
 
   return (
     <div className="p-6 bg-slate-50 dark:bg-slate-900 min-h-full space-y-6">

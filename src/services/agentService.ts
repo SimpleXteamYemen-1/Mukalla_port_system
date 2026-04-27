@@ -34,6 +34,7 @@ export interface Vessel {
     eta: string;
     status: string;
     owner_id: number;
+    expected_containers?: number | null;
 }
 
 export interface CargoManifest {
@@ -61,6 +62,7 @@ export interface ReportArrival {
     cargo: string | null;
     priority: string | null;
     priority_reason: string | null;
+    expected_containers?: number | null;
     created_at: string;
 }
 
@@ -137,7 +139,7 @@ export const agentService = {
         }
     },
 
-    submitArrival: async (data: { imo_number: string; name: string; type: string; flag?: string; eta: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
+    submitArrival: async (data: { imo_number: string; name: string; type: string; expected_containers?: number | string | null; flag?: string; eta: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
         try {
             const formData = new FormData();
             Object.entries(data).forEach(([key, value]) => {
@@ -169,7 +171,7 @@ export const agentService = {
         }
     },
 
-    updateArrival: async (id: number, data: { eta: string; type?: string; flag?: string; name?: string; imo_number?: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
+    updateArrival: async (id: number, data: { eta: string; type?: string; expected_containers?: number | string | null; flag?: string; name?: string; imo_number?: string; purpose?: string; cargo?: string; priority?: string; priority_reason?: string; priority_document?: FileList | null }) => {
         try {
             const formData = new FormData();
             formData.append('_method', 'PUT'); // Laravel required for PUT with FormData
@@ -292,7 +294,7 @@ export const agentService = {
                 let hours = 0;
                 let parsedStatus = c.status;
                 
-                if (expiry && parsedStatus === 'valid' || parsedStatus === 'clearance_approved') {
+                if (expiry && (parsedStatus === 'valid' || parsedStatus === 'clearance_approved')) {
                     hours = Math.round((expiry.getTime() - now.getTime()) / (1000 * 60 * 60));
                     if (hours < 0) parsedStatus = 'expired';
                     else if (hours < 24) parsedStatus = 'expiring-soon';

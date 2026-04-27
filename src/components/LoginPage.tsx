@@ -1,4 +1,6 @@
 import { useState, FormEvent } from 'react';
+import { toast } from 'react-toastify';
+
 import { Eye, EyeOff, Mail, Lock, Globe, Anchor } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language, User } from '../App';
@@ -70,8 +72,10 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
       localStorage.setItem('token', access_token);
 
       // Update app state
+      toast.success(language === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Login successful!');
       onLogin(user);
     } catch (error: any) {
+
       console.error('Login error:', error);
       
       if (error.response && error.response.status === 403) {
@@ -92,7 +96,9 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
       } else {
         setErrors({ general: t.errors.general || 'An error occurred during login.' });
       }
+      toast.error(language === 'ar' ? 'فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.' : 'Login failed. Please check your credentials.');
     } finally {
+
       setIsLoading(false);
     }
   };

@@ -220,10 +220,15 @@ class ExecutiveController extends Controller
 
         $mapped = $vessels->map(function($v) {
                 $cargoType = 'General Cargo';
-                if ($v->type === 'Tanker') {
+                $typeStr = strtolower($v->type ?? '');
+                if ($typeStr === 'tanker') {
                     $cargoType = 'Liquid Bulk';
-                } elseif ($v->type === 'Container') {
+                } elseif ($typeStr === 'container') {
                     $cargoType = 'Container Cargo';
+                } elseif ($typeStr === 'bulk') {
+                    $cargoType = 'Dry Bulk';
+                } elseif ($typeStr === 'ro-ro') {
+                    $cargoType = 'Vehicles/Ro-Ro';
                 }
 
                 // Build real manifest documents from the containers table (if loaded)
@@ -477,10 +482,15 @@ class ExecutiveController extends Controller
         // Determine cargoType from vessel data
         $cargoType = $vessel->cargo ?? 'General Cargo';
         if (!$vessel->cargo) {
-            if ($vessel->type === 'Tanker') {
+            $typeStr = strtolower($vessel->type ?? '');
+            if ($typeStr === 'tanker') {
                 $cargoType = 'Liquid Bulk';
-            } elseif ($vessel->type === 'Container') {
+            } elseif ($typeStr === 'container') {
                 $cargoType = 'Container Cargo';
+            } elseif ($typeStr === 'bulk') {
+                $cargoType = 'Dry Bulk';
+            } elseif ($typeStr === 'ro-ro') {
+                $cargoType = 'Vehicles/Ro-Ro';
             }
         }
 

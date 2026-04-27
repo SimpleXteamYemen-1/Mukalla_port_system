@@ -21,6 +21,7 @@ const arrivalSchema = z.object({
   arrivalTime: z.string().min(1, { message: 'Arrival time is required' }),
   purpose: z.string().min(1, { message: 'Purpose is required' }),
   cargo: z.string().optional(),
+  expected_containers: z.coerce.number().min(1, { message: 'Must be at least 1' }).optional().or(z.literal('')),
   priority: z.enum(['Low', 'Medium', 'High']),
   priority_reason: z.string().optional(),
   priority_document: z.any().optional(),
@@ -73,6 +74,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     arrivalTime: '',
     purpose: '',
     cargo: '',
+    expected_containers: '',
     priority: 'Low',
     priority_reason: '',
   };
@@ -109,6 +111,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
   const watchImo = watch('imo');
   const watchPriority = watch('priority');
+  const watchType = watch('type');
 
   useEffect(() => {
     loadArrivals();
@@ -163,12 +166,14 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
         setVesselId(result.vessel.id);
         setValue('vessel', result.vessel.name, { shouldValidate: true });
         setValue('type', result.vessel.type, { shouldValidate: true });
+        setValue('expected_containers', result.vessel.expected_containers || '', { shouldValidate: true });
         setValue('flag', result.vessel.flag || '', { shouldValidate: true });
       } else {
         setImoVerified(true);
         setVesselId(null);
         setValue('vessel', '');
         setValue('type', '');
+        setValue('expected_containers', '');
         setValue('flag', '');
         toast.info(language === 'ar' ? 'السفينة غير موجودة في قاعدة البيانات. الرجاء إدخال البيانات.' : 'Vessel not found in database. Please enter details.');
       }
@@ -189,6 +194,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
           imo_number: data.imo,
           name: data.vessel,
           type: data.type || 'container',
+          expected_containers: data.type === 'container' ? (data.expected_containers || null) : null,
           flag: data.flag || 'Unknown',
           eta: eta,
           purpose: data.purpose,
@@ -203,6 +209,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
           imo_number: data.imo,
           name: data.vessel,
           type: data.type || 'container',
+          expected_containers: data.type === 'container' ? (data.expected_containers || null) : null,
           flag: data.flag || 'Unknown',
           eta: eta,
           purpose: data.purpose,
@@ -217,16 +224,8 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       sessionStorage.removeItem(SESSION_KEY);
       setShowForm(false);
       reset({
-        imo: '',
-        vessel: '',
-        type: '',
-        flag: '',
-        arrivalDate: '',
-        arrivalTime: '',
-        purpose: '',
-        cargo: '',
-        priority: 'Low',
-        priority_reason: '',
+        imo: '', vessel: '', type: '', expected_containers: '', flag: '', arrivalDate: '',
+        arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
       });
       setImoVerified(false);
       setVesselId(null);
@@ -263,6 +262,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     setValue('imo', notification.imo_number, { shouldValidate: true });
     setValue('vessel', notification.name, { shouldValidate: true });
     setValue('type', notification.type || '', { shouldValidate: true });
+    setValue('expected_containers', notification.expected_containers || '', { shouldValidate: true });
     setValue('flag', notification.flag || '', { shouldValidate: true });
     setValue('purpose', notification.purpose || 'Loading/Unloading Cargo', { shouldValidate: true });
     setValue('cargo', notification.cargo || '', { shouldValidate: true });
@@ -373,7 +373,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     sessionStorage.removeItem(SESSION_KEY);
                     setShowForm(false);
                     reset({
-                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '',
+                      imo: '', vessel: '', type: '', expected_containers: '', flag: '', arrivalDate: '',
                       arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
                     });
                     setImoVerified(false);
@@ -450,6 +450,19 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       {errors.flag && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.flag.message}</p>}
                     </div>
                   </>
+                )}
+
+                {watchType === 'container' && (
+                  <div className="animate-in fade-in zoom-in duration-300">
+                    <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'عدد الحاويات المتوقع' : 'Expected Containers'}</label>
+                    <input
+                      type="number"
+                      {...register('expected_containers')}
+                      placeholder="e.g. 50"
+                      className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.expected_containers ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                    />
+                    {errors.expected_containers && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.expected_containers.message}</p>}
+                  </div>
                 )}
 
                 {/* Arrival Date */}
@@ -547,7 +560,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     sessionStorage.removeItem(SESSION_KEY);
                     setShowForm(false);
                     reset({
-                      imo: '', vessel: '', type: '', flag: '', arrivalDate: '',
+                      imo: '', vessel: '', type: '', expected_containers: '', flag: '', arrivalDate: '',
                       arrivalTime: '', purpose: '', cargo: '', priority: 'Low', priority_reason: ''
                     });
                     setImoVerified(false);
@@ -580,9 +593,11 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
           </div>
         ) : notifications.map((notification) => {
           const hasManifest = notification.containers && notification.containers.length > 0;
+          const containerMismatch = notification.type === 'container' && notification.expected_containers && notification.containers?.length !== notification.expected_containers;
           const hasManifestErrors = notification.status === 'draft' && (
             !hasManifest ||
-            notification.containers.some((c: any) => c.extraction_status !== 'extracted')
+            notification.containers.some((c: any) => c.extraction_status !== 'extracted') ||
+            containerMismatch
           );
           const isRTL = language === 'ar';
           return (
@@ -603,6 +618,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <div className="flex flex-wrap gap-4 text-xs text-[var(--text-secondary)]/80 font-bold uppercase tracking-wider">
                         <span className="flex items-center gap-1"><Ship className="w-3 h-3" /> IMO: {notification.imo_number}</span>
                         <span>Type: {notification.type}</span>
+                        {notification.type === 'container' && notification.expected_containers && (
+                          <span>Containers: {notification.containers?.length || 0} / {notification.expected_containers}</span>
+                        )}
                         <span>Flag: {notification.flag}</span>
                       </div>
                     </div>
@@ -628,8 +646,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   {notification.status === 'draft' && (
                     <div className="flex flex-col items-end gap-2 mt-2 w-full">
                       {hasManifestErrors && (
-                        <p className="text-[10px] text-red-500 font-bold bg-red-500/5 px-2 py-1 rounded border border-red-500/10">
-                          {isRTL ? 'يرجى حل جميع أخطاء استخراج البيانات قبل التقديم.' : 'Please resolve all manifest extraction errors before submitting.'}
+                        <p className="text-[10px] text-red-500 font-bold bg-red-500/5 px-2 py-1 rounded border border-red-500/10 max-w-[200px] text-right">
+                          {containerMismatch
+                            ? (isRTL ? `عدد الحاويات المرفوعة لا يتطابق مع العدد المتوقع (${notification.expected_containers})` : `Uploaded manifests do not match the expected container count (${notification.expected_containers})`)
+                            : (isRTL ? 'يرجى حل جميع أخطاء استخراج البيانات قبل التقديم.' : 'Please resolve all manifest extraction errors before submitting.')}
                         </p>
                       )}
                       <button
