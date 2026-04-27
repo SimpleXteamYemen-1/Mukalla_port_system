@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 import { Language } from '../../App';
@@ -239,30 +239,7 @@ export function PortClearances({ language }: PortClearancesProps) {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    try {
-      await approveClearance(id);
-      toast.success(isRTL ? 'تم الموافقة على التصريح' : 'Clearance approved');
-      loadData();
-    } catch (e) {
-      console.error(e);
-      toast.error(isRTL ? 'خطأ أثناء الموافقة' : 'Error during approval');
-    }
-  };
 
-
-  const handleReject = async (id: string) => {
-    const reason = prompt(isRTL ? 'أدخل سبب الرفض' : 'Enter rejection reason:');
-    if (!reason) return;
-    try {
-      await rejectClearance(id, reason);
-      toast.success(isRTL ? 'تم رفض التصريح' : 'Clearance rejected');
-      loadData();
-    } catch (e) {
-      console.error(e);
-      toast.error(isRTL ? 'خطأ أثناء الرفض' : 'Error during rejection');
-    }
-  };
 
 
   const getHoursColor = (hours: number) =>

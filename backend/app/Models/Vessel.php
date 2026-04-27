@@ -10,6 +10,7 @@ class Vessel extends Model
         'name',
         'imo_number',
         'type',
+        'expected_containers',
         'flag',
         'owner_id',
         'status',

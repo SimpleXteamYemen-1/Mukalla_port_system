@@ -21,7 +21,7 @@ class AgentController extends Controller
 {
     public function checkIMO($imo)
     {
-        $vessel = Vessel::where('imo_number', $imo)->first();
+        $vessel = Vessel::where('imo_number', $imo)->latest()->first();
 
         if ($vessel) {
             return response()->json([
@@ -364,6 +364,7 @@ class AgentController extends Controller
         $request->validate([
             'eta' => 'required|date',
             'type' => 'nullable|string',
+            'expected_containers' => 'nullable|integer|min:1|required_if:type,container',
             'flag' => 'nullable|string',
             'name' => 'nullable|string',
             'imo_number' => 'nullable|string',
@@ -374,7 +375,7 @@ class AgentController extends Controller
             'priority_document' => 'nullable|required_if:priority,High|file|mimes:pdf,jpeg,jpg|max:10240',
         ]);
 
-        $data = $request->only(['eta', 'type', 'flag', 'name', 'imo_number', 'purpose', 'cargo', 'priority', 'priority_reason']);
+        $data = $request->only(['eta', 'type', 'expected_containers', 'flag', 'name', 'imo_number', 'purpose', 'cargo', 'priority', 'priority_reason']);
         if ($request->hasFile('priority_document')) {
             $data['priority_document_path'] = $request->file('priority_document')->store('priority_documents', 'public');
         }
@@ -496,6 +497,17 @@ class AgentController extends Controller
                 'message' => 'Cannot finalize: At least one cargo manifest must be uploaded.',
                 'error_code' => 'NO_MANIFESTS'
             ], 422);
+        }
+
+        // 1.5. If expected_containers is set, ensure it matches the actual count
+        if ($vessel->expected_containers && $vessel->expected_containers > 0) {
+            $manifestCount = $containers->count();
+            if ($manifestCount !== $vessel->expected_containers) {
+                return response()->json([
+                    'message' => "Cannot finalize: Expected {$vessel->expected_containers} containers, but {$manifestCount} manifests were uploaded.",
+                    'error_code' => 'MANIFEST_COUNT_MISMATCH'
+                ], 422);
+            }
         }
 
         // 2. Check for OCR extraction errors

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 import { Ship, Bell, Anchor, AlertCircle, TrendingUp, Clock, Plus, Activity, FileText, Download } from 'lucide-react';
@@ -210,11 +210,17 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
           officer: data.clearance.officer,
         });
       } else {
+        const labels = {
+          arrival: language === 'ar' ? 'بلاغ الوصول' : 'Arrival Approval',
+          anchorage: language === 'ar' ? 'طلب الرسو' : 'Anchorage Request',
+          clearance: language === 'ar' ? 'تصريح مغادرة' : 'Port Clearance'
+        };
+        const label = labels[docType];
+
         toast.warning(
           language === 'ar'
             ? `لا توجد وثيقة «${label}» لهذه السفينة بعد.`
-            : `No «${label}» document exists for this vessel yet.`,
-          'warning',
+            : `No «${label}» document exists for this vessel yet.`
         );
       }
 
