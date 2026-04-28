@@ -8,11 +8,11 @@ use App\Models\Vessel;
 use App\Models\CargoManifest;
 use App\Models\AnchorageRequest;
 use App\Models\PortClearance;
-use App\Http\Requests\StoreArrivalNotificationRequest;
 use App\Http\Requests\StoreAnchorageRequest;
 use App\Http\Requests\StoreVesselArrivalRequest;
 use App\Http\Requests\UploadManifestRequest;
 use App\Services\AgentService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Notification;
 use App\Models\User;
@@ -240,7 +240,13 @@ class AgentController extends Controller
             return response()->json(['message' => 'Vessel has successfully departed']);
         } catch (\Exception $e) {
             \DB::rollBack();
-            return response()->json(['message' => 'Departure execution failed', 'error' => $e->getMessage()], 500);
+            Log::error('Departure execution failed', [
+                'vessel_id' => $vessel->id,
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Departure execution failed'], 500);
         }
     }
 
@@ -360,7 +366,7 @@ class AgentController extends Controller
     public function updateArrival(Request $request, $id)
     {
         $vessel = Vessel::where('id', $id)->where('owner_id', $request->user()->id)->firstOrFail();
-        
+
         $request->validate([
             'eta' => 'required|date',
             'type' => 'nullable|string',
@@ -396,7 +402,7 @@ class AgentController extends Controller
         $pendingAnchorage = AnchorageRequest::where('vessel_id', $vessel->id)
             ->whereIn('status', ['pending', 'wharf_assigned', 'waiting'])
             ->get();
-            
+
         foreach ($pendingAnchorage as $anchorage) {
             $anchorage->delete();
         }
@@ -415,7 +421,7 @@ class AgentController extends Controller
         $request->validate([
             'total_weight' => 'required|numeric',
             'container_count' => 'required|integer',
-            'file' => 'nullable|file',
+            'file' => 'nullable|file|mimes:pdf,csv,xlsx|max:10240',
         ]);
 
         $data = [
@@ -528,7 +534,7 @@ class AgentController extends Controller
     public function deleteManifest(Request $request, $id)
     {
         $container = \App\Models\Container::findOrFail($id);
-        
+
         // Ensure authorization: manifest belongs to a vessel owned by this agent
         $vessel = Vessel::where('id', $container->vessel_id)
             ->where('owner_id', $request->user()->id)
@@ -575,12 +581,12 @@ class AgentController extends Controller
                 ->where('status', '!=', 'archived')
                 ->where(function($q) use ($date) {
                     $q->whereDate('eta', $date)
-                      ->orWhereHas('clearances', function($cq) use ($date) {
-                          $cq->whereDate('created_at', $date)->orWhereDate('issue_date', $date);
-                      })
-                      ->orWhereHas('manifests', function($mq) use ($date) {
-                          $mq->whereDate('created_at', $date);
-                      });
+                    ->orWhereHas('clearances', function($cq) use ($date) {
+                        $cq->whereDate('created_at', $date)->orWhereDate('issue_date', $date);
+                    })
+                    ->orWhereHas('manifests', function($mq) use ($date) {
+                        $mq->whereDate('created_at', $date);
+                    });
                 })->get();
         }
 
@@ -588,7 +594,7 @@ class AgentController extends Controller
             // 1. Arrival (The vessel record itself)
             // If date is provided, we only show it as a match if it's relevant to that date
             $arrival = $v;
-            
+
             // ── 2. Anchorage ─────────────────────────────────────────────────────
             // Queried strictly by vessel_id FK — no status filter.
             // when($date) only activates in date-report mode; in export mode ($date is

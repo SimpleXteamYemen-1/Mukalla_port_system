@@ -101,9 +101,13 @@ function App() {
     }
   }, [theme]);
 
-  // Global Echo listener
+  // Global Echo listener for operational users only; the backend authorizes the private channel too.
   useEffect(() => {
-    echo.channel('port-operations')
+    if (!user || !['officer', 'executive'].includes(user.role)) {
+      return;
+    }
+
+    echo.private('port-operations')
       .listen('.vessel.arrived', (e: any) => {
         const msg = language === 'ar'
           ? `سفينة جديدة: ${e.vessel.name} وصلت.`
@@ -112,9 +116,9 @@ function App() {
       });
 
     return () => {
-      echo.leaveChannel('port-operations');
+      echo.leave('port-operations');
     };
-  }, [language]);
+  }, [language, user]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');

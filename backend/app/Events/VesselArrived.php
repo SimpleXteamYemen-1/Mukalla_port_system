@@ -2,9 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -15,7 +13,8 @@ class VesselArrived implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $vessel;
+    // Keep the model typed so broadcast serialization and IDE checks stay predictable.
+    public Vessel $vessel;
 
     /**
      * Create a new event instance.
@@ -33,12 +32,27 @@ class VesselArrived implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('port-operations'),
+            new PrivateChannel('port-operations'),
         ];
     }
 
     public function broadcastAs(): string
     {
         return 'vessel.arrived';
+    }
+
+    public function broadcastWith(): array
+    {
+        // Broadcast only the fields needed by the UI instead of exposing the full model.
+        return [
+            'vessel' => [
+                'id' => $this->vessel->id,
+                'name' => $this->vessel->name,
+                'imo_number' => $this->vessel->imo_number,
+                'status' => $this->vessel->status,
+                'eta' => $this->vessel->eta?->toISOString(),
+                'priority' => $this->vessel->priority,
+            ],
+        ];
     }
 }

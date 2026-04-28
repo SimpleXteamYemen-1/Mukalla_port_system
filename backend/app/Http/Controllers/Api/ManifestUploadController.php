@@ -21,12 +21,14 @@ class ManifestUploadController extends Controller
 
     public function upload(Request $request, $id)
     {
-        // Require the vessels record to exist representing the Arrival Notification
-        $vessel = Vessel::findOrFail($id);
+        // Agents may only upload manifests to their own arrival notifications.
+        $vessel = Vessel::where('id', $id)
+            ->where('owner_id', $request->user()->id)
+            ->firstOrFail();
 
         $request->validate([
             'manifests' => 'required|array',
-            'manifests.*' => 'required|file', // Could strictly type mimes:pdf,jpg,png here
+            'manifests.*' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         $successfulUploads = [];

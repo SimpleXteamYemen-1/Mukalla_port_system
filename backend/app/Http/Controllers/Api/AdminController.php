@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Log as AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -89,15 +91,32 @@ class AdminController extends Controller
         // Assign Spatie role so middleware gates work
         $user->syncRoles([$request->role]);
 
-        // Send "Set your password" link when no password was provided
+        $passwordResetSent = false;
+        $passwordResetWarning = null;
+
+        // Send "Set your password" link when no password was provided.
         if ($sendResetLink) {
-            Password::sendResetLink(['email' => $user->email]);
+            $resetStatus = Password::sendResetLink(['email' => $user->email]);
+            $passwordResetSent = $resetStatus === Password::RESET_LINK_SENT;
+
+            if (! $passwordResetSent) {
+                Log::warning('Admin-created user password reset link could not be sent.', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'status' => $resetStatus,
+                ]);
+
+                $passwordResetWarning = 'User was created, but the password reset email could not be sent.';
+            }
         }
+
+        $this->auditAdminAction($request, 'admin_user_created', "Created {$user->role} account for {$user->email}.");
 
         return response()->json([
             'message'         => 'User created successfully.',
             'user'            => $user,
-            'password_reset'  => $sendResetLink,
+            'password_reset'  => $passwordResetSent,
+            'password_reset_warning' => $passwordResetWarning,
         ], 201);
     }
 
@@ -108,6 +127,7 @@ class AdminController extends Controller
     public function update(Request $request, int $id)
     {
         $user = User::withTrashed()->findOrFail($id);
+        $isSelfUpdate = (int) $request->user()->id === (int) $user->id;
 
         $request->validate([
             'name'             => 'sometimes|required|string|max:255',
@@ -118,6 +138,24 @@ class AdminController extends Controller
             'rejection_reason' => 'nullable|string|max:500',
             'phone'            => 'nullable|string|max:30',
         ]);
+
+        if ($isSelfUpdate && $request->input('status') === User::STATUS_SUSPENDED) {
+            return response()->json([
+                'message' => 'You cannot suspend your own account.',
+                'errors' => [
+                    'status' => ['You cannot suspend your own account.'],
+                ],
+            ], 422);
+        }
+
+        if ($isSelfUpdate && $request->has('role') && $request->input('role') !== $user->role) {
+            return response()->json([
+                'message' => 'You cannot change your own role.',
+                'errors' => [
+                    'role' => ['You cannot change your own role.'],
+                ],
+            ], 422);
+        }
 
         $oldStatus = $user->status;
 
@@ -139,6 +177,8 @@ class AdminController extends Controller
             $user->tokens()->delete();
         }
 
+        $this->auditAdminAction($request, 'admin_user_updated', "Updated account {$user->email}.");
+
         return response()->json([
             'message'          => 'User updated successfully.',
             'user'             => $user->fresh(),
@@ -150,14 +190,21 @@ class AdminController extends Controller
     // DELETE /admin/users/{id}
     // Soft-delete only. Revokes tokens. Preserves relational history.
     // -------------------------------------------------------------------------
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $user = User::findOrFail($id);               // 404 if already soft-deleted
+
+        if ((int) $request->user()->id === (int) $user->id) {
+            return response()->json([
+                'message' => 'You cannot delete your own account.',
+            ], 422);
+        }
 
         // Revoke all active sessions before soft-deleting
         $user->tokens()->delete();
 
         $user->delete();                             // SoftDeletes → sets deleted_at
+        $this->auditAdminAction($request, 'admin_user_deleted', "Deactivated account {$user->email}.");
 
         return response()->json([
             'message' => 'User account deactivated. All sessions have been revoked.',
@@ -168,14 +215,31 @@ class AdminController extends Controller
     // POST /admin/users/{id}/restore
     // Restore a soft-deleted account.
     // -------------------------------------------------------------------------
-    public function restore(int $id)
+    public function restore(Request $request, int $id)
     {
         $user = User::onlyTrashed()->findOrFail($id);
         $user->restore();
+        $this->auditAdminAction($request, 'admin_user_restored', "Restored account {$user->email}.");
 
         return response()->json([
             'message' => 'User account restored.',
             'user'    => $user->fresh(),
         ]);
+    }
+
+    private function auditAdminAction(Request $request, string $action, string $details): void
+    {
+        try {
+            AuditLog::create([
+                'user_id' => $request->user()->id,
+                'action' => $action,
+                'details' => $details,
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Admin audit log could not be written.', [
+                'action' => $action,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

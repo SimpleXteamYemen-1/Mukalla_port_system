@@ -8,6 +8,7 @@ use App\Models\Log;
 use App\Models\Vessel;
 use App\Models\AnchorageRequest;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ExecutiveController extends Controller
 {
@@ -86,8 +87,8 @@ class ExecutiveController extends Controller
     public function generateReport(Request $request)
     {
         $request->validate([
-            'dateRange' => 'required|string',
-            'reportType' => 'required|string',
+            'dateRange' => 'required|string|max:50',
+            'reportType' => 'required|string|max:100',
             'format' => 'required|in:PDF,Excel,CSV',
         ]);
 
@@ -119,6 +120,8 @@ class ExecutiveController extends Controller
 
         $requestFormat = $request->input('format', 'pdf');
         $reportType = $request->input('reportType', 'Custom');
+        $safeReportType = e($reportType);
+        $csvReportType = str_replace(['"', "\r", "\n"], ['""', ' ', ' '], $reportType);
 
         // Generate filename
         $ext = strtolower($requestFormat) === 'excel' ? 'csv' : strtolower($requestFormat);
@@ -128,7 +131,7 @@ class ExecutiveController extends Controller
         if ($ext === 'pdf') {
             // Use DOMPDF
             $html = "
-                <h1>Mukalla Port Authority - {$reportType} Report</h1>
+                <h1>Mukalla Port Authority - {$safeReportType} Report</h1>
                 <p><strong>Date Range:</strong> {$startDate->format('Y-m-d')} to {$endDate->format('Y-m-d')}</p>
                 <hr>
                 " . ($isEmpty ? "<h2>No Operational Data for Selected Period</h2>" : "
@@ -145,7 +148,7 @@ class ExecutiveController extends Controller
             \Illuminate\Support\Facades\Storage::disk('public')->put($path, $pdf->output());
         } else {
             // CSV
-            $csvContent = "Mukalla Port Authority - {$reportType} Report\n";
+            $csvContent = "Mukalla Port Authority - \"{$csvReportType}\" Report\n";
             $csvContent .= "Date Range:,{$startDate->format('Y-m-d')},to,{$endDate->format('Y-m-d')}\n\n";
             
             if ($isEmpty) {
@@ -276,19 +279,29 @@ class ExecutiveController extends Controller
 
     public function approveArrival(Request $request, $id)
     {
-        $vessel = Vessel::findOrFail($id);
-        $vessel->status = 'approved';
-        $vessel->save();
+        return DB::transaction(function () use ($request, $id) {
+            $vessel = Vessel::lockForUpdate()->findOrFail($id);
 
-        Log::create([
-            'user_id' => $request->user()->id,
-            'vessel_id' => $vessel->id,
-            'vessel_name' => $vessel->name,
-            'action' => 'approve_arrival',
-            'details' => "Executive approved arrival for vessel {$vessel->name}",
-        ]);
+            if ($vessel->status !== 'awaiting') {
+                return response()->json([
+                    'message' => 'Only arrivals awaiting review can be approved.',
+                    'status' => $vessel->status,
+                ], 422);
+            }
 
-        return response()->json($vessel);
+            $vessel->status = 'approved';
+            $vessel->save();
+
+            Log::create([
+                'user_id' => $request->user()->id,
+                'vessel_id' => $vessel->id,
+                'vessel_name' => $vessel->name,
+                'action' => 'approve_arrival',
+                'details' => "Executive approved arrival for vessel {$vessel->name}",
+            ]);
+
+            return response()->json($vessel);
+        });
     }
 
     public function rejectArrival(Request $request, $id)
@@ -299,36 +312,55 @@ class ExecutiveController extends Controller
             'rejected_manifest_ids.*' => 'exists:containers,id'
         ]);
 
-        $vessel = Vessel::findOrFail($id);
-        $vessel->status = 'rejected';
-        $vessel->rejection_reason = $request->reason;
-        $vessel->save();
+        return DB::transaction(function () use ($request, $id) {
+            $vessel = Vessel::lockForUpdate()->findOrFail($id);
 
-        // Update specific manifests if provided
-        if ($request->has('rejected_manifest_ids') && !empty($request->rejected_manifest_ids)) {
-            \App\Models\Container::whereIn('id', $request->rejected_manifest_ids)
-                ->where('vessel_id', $vessel->id)
-                ->update(['status' => 'rejected_by_executive']);
-        }
+            if ($vessel->status !== 'awaiting') {
+                return response()->json([
+                    'message' => 'Only arrivals awaiting review can be rejected.',
+                    'status' => $vessel->status,
+                ], 422);
+            }
 
-        Log::create([
-            'user_id' => $request->user()->id,
-            'vessel_id' => $vessel->id,
-            'vessel_name' => $vessel->name,
-            'action' => 'reject_arrival',
-            'details' => "Executive rejected arrival for vessel {$vessel->name}. Reason: {$request->reason}",
-        ]);
+            $vessel->status = 'rejected';
+            $vessel->rejection_reason = $request->reason;
+            $vessel->save();
 
-        return response()->json([
-            'vessel' => $vessel,
-            'message' => 'Arrival rejected successfully and manifests flagged.'
-        ]);
+            // Update specific manifests if provided
+            if ($request->has('rejected_manifest_ids') && !empty($request->rejected_manifest_ids)) {
+                \App\Models\Container::whereIn('id', $request->rejected_manifest_ids)
+                    ->where('vessel_id', $vessel->id)
+                    ->update(['status' => 'rejected_by_executive']);
+            }
+
+            Log::create([
+                'user_id' => $request->user()->id,
+                'vessel_id' => $vessel->id,
+                'vessel_name' => $vessel->name,
+                'action' => 'reject_arrival',
+                'details' => "Executive rejected arrival for vessel {$vessel->name}. Reason: {$request->reason}",
+            ]);
+
+            return response()->json([
+                'vessel' => $vessel,
+                'message' => 'Arrival rejected successfully and manifests flagged.'
+            ]);
+        });
     }
 
     public function getRecentDecisions()
     {
         // Filter logs for decision-like actions
-        return response()->json(Log::whereIn('action', ['approve_arrival', 'assign_berth', 'issue_clearance', 'reject_request'])
+        return response()->json(Log::whereIn('action', [
+                'approve_arrival',
+                'reject_arrival',
+                'assign_berth',
+                'issue_clearance',
+                'approve_anchorage',
+                'reject_anchorage',
+                'approve_user',
+                'reject_user',
+            ])
             ->latest()
             ->take(5)
             ->get()
@@ -360,19 +392,29 @@ class ExecutiveController extends Controller
 
     public function approveAnchorage(Request $request, $id)
     {
-        $anchorage = AnchorageRequest::findOrFail($id);
-        $anchorage->status = 'approved';
-        $anchorage->save();
+        return DB::transaction(function () use ($request, $id) {
+            $anchorage = AnchorageRequest::with('vessel')->lockForUpdate()->findOrFail($id);
 
-        Log::create([
-            'user_id' => $request->user()->id,
-            'vessel_id' => $anchorage->vessel_id,
-            'vessel_name' => $anchorage->vessel->name,
-            'action' => 'approve_anchorage',
-            'details' => "Approved anchorage for vessel {$anchorage->vessel->name}",
-        ]);
+            if ($anchorage->status !== 'pending') {
+                return response()->json([
+                    'message' => 'Only pending anchorage requests can be approved.',
+                    'status' => $anchorage->status,
+                ], 422);
+            }
 
-        return response()->json($anchorage);
+            $anchorage->status = 'approved';
+            $anchorage->save();
+
+            Log::create([
+                'user_id' => $request->user()->id,
+                'vessel_id' => $anchorage->vessel_id,
+                'vessel_name' => $anchorage->vessel->name,
+                'action' => 'approve_anchorage',
+                'details' => "Approved anchorage for vessel {$anchorage->vessel->name}",
+            ]);
+
+            return response()->json($anchorage);
+        });
     }
 
     public function rejectAnchorage(Request $request, $id)
@@ -381,20 +423,30 @@ class ExecutiveController extends Controller
             'reason' => 'required|string'
         ]);
 
-        $anchorage = AnchorageRequest::findOrFail($id);
-        $anchorage->status = 'rejected';
-        $anchorage->rejection_reason = $request->reason;
-        $anchorage->save();
+        return DB::transaction(function () use ($request, $id) {
+            $anchorage = AnchorageRequest::with('vessel')->lockForUpdate()->findOrFail($id);
 
-        Log::create([
-            'user_id' => $request->user()->id,
-            'vessel_id' => $anchorage->vessel_id,
-            'vessel_name' => $anchorage->vessel->name,
-            'action' => 'reject_anchorage',
-            'details' => "Rejected anchorage for vessel {$anchorage->vessel->name}",
-        ]);
+            if ($anchorage->status !== 'pending') {
+                return response()->json([
+                    'message' => 'Only pending anchorage requests can be rejected.',
+                    'status' => $anchorage->status,
+                ], 422);
+            }
 
-        return response()->json($anchorage);
+            $anchorage->status = 'rejected';
+            $anchorage->rejection_reason = $request->reason;
+            $anchorage->save();
+
+            Log::create([
+                'user_id' => $request->user()->id,
+                'vessel_id' => $anchorage->vessel_id,
+                'vessel_name' => $anchorage->vessel->name,
+                'action' => 'reject_anchorage',
+                'details' => "Rejected anchorage for vessel {$anchorage->vessel->name}",
+            ]);
+
+            return response()->json($anchorage);
+        });
     }
 
     public function getPendingUsers(Request $request)
@@ -404,22 +456,32 @@ class ExecutiveController extends Controller
 
     public function approveUser(Request $request, $id)
     {
-        $user = User::findOrFail($id);
-        $user->status = User::STATUS_ACTIVE;
-        // Optionally mark verified as true if that's still being used
-        $user->verified = true; 
-        $user->save();
+        return DB::transaction(function () use ($request, $id) {
+            $user = User::lockForUpdate()->findOrFail($id);
 
-        Log::create([
-            'user_id' => $request->user()->id,
-            'action' => 'approve_user',
-            'details' => "Executive approved account for {$user->name} ({$user->email})",
-        ]);
+            if ($user->status !== User::STATUS_PENDING) {
+                return response()->json([
+                    'message' => 'Only pending user accounts can be approved.',
+                    'status' => $user->status,
+                ], 422);
+            }
 
-        return response()->json([
-            'message' => 'User account approved successfully.',
-            'user' => $user
-        ]);
+            $user->status = User::STATUS_ACTIVE;
+            // Optionally mark verified as true if that's still being used
+            $user->verified = true;
+            $user->save();
+
+            Log::create([
+                'user_id' => $request->user()->id,
+                'action' => 'approve_user',
+                'details' => "Executive approved account for {$user->name} ({$user->email})",
+            ]);
+
+            return response()->json([
+                'message' => 'User account approved successfully.',
+                'user' => $user
+            ]);
+        });
     }
 
     public function rejectUser(Request $request, $id)
@@ -428,21 +490,31 @@ class ExecutiveController extends Controller
             'reason' => 'required|string'
         ]);
 
-        $user = User::findOrFail($id);
-        $user->status = User::STATUS_REJECTED;
-        $user->rejection_reason = $request->reason;
-        $user->save();
+        return DB::transaction(function () use ($request, $id) {
+            $user = User::lockForUpdate()->findOrFail($id);
 
-        Log::create([
-            'user_id' => $request->user()->id,
-            'action' => 'reject_user',
-            'details' => "Executive rejected account for {$user->name} ({$user->email}). Reason: {$request->reason}",
-        ]);
+            if ($user->status !== User::STATUS_PENDING) {
+                return response()->json([
+                    'message' => 'Only pending user accounts can be rejected.',
+                    'status' => $user->status,
+                ], 422);
+            }
 
-        return response()->json([
-            'message' => 'User account rejected successfully.',
-            'user' => $user
-        ]);
+            $user->status = User::STATUS_REJECTED;
+            $user->rejection_reason = $request->reason;
+            $user->save();
+
+            Log::create([
+                'user_id' => $request->user()->id,
+                'action' => 'reject_user',
+                'details' => "Executive rejected account for {$user->name} ({$user->email}). Reason: {$request->reason}",
+            ]);
+
+            return response()->json([
+                'message' => 'User account rejected successfully.',
+                'user' => $user
+            ]);
+        });
     }
 
     /**
@@ -514,7 +586,11 @@ class ExecutiveController extends Controller
         ];
 
         // Build historical timeline from logs mentioning this vessel, sorted newest first
-        $historyQuery = Log::where('details', 'like', "%{$vessel->name}%")
+        $historyQuery = Log::where('vessel_id', $vessel->id)
+            ->orWhere(function ($query) use ($vessel) {
+                $query->whereNull('vessel_id')
+                    ->where('details', 'like', "%{$vessel->name}%");
+            })
             ->orderBy('created_at', 'desc');
 
         $paginatedHistory = $historyQuery->paginate(10, ['*'], 'page', $request->query('page', 1));

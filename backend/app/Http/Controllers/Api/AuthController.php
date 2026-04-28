@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 
 class AuthController extends Controller
 {
@@ -18,7 +17,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string|exists:roles,name',
+            'role' => 'required|string|in:agent,trader',
         ]);
 
         $user = User::create([
@@ -53,25 +52,26 @@ class AuthController extends Controller
             ]);
         }
 
-        // Only apply status checks to publicly-registered roles (trader, agent).
-        // System-created accounts (executive, officer, wharf) always bypass this check.
-        $publicRoles = ['trader', 'agent'];
+        if ($user->status === User::STATUS_PENDING) {
+            return response()->json([
+                'status'  => 'pending',
+                'message' => 'Account is under Executive Management review.',
+            ], 403);
+        }
 
-        if (in_array($user->role, $publicRoles)) {
-            if ($user->status === User::STATUS_PENDING) {
-                return response()->json([
-                    'status'  => 'pending',
-                    'message' => 'Account is under Executive Management review.',
-                ], 403);
-            }
+        if ($user->status === User::STATUS_REJECTED) {
+            return response()->json([
+                'status'           => 'rejected',
+                'message'          => 'Account request rejected.',
+                'rejection_reason' => $user->rejection_reason,
+            ], 403);
+        }
 
-            if ($user->status === User::STATUS_REJECTED) {
-                return response()->json([
-                    'status'           => 'rejected',
-                    'message'          => 'Account request rejected.',
-                    'rejection_reason' => $user->rejection_reason,
-                ], 403);
-            }
+        if ($user->status === User::STATUS_SUSPENDED) {
+            return response()->json([
+                'status' => 'suspended',
+                'message' => 'Account is suspended. Please contact administration.',
+            ], 403);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -85,7 +85,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
     }
@@ -171,6 +171,11 @@ class AuthController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+        $currentToken = $user->currentAccessToken();
+        $user->tokens()
+            ->when($currentToken, fn ($query) => $query->where('id', '!=', $currentToken->id))
+            ->delete();
 
         return response()->json(['message' => 'Password updated successfully']);
     }
