@@ -17,9 +17,14 @@ use App\Http\Controllers\Api\ManifestUploadController;
 
 use App\Http\Controllers\Api\AdminController;
 
+use App\Http\Controllers\Api\NotificationController;
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
     // User Profile Routes
     Route::get('/user/profile', [AuthController::class, 'getProfile']);
@@ -42,6 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/agent/vessels/{id}/finalize', [AgentController::class, 'finalizeArrival']);
 
         Route::post('/agent/anchorage', [AgentController::class, 'submitAnchorageRequest']);
+        Route::put('/agent/anchorage/{id}', [AgentController::class, 'updateAnchorageRequest']);
+        Route::post('/agent/anchorage/{id}/expand-duration', [AgentController::class, 'expandDuration']);
         Route::get('/agent/anchorage', [AgentController::class, 'getAnchorageRequests']);
         Route::get('/agent/stats', [AgentController::class, 'getDashboardStats']);
         Route::get('/agent/tracker', [AgentController::class, 'getTrackerData']);
@@ -97,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/wharf/anchorage-requests', [WharfController::class, 'getAnchorageRequests']);
         Route::post('/wharf/anchorage-requests/{id}/approve', [WharfController::class, 'approveAnchorageRequest']);
         Route::post('/wharf/anchorage-requests/{id}/waitlist', [WharfController::class, 'waitlistAnchorageRequest']);
+        Route::post('/wharf/anchorage-requests/{id}/timeout', [WharfController::class, 'triggerTimeoutNotification']);
         // Vessel History (reuses ExecutiveController)
         Route::get('/wharf/vessels-list', [ExecutiveController::class, 'getAllVessels']);
         Route::get('/wharf/vessels/{id}/history', [ExecutiveController::class, 'getVesselHistory']);

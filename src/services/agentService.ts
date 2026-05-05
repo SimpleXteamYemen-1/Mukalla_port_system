@@ -224,6 +224,18 @@ export const agentService = {
         }
     },
 
+    expandDuration: async (id: number, additionalHours: number) => {
+        try {
+            const response = await api.post(`/agent/anchorage/${id}/expand-duration`, {
+                additional_hours: additionalHours
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error expanding duration:', error);
+            throw error;
+        }
+    },
+
     getAnchorageRequests: async () => {
         try {
             const response = await api.get('/agent/anchorage');

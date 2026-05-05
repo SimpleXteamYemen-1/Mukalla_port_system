@@ -247,7 +247,11 @@ class AgentController extends Controller
                 'action' => 'vessel_departure',
                 'details' => "Vessel {$vessel->name} has successfully departed.",
             ]);
-            event(new \App\Events\VesselOperationLogged($log, $request->user()->name));
+            try {
+                event(new \App\Events\VesselOperationLogged($log, $request->user()->name));
+            } catch (\Exception $e) {
+                \Log::error("Broadcasting failed in vesselDeparture: " . $e->getMessage());
+            }
 
             \DB::commit();
             return response()->json(['message' => 'Vessel has successfully departed']);
@@ -730,5 +734,34 @@ class AgentController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+    public function expandDuration(Request $request, $id)
+    {
+        $request->validate([
+            'additional_hours' => 'required|integer|min:1',
+        ]);
+
+        $anchorage = AnchorageRequest::where('id', $id)
+            ->where('agent_id', $request->user()->id)
+            ->firstOrFail();
+
+        $anchorage->update([
+            'duration_hours' => $anchorage->duration_hours + $request->additional_hours,
+            'duration' => (string)($anchorage->duration_hours + $request->additional_hours),
+            'anchorage_started_at' => now(), // Reset timer so countdown restarts from expansion time
+            'timeout_notified_at' => null,   // Clear notification status upon expansion
+        ]);
+
+        // Create log entry
+        Log::create([
+            'user_id' => $request->user()->id,
+            'vessel_id' => $anchorage->vessel_id,
+            'vessel_name' => $anchorage->vessel->name,
+            'action' => 'duration_expanded',
+            'details' => "Agent expanded anchorage duration by {$request->additional_hours} hours. New total: {$anchorage->duration_hours} hours.",
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json(['success' => true, 'anchorage' => $anchorage]);
     }
 }

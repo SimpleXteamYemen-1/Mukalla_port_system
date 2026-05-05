@@ -155,5 +155,15 @@ export const wharfService = {
             throw error;
         }
     },
+
+    triggerTimeoutNotification: async (requestId: number) => {
+        try {
+            const response = await api.post(`/wharf/anchorage-requests/${requestId}/timeout`);
+            return response.data;
+        } catch (error) {
+            console.error('Error triggering timeout notification:', error);
+            throw error;
+        }
+    },
 };
 

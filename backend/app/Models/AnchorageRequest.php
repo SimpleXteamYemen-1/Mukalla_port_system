@@ -17,11 +17,16 @@ class AnchorageRequest extends Model
         'rejection_reason',
         'wharf_id',
         'wharf_assigned_at',
+        'anchorage_started_at',
+        'duration_hours',
+        'timeout_notified_at',
     ];
 
     protected $casts = [
         'docking_time' => 'datetime',
         'wharf_assigned_at' => 'datetime',
+        'anchorage_started_at' => 'datetime',
+        'timeout_notified_at' => 'datetime',
     ];
 
     public function vessel()
