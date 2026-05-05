@@ -13,8 +13,17 @@ import * as z from 'zod';
 const anchorageSchema = z.object({
   vesselId: z.string().min(1, { message: 'Please select a vessel' }),
   duration: z.string().min(1, { message: 'Duration is required' }),
+  customDuration: z.string().optional(),
   reason: z.string().min(1, { message: 'Reason is required' }),
   dockingTime: z.string().min(1, { message: 'Docking time is required' }),
+}).refine((data) => {
+  if (data.duration === 'custom' && (!data.customDuration || parseInt(data.customDuration) <= 0)) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Please enter a valid custom duration in hours',
+  path: ['customDuration'],
 });
 
 type AnchorageFormData = z.infer<typeof anchorageSchema>;
@@ -43,12 +52,14 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
     defaultValues: {
       vesselId: '',
       duration: '',
+      customDuration: '',
       reason: '',
       dockingTime: '',
     },
   });
 
   const watchedVesselId = watch('vesselId');
+  const watchedDuration = watch('duration');
 
   // Auto-populate Reason from the selected vessel's purpose/arrival data
   useEffect(() => {
@@ -100,9 +111,10 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
         });
         toast.success(language === 'ar' ? 'تم تعديل الرسو بنجاح!' : 'Anchorage request updated successfully!');
       } else {
+        const durationValue = data.duration === 'custom' ? data.customDuration : data.duration;
         await agentService.submitAnchorageRequest({
           vessel_id: data.vesselId,
-          duration: data.duration,
+          duration: durationValue,
           reason: data.reason,
           docking_time: data.dockingTime,
         });
@@ -240,17 +252,32 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
               {/* Duration */}
               <div className="space-y-2">
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.duration}</label>
-                <select
-                  {...register('duration')}
-                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.duration ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
-                >
-                  <option value="">{t.selectDuration}</option>
-                  <option value="24">24 {t.hours}</option>
-                  <option value="48">48 {t.hours}</option>
-                  <option value="72">72 {t.hours}</option>
-                  <option value="custom">{t.custom}</option>
-                </select>
-                {errors.duration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.duration.message}</p>}
+                  <select
+                    {...register('duration')}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.duration ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
+                  >
+                    <option value="">{t.selectDuration}</option>
+                    <option value="24">24 {t.hours}</option>
+                    <option value="48">48 {t.hours}</option>
+                    <option value="72">72 {t.hours}</option>
+                    <option value="custom">{t.custom}</option>
+                  </select>
+                  {errors.duration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.duration.message}</p>}
+                  
+                  {watchedDuration === 'custom' && (
+                    <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
+                      <label className="block text-[var(--text-primary)] text-[10px] font-black uppercase tracking-widest mb-1 opacity-70">
+                        {language === 'ar' ? 'ساعات مخصصة' : 'Enter custom hours'}
+                      </label>
+                      <input
+                        type="number"
+                        {...register('customDuration')}
+                        placeholder="e.g. 12"
+                        className={`w-full px-4 py-2 bg-[var(--background)] border ${errors.customDuration ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all`}
+                      />
+                      {errors.customDuration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.customDuration.message}</p>}
+                    </div>
+                  )}
               </div>
 
               {/* Docking Time — full width left column */}

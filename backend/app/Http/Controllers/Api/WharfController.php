@@ -10,6 +10,7 @@ use App\Models\StorageArea;
 use App\Models\AnchorageRequest;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Log;
 use App\Models\Vessel;
 
 class WharfController extends Controller
@@ -61,6 +62,12 @@ class WharfController extends Controller
 
     public function getDashboardStats()
     {
+        $anchoredVesselIds = AnchorageRequest::whereIn('status', ['approved', 'wharf_assigned', 'completed'])
+            ->pluck('vessel_id');
+
+        $usedCapacity = Container::whereIn('vessel_id', $anchoredVesselIds)
+            ->whereIn('status', ['pending', 'assigned', 'in_wharf'])
+            ->count();
         $usedCapacity = Container::where('status', 'assigned')->count();
         
         $pendingDischargeRequests = \App\Models\DischargeRequest::where('status', 'pending')
@@ -72,9 +79,11 @@ class WharfController extends Controller
             'approved_wharves' => Wharf::where('status', 'available')->count(),
             'occupied_wharves' => Wharf::where('status', 'occupied')->count(),
             'storage_used' => $usedCapacity,
-            'storage_available' => 1000, // Hardcoded default as capacity is out of scope
-            'containers_awaiting' => $pendingDischargeRequests,
+            'storage_available' => 4000,
+            'containers_awaiting' => Container::where('status', 'arrived')->count(),
         ]);
+     
+      
     }
 
     public function getDischargeRequests()
@@ -284,6 +293,8 @@ class WharfController extends Controller
             'status' => 'wharf_assigned',
             'wharf_id' => $wharf->id,
             'wharf_assigned_at' => now(),
+            'anchorage_started_at' => now(), // The timer officially starts when wharf is assigned (Occupied)
+            'duration_hours' => (int)$anchorage->duration,
         ]);
 
         // Sync Vessel mapping
@@ -294,6 +305,16 @@ class WharfController extends Controller
             $anchorage->vessel->current_wharf_id = $wharf->id;
             $anchorage->vessel->save();
         }
+
+        // Create log entry
+        Log::create([
+            'user_id' => $request->user()->id,
+            'vessel_id' => $anchorage->vessel_id,
+            'vessel_name' => $anchorage->vessel->name,
+            'action' => 'wharf_assigned',
+            'details' => "Wharf {$wharf->name} assigned to vessel {$anchorage->vessel->name}. Timer started for {$anchorage->duration_hours} hours.",
+            'ip_address' => $request->ip()
+        ]);
 
         // Mark wharf as occupied
         $wharf->status = 'occupied';
@@ -335,6 +356,48 @@ class WharfController extends Controller
         ]);
 
         return response()->json($anchorage->fresh(['vessel', 'wharf']));
+    }
+
+    /**
+     * Trigger a high-priority timeout notification to the agent.
+     */
+    public function triggerTimeoutNotification(Request $request, $id)
+    {
+        $anchorage = AnchorageRequest::with('vessel')->findOrFail($id);
+
+        if ($anchorage->status !== 'wharf_assigned') {
+            return response()->json(['message' => 'Request is not in wharf_assigned status'], 422);
+        }
+
+        // Update notified timestamp
+        $anchorage->update([
+            'timeout_notified_at' => now(),
+        ]);
+
+        // Notify the agent with high priority
+        Notification::create([
+            'user_id' => $anchorage->agent_id,
+            'title' => 'URGENT: Anchorage Timeout',
+            'message' => "The specified anchorage duration for vessel {$anchorage->vessel->name} has expired. Please take action immediately (Expand Duration or Port Clearance).",
+            'type' => 'anchorage_timeout',
+            'data' => json_encode([
+                'vessel_id' => $anchorage->vessel_id,
+                'vessel_name' => $anchorage->vessel->name,
+                'request_id' => $anchorage->id,
+            ]),
+        ]);
+
+        // Create log entry
+        Log::create([
+            'user_id' => $request->user()->id,
+            'vessel_id' => $anchorage->vessel_id,
+            'vessel_name' => $anchorage->vessel->name,
+            'action' => 'anchorage_timeout_triggered',
+            'details' => "Manual timeout alert triggered for vessel {$anchorage->vessel->name}.",
+            'ip_address' => $request->ip()
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     /**

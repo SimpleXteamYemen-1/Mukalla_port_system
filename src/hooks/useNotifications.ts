@@ -11,18 +11,20 @@ export interface NotificationItem {
   submittedTimestamp: string;
   status: string;
   message: string;
-  route?: string; // Optional route for the item
+  route?: string;
+  type?: string;
+  data?: any;
 }
 
 const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
-  let notifications: NotificationItem[] = [];
+  let synthesized: NotificationItem[] = [];
 
   try {
     switch (user.role) {
       case 'executive':
         // Fetch pending arrivals
         const { data: approvals } = await api.get('/executive/approvals');
-        const arrivalNotifs = (approvals || []).map((item: any) => ({
+        synthesized = (approvals || []).map((item: any) => ({
           id: `arr-${item.id}`,
           operationId: item.id,
           senderName: item.agent?.name || 'Agent',
@@ -33,14 +35,11 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
           message: `Arrival Request ${item.id} awaiting approval`,
           route: `/executive/approvals`,
         }));
-
-        notifications = [...arrivalNotifs];
         break;
 
       case 'officer':
-        // Fetch awaiting berths/pending clearances (simplified for Officer, focusing on awaiting vessels)
         const { data: vessels } = await api.get('/officer/vessels');
-        const officerNotifs = (vessels || [])
+        synthesized = (vessels || [])
           .filter((v: any) => v.status === 'awaiting' || v.status === 'scheduled')
           .map((v: any) => ({
             id: `vess-${v.id}`,
@@ -53,13 +52,11 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
             message: `Vessel ${v.name} is ${v.status === 'awaiting' ? 'awaiting arrival approval' : 'scheduled'}`,
             route: `/officer/active-vessels`,
           }));
-        notifications = [...officerNotifs];
         break;
 
       case 'agent':
-        // Fetch tracker data for recent updates
         const { data: trackerData } = await api.get('/agent/tracker');
-        const agentNotifs = (trackerData || [])
+        synthesized = (trackerData || [])
           .filter((item: any) => item.status === 'pending' || item.status === 'rejected')
           .map((item: any) => ({
             id: `trk-${item.id}`,
@@ -72,21 +69,18 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
             message: `${item.title} for ${item.vessel} is ${item.status}`,
             route: `/agent/tracker`,
           }));
-        notifications = [...agentNotifs];
         break;
 
       case 'wharf':
-        // Fetch wharf anchorage requests and active wharves
         const [wharvesRes, anchorageRes] = await Promise.all([
           api.get('/wharf/wharves').catch(() => ({ data: [] })),
           api.get('/wharf/anchorage-requests').catch(() => ({ data: { requests: [] } }))
         ]);
         
         const availableCount = (wharvesRes.data || []).filter((w: any) => w.status === 'available').length;
-        // Depending on backend, anchorage requests might be in data or data.requests
         const requestsData = Array.isArray(anchorageRes.data) ? anchorageRes.data : (anchorageRes.data?.requests || []);
         
-        const wharfNotifs = requestsData
+        synthesized = requestsData
           .filter((r: any) => r.status === 'pending' || r.status === 'waiting')
           .map((r: any) => ({
             id: `wharf-ar-${r.id}`,
@@ -101,19 +95,36 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
                 : `New anchorage request for ${r.vessel?.name || 'Unknown'}`,
             route: `/wharf/availability`,
           }));
-        notifications = [...wharfNotifs];
         break;
-
-      default:
-        // Generic fallback
-        notifications = [];
     }
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error('Error fetching synthesized notifications:', error);
   }
 
-  // Sort by newest first
-  return notifications.sort((a, b) => new Date(b.submittedTimestamp).getTime() - new Date(a.submittedTimestamp).getTime());
+  // Fetch actual DB notifications
+  let dbNotifications: NotificationItem[] = [];
+  try {
+    const { data } = await api.get('/notifications');
+    dbNotifications = (data || []).map((n: any) => ({
+      id: `db-${n.id}`,
+      operationId: n.id,
+      senderName: 'System',
+      senderRole: 'system',
+      operationType: n.type || 'Notification',
+      submittedTimestamp: n.created_at,
+      status: n.read_at ? 'read' : 'unread',
+      message: n.message,
+      type: n.type,
+      data: n.data ? (typeof n.data === 'string' ? JSON.parse(n.data) : n.data) : undefined,
+      route: n.type === 'anchorage_timeout' ? '/agent/anchorage' : undefined,
+    }));
+  } catch (e) {
+    console.error('Error fetching DB notifications:', e);
+  }
+
+  return [...synthesized, ...dbNotifications].sort((a, b) => 
+    new Date(b.submittedTimestamp).getTime() - new Date(a.submittedTimestamp).getTime()
+  );
 };
 
 export const useNotifications = (user: User | null) => {

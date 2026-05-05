@@ -14,6 +14,7 @@ class Log extends Model
         'vessel_name',
         'action',
         'details',
+        'ip_address',
     ];
 
     public function user()

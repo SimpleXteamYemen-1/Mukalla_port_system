@@ -57,7 +57,11 @@ class PortOfficerController extends Controller
             'action' => 'approve_arrival',
             'details' => "Approved vessel {$vessel->name} arrival",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in approveArrival: " . $e->getMessage());
+        }
 
         return response()->json($vessel);
     }
@@ -98,7 +102,11 @@ class PortOfficerController extends Controller
             'action' => 'assign_berth',
             'details' => "Scheduled {$vessel->name} to {$wharf->name} from {$vessel->eta} to {$vessel->etd}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in assignBerth: " . $e->getMessage());
+        }
 
         return response()->json($vessel);
     }
@@ -137,7 +145,11 @@ class PortOfficerController extends Controller
             'action' => 'issue_clearance',
             'details' => "Issued clearance for vessel {$vessel->name} to {$request->next_port}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in issueClearance: " . $e->getMessage());
+        }
 
         return response()->json($clearance, 201);
     }
@@ -281,7 +293,11 @@ class PortOfficerController extends Controller
             'action' => 'approve_clearance',
             'details' => "Approved clearance for vessel {$vessel->name}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in approveClearance: " . $e->getMessage());
+        }
 
         return response()->json($clearance);
     }
@@ -307,7 +323,11 @@ class PortOfficerController extends Controller
             'action' => 'reject_clearance',
             'details' => "Rejected clearance for vessel {$clearance->vessel->name}. Reason: {$request->rejection_reason}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in rejectClearance: " . $e->getMessage());
+        }
 
         return response()->json($clearance);
     }
@@ -349,7 +369,11 @@ class PortOfficerController extends Controller
             'action' => 'berth_release',
             'details' => "Released {$vessel->name} from {$wharf->name}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in releaseBerth: " . $e->getMessage());
+        }
 
         return response()->json($vessel);
     }

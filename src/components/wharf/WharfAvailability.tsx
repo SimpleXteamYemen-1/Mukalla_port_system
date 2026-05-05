@@ -13,7 +13,7 @@ interface Wharf {
   id: number;
   name: string;
   status: 'available' | 'occupied' | 'maintenance';
-  vessels?: { name: string; containers?: ContainerItem[] }[];
+  vessels?: { id?: number; name: string; containers?: ContainerItem[] }[];
 }
 
 interface AnchorageRequest {
@@ -24,7 +24,10 @@ interface AnchorageRequest {
   reason: string;
   status: string;
   wharf?: { id: number; name: string };
-  agent?: { name: string };
+  agent?: { name: string; id: number };
+  anchorage_started_at?: string;
+  duration_hours?: number;
+  timeout_notified_at?: string;
 }
 
 interface ContainerItem {
@@ -44,6 +47,13 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
   const [selectedWharfMap, setSelectedWharfMap] = useState<Record<number, number>>({});
   const [expandedRequest, setExpandedRequest] = useState<number | null>(null);
   const [expandedWaitingId, setExpandedWaitingId] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Real-time timer for timeout monitoring
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
   const [manifestVessel, setManifestVessel] = useState<{ id?: number; name: string; containers: ContainerItem[] } | null>(null);
   const [selectedContainers, setSelectedContainers] = useState<number[]>([]);
   const [confirmDischargeModal, setConfirmDischargeModal] = useState(false);
@@ -184,6 +194,40 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
       setProcessing(null);
     }
   };
+
+  const handleTimeoutNotify = async (request: AnchorageRequest) => {
+    setProcessing(request.id);
+    try {
+      // We'll call a new endpoint in WharfController to dispatch the notification
+      await wharfService.triggerTimeoutNotification(request.id);
+      toast.success(isRTL ? 'تم إرسال تنبيه انتهاء الوقت للوكيل' : 'Timeout alert sent to Agent successfully.');
+      await loadData();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || (isRTL ? 'فشل إرسال التنبيه' : 'Failed to send alert'));
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const checkTimeout = (request: AnchorageRequest) => {
+    if (request.status !== 'wharf_assigned' || !request.anchorage_started_at || !request.duration_hours) return null;
+    
+    const startTime = new Date(request.anchorage_started_at).getTime();
+    const durationMs = request.duration_hours * 3600000;
+    const expiryTime = startTime + durationMs;
+    const now = currentTime.getTime();
+    
+    const remainingMs = expiryTime - now;
+    const isExpired = remainingMs <= 0;
+    
+    return {
+      isExpired,
+      remainingText: isExpired 
+        ? (isRTL ? 'منتهي' : 'Expired') 
+        : `${Math.floor(remainingMs / 3600000)}h ${Math.floor((remainingMs % 3600000) / 60000)}m`
+    };
+  };
+
 
   const availableWharves = wharves.filter((w) => w.status === 'available');
   const pendingRequests = anchorageRequests.filter((r) => r.status === 'pending');
@@ -415,6 +459,34 @@ export function WharfAvailability({ language }: WharfAvailabilityProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
+                    {req.status === 'wharf_assigned' && checkTimeout(req) && (
+                      <div className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold border ${
+                        checkTimeout(req)?.isExpired 
+                          ? 'bg-red-500/10 text-red-500 border-red-500/20' 
+                          : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                      }`}>
+                        <Clock className={`w-3.5 h-3.5 ${checkTimeout(req)?.isExpired ? 'animate-pulse' : ''}`} />
+                        <span>{checkTimeout(req)?.remainingText}</span>
+                      </div>
+                    )}
+                    
+                    {req.status === 'wharf_assigned' && checkTimeout(req)?.isExpired && (
+                      <button
+                        onClick={() => handleTimeoutNotify(req)}
+                        disabled={processing === req.id || req.timeout_notified_at !== null}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-black transition-all ${
+                          req.timeout_notified_at 
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                            : 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20'
+                        }`}
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        {req.timeout_notified_at 
+                          ? (isRTL ? 'تم التنبيه' : 'Notified') 
+                          : (isRTL ? 'تنبيه انتهاء الوقت' : 'Wharf Timeout')}
+                      </button>
+                    )}
+
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                       req.status === 'wharf_assigned' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                       req.status === 'waiting' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :

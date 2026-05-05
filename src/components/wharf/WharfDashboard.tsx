@@ -70,9 +70,8 @@ export function WharfDashboard({ language }: WharfDashboardProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const storagePercentage = stats.storageAvailable > 0
-    ? Math.round((stats.storageUsed / (stats.storageUsed + stats.storageAvailable)) * 100)
-    : 0;
+  const activeContainerCount = stats.storageUsed;
+  const capacityPercentage = Math.round((activeContainerCount / 4000) * 100);
 
   const waitlistedRequests = anchorageRequests.filter(r => r.status === 'waiting');
   const availableWharves = wharves.filter(w => w.status === 'available');
@@ -187,19 +186,19 @@ export function WharfDashboard({ language }: WharfDashboardProps) {
             <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
               <Package className="w-5 h-5 text-slate-500 dark:text-slate-400" />
             </div>
-            <span className="text-3xl font-bold text-slate-900 dark:text-slate-50">{storagePercentage}%</span>
+            <span className="text-3xl font-bold text-slate-900 dark:text-slate-50">{capacityPercentage}%</span>
           </div>
           <h3 className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wide mb-3">
             {isRTL ? 'سعة التخزين' : 'Storage Capacity'}
           </h3>
           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2">
             <div
-              className={`h-2 rounded-full transition-all duration-1000 ${storagePercentage >= 90 ? 'bg-red-600 dark:bg-red-500' : storagePercentage >= 70 ? 'bg-amber-500' : 'bg-green-600 dark:bg-green-500'}`}
-              style={{ width: `${storagePercentage}%` }}
+              className={`h-2 rounded-full transition-all duration-1000 ${capacityPercentage >= 90 ? 'bg-red-600 dark:bg-red-500' : capacityPercentage >= 70 ? 'bg-amber-500' : 'bg-green-600 dark:bg-green-500'}`}
+              style={{ width: `${capacityPercentage}%` }}
             />
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-xs">
-            <span className="font-semibold text-slate-900 dark:text-slate-50">{stats.storageUsed}</span> / {stats.storageUsed + stats.storageAvailable} {isRTL ? 'مستخدم' : 'used'}
+            <span className="font-semibold text-slate-900 dark:text-slate-50">{activeContainerCount}</span> / 4000 {isRTL ? 'مستخدم' : 'used'}
           </p>
         </div>
 

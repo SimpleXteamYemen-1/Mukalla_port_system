@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, LogOut, Shield, Ship, Package, BarChart3, Anchor, Bell, Globe, User as UserIcon, ChevronDown, Settings, Sun, Moon, Search } from 'lucide-react';
+import { AlertCircle, LogOut, Shield, Ship, Package, BarChart3, Anchor, Bell, Globe, User as UserIcon, ChevronDown, Settings, Sun, Moon, Search, Clock } from 'lucide-react';
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
 import { MainLayout } from './MainLayout';
@@ -46,6 +46,10 @@ import { DischargeRequests } from './trader/DischargeRequests';
 import { TraderNotifications } from './trader/TraderNotifications';
 import { NotificationDropdown } from './NotificationDropdown';
 import { NotificationsPage } from './NotificationsPage';
+import { useNotifications, NotificationItem } from '../hooks/useNotifications';
+import { agentService } from '../services/agentService';
+import api from '../services/api';
+import { toast } from 'react-toastify';
 interface DashboardRouterProps {
   user: User;
   language: Language;
@@ -124,6 +128,48 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
     window.history.replaceState({}, '', url);
   }, [currentPage, activeVesselId]);
+
+  // Timeout Resolution Logic for Agents
+  const { data: notifications = [] } = useNotifications(user.role === 'agent' ? user : null);
+  const [activeTimeout, setActiveTimeout] = useState<NotificationItem | null>(null);
+  const [dismissedTimeouts, setDismissedTimeouts] = useState<(string | number)[]>([]);
+
+  useEffect(() => {
+    if (user.role === 'agent') {
+      const timeoutNotif = notifications.find(n => n.type === 'anchorage_timeout' && n.status === 'unread' && !dismissedTimeouts.includes(n.id));
+      if (timeoutNotif && !activeTimeout) {
+        setActiveTimeout(timeoutNotif);
+      }
+    }
+  }, [notifications, user.role, activeTimeout, dismissedTimeouts]);
+
+  const [expandHours, setExpandHours] = useState<number | ''>('');
+
+  const handleExpand = async () => {
+    if (!activeTimeout?.data?.request_id || !expandHours || Number(expandHours) < 1) return;
+    try {
+      await agentService.expandDuration(activeTimeout.data.request_id, Number(expandHours));
+      // Mark notification as read so it doesn't pop up again
+      await api.post(`/notifications/${activeTimeout.operationId}/read`);
+      setDismissedTimeouts(prev => [...prev, activeTimeout.id]);
+      setActiveTimeout(null);
+      setExpandHours('');
+      toast.success(isRTL ? 'تم تمديد الفترة بنجاح' : 'Duration expanded successfully');
+    } catch (error) {
+      toast.error('Error expanding duration');
+    }
+  };
+
+  const handleClearance = () => {
+    if (!activeTimeout) return;
+    // Mark as read locally to prevent reappearing
+    setDismissedTimeouts(prev => [...prev, activeTimeout.id]);
+    // Close modal immediately, then navigate — no async delay
+    setActiveTimeout(null);
+    setCurrentPage('clearances');
+    // Mark as read in the background (fire-and-forget)
+    api.post(`/notifications/${activeTimeout.operationId}/read`).catch(() => {});
+  };
 
   // Executive Management Interface
   if (user.role === 'executive') {
@@ -736,7 +782,84 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         )}
         {/* Catch-all: unknown page → show dashboard */}
         {!VALID_PAGES.agent.includes(currentPage) && <AgentDashboard language={language} onNavigate={setCurrentPage} />}
+        
+        {/* Timeout Resolution Modal */}
+        {activeTimeout && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-[var(--bg-card)] border border-red-500/30 rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 bg-red-500/10 rounded-2xl flex items-center justify-center">
+                    <AlertCircle className="w-8 h-8 text-red-500 animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+                      {isRTL ? 'تنبيه: انتهاء فترة الرسو' : 'URGENT: Anchorage Timeout'}
+                    </h2>
+                    <p className="text-red-500 text-sm font-bold tracking-widest uppercase opacity-80">
+                      {activeTimeout.data?.vessel_name}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[var(--text-secondary)] leading-relaxed mb-8">
+                  {isRTL 
+                    ? 'لقد انتهت فترة الرسو المحددة لهذه السفينة. يرجى اتخاذ إجراء فوري لتجنب الغرامات أو الإخلاء القسري.' 
+                    : 'The allocated anchorage duration for this vessel has expired. Please resolve this immediately by expanding the duration or initiating port clearance.'}
+                </p>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Custom Duration Expand */}
+                  <div className="p-4 bg-[var(--secondary)]/5 rounded-2xl border border-[var(--secondary)] hover:border-[var(--primary)] transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Clock className="w-5 h-5 text-[var(--primary)] flex-shrink-0" />
+                      <div>
+                        <p className="text-[var(--text-primary)] font-bold">
+                          {isRTL ? 'تمديد مخصص' : 'Custom Duration Expand'}
+                        </p>
+                        <p className="text-xs text-[var(--text-secondary)]">
+                          {isRTL ? 'أدخل عدد الساعات الإضافية' : 'Enter the number of additional hours'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder={isRTL ? 'عدد الساعات...' : 'Hours...'}
+                        value={expandHours}
+                        onChange={(e) => setExpandHours(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                        className="flex-1 px-3 py-2 bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] text-sm outline-none focus:border-[var(--primary)] transition-colors"
+                      />
+                      <button
+                        onClick={handleExpand}
+                        disabled={!expandHours || Number(expandHours) < 1}
+                        className="px-4 py-2 bg-[var(--primary)] hover:bg-[var(--primary)]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-colors"
+                      >
+                        {isRTL ? 'تمديد' : 'Expand'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-[var(--primary)]/10 rounded-2xl border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-all cursor-pointer" onClick={handleClearance}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Ship className="w-5 h-5 text-[var(--primary)]" />
+                        <div>
+                          <p className="text-[var(--primary)] font-bold">{isRTL ? 'طلب تصريح مغادرة' : 'Request Port Clearance'}</p>
+                          <p className="text-xs text-[var(--text-secondary)]">{isRTL ? 'إنهاء الرسو والمغادرة' : 'End session and initiate departure'}</p>
+                        </div>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-[var(--primary)] ${isRTL ? 'rotate-90' : '-rotate-90'}`} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
+
       </MainLayout>
     );
   }

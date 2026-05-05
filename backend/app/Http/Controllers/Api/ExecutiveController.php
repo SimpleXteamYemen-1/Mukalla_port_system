@@ -321,7 +321,11 @@ class ExecutiveController extends Controller
             'action' => 'approve_arrival',
             'details' => "Executive approved arrival for vessel {$vessel->name}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in approveArrival: " . $e->getMessage());
+        }
 
         return response()->json($vessel);
     }
@@ -353,7 +357,11 @@ class ExecutiveController extends Controller
             'action' => 'reject_arrival',
             'details' => "Executive rejected arrival for vessel {$vessel->name}. Reason: {$request->reason}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in rejectArrival: " . $e->getMessage());
+        }
 
         return response()->json([
             'vessel' => $vessel,
@@ -407,7 +415,11 @@ class ExecutiveController extends Controller
             'action' => 'approve_anchorage',
             'details' => "Approved anchorage for vessel {$anchorage->vessel->name}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in approveAnchorage: " . $e->getMessage());
+        }
 
         return response()->json($anchorage);
     }
@@ -430,7 +442,11 @@ class ExecutiveController extends Controller
             'action' => 'reject_anchorage',
             'details' => "Rejected anchorage for vessel {$anchorage->vessel->name}",
         ]);
-        event(new VesselOperationLogged($log, $request->user()->name));
+        try {
+            event(new VesselOperationLogged($log, $request->user()->name));
+        } catch (\Exception $e) {
+            \Log::error("Broadcasting failed in rejectAnchorage: " . $e->getMessage());
+        }
 
         return response()->json($anchorage);
     }
