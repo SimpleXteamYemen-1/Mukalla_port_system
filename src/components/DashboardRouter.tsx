@@ -132,15 +132,16 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
   // Timeout Resolution Logic for Agents
   const { data: notifications = [] } = useNotifications(user.role === 'agent' ? user : null);
   const [activeTimeout, setActiveTimeout] = useState<NotificationItem | null>(null);
+  const [dismissedTimeouts, setDismissedTimeouts] = useState<(string | number)[]>([]);
 
   useEffect(() => {
     if (user.role === 'agent') {
-      const timeoutNotif = notifications.find(n => n.type === 'anchorage_timeout' && n.status === 'unread');
+      const timeoutNotif = notifications.find(n => n.type === 'anchorage_timeout' && n.status === 'unread' && !dismissedTimeouts.includes(n.id));
       if (timeoutNotif && !activeTimeout) {
         setActiveTimeout(timeoutNotif);
       }
     }
-  }, [notifications, user.role, activeTimeout]);
+  }, [notifications, user.role, activeTimeout, dismissedTimeouts]);
 
   const [expandHours, setExpandHours] = useState<number | ''>('');
 
@@ -150,6 +151,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
       await agentService.expandDuration(activeTimeout.data.request_id, Number(expandHours));
       // Mark notification as read so it doesn't pop up again
       await api.post(`/notifications/${activeTimeout.operationId}/read`);
+      setDismissedTimeouts(prev => [...prev, activeTimeout.id]);
       setActiveTimeout(null);
       setExpandHours('');
       toast.success(isRTL ? 'تم تمديد الفترة بنجاح' : 'Duration expanded successfully');
@@ -159,13 +161,14 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
   };
 
   const handleClearance = () => {
+    if (!activeTimeout) return;
+    // Mark as read locally to prevent reappearing
+    setDismissedTimeouts(prev => [...prev, activeTimeout.id]);
     // Close modal immediately, then navigate — no async delay
     setActiveTimeout(null);
     setCurrentPage('clearances');
     // Mark as read in the background (fire-and-forget)
-    if (activeTimeout) {
-      api.post(`/notifications/${activeTimeout.operationId}/read`).catch(() => {});
-    }
+    api.post(`/notifications/${activeTimeout.operationId}/read`).catch(() => {});
   };
 
   // Executive Management Interface
