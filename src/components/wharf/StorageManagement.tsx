@@ -64,6 +64,7 @@ export function StorageManagement({ language }: { language: Language }) {
   }, []);
 
   const filteredContainers = containers.filter(c => 
+    c.status === 'discharged' &&
     c.storage_type === activeTab &&
     (c.description_of_goods.toLowerCase().includes(searchQuery.toLowerCase()) || 
      c.consignee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -140,7 +141,7 @@ export function StorageManagement({ language }: { language: Language }) {
       {/* Tri Tab Navigation */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-1.5 bg-[var(--secondary)]/5 rounded-2xl overflow-hidden border border-[var(--secondary)]/10">
         {tabs.map((tab) => {
-          const count = containers.filter(c => c.storage_type === tab.id).length;
+          const count = containers.filter(c => c.status === 'discharged' && c.storage_type === tab.id).length;
           const isActive = activeTab === tab.id;
           return (
             <button

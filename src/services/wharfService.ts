@@ -155,5 +155,47 @@ export const wharfService = {
             throw error;
         }
     },
+
+    // ─── Discharge Requests Workflow ──────────────────────────────────────────
+    getDischargeRequests: async () => {
+        try {
+            const response = await api.get('/wharf/discharge-requests');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching discharge requests:', error);
+            return [];
+        }
+    },
+
+    approveDischargeRequest: async (batchId: string) => {
+        try {
+            const response = await api.post(`/wharf/discharge-requests/${batchId}/approve`);
+            return response.data;
+        } catch (error) {
+            console.error('Error approving discharge request:', error);
+            throw error;
+        }
+    },
+
+    declineDischargeRequest: async (batchId: string, reason: string) => {
+        try {
+            const response = await api.post(`/wharf/discharge-requests/${batchId}/decline`, { reason });
+            return response.data;
+        } catch (error) {
+            console.error('Error declining discharge request:', error);
+            throw error;
+        }
+    },
+
+    // ─── Physical Discharge ───────────────────────────────────────────────────
+    dischargeContainers: async (vesselId: number, containerIds: number[]) => {
+        try {
+            const response = await api.post(`/wharf/vessels/${vesselId}/discharge-containers`, { container_ids: containerIds });
+            return response.data;
+        } catch (error) {
+            console.error('Error physically discharging containers:', error);
+            throw error;
+        }
+    },
 };
 

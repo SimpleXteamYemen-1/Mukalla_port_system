@@ -158,6 +158,17 @@ class AgentController extends Controller
                 'error_code' => 'ANCHORAGE_NOT_COMPLETED',
             ], 422);
         }
+
+        // ── Physical Discharge Guard ───────────────────────────────────────────
+        // Prevent Port Clearance if the vessel still has containers that haven't
+        // been physically discharged to the wharf (status 'pending').
+        $pendingContainers = $vessel->containers()->where('status', 'pending')->count();
+        if ($pendingContainers > 0) {
+            return response()->json([
+                'message' => "Cannot request Port Clearance: The vessel still has {$pendingContainers} container(s) that have not been physically discharged to the wharf.",
+                'error_code' => 'PENDING_CONTAINERS_ON_VESSEL',
+            ], 422);
+        }
         // ───────────────────────────────────────────────────────────────────
 
         // Ensure there is no existing pending clearance
@@ -262,7 +273,7 @@ class AgentController extends Controller
         $userId = $request->user()->id;
 
         $activeVessels = Vessel::where('owner_id', $userId)
-            ->where('status', 'active')
+            ->whereIn('status', ['approved', 'scheduled', 'docked', 'loading', 'unloading', 'ready'])
             ->count();
 
         $pendingAnchorage = AnchorageRequest::where('agent_id', $userId)
@@ -288,21 +299,25 @@ class AgentController extends Controller
 
         // 1. Arrivals (Vessels)
         $arrivals = Vessel::where('owner_id', $userId)->get()->map(function ($v) use ($request) {
+            $isDraft = $v->status === 'draft';
+            $isAwaiting = $v->status === 'awaiting';
+            $isRejected = $v->status === 'rejected';
+            $isApproved = !in_array($v->status, ['draft', 'awaiting', 'rejected']);
+
             return [
-            'id' => 'AN-' . $v->id,
-            'type' => 'arrival',
-            'vessel' => $v->name,
-            'title' => 'Arrival Notification',
-            'submittedDate' => $v->created_at->toDateTimeString(),
-            'status' => $v->status === 'awaiting' ? 'pending' : ($v->status === 'active' ? 'approved' : $v->status),
-            'completedDate' => $v->updated_at->toDateTimeString(),
-            'rejectionReason' => $v->rejection_reason ?? null,
-            // 'icon' => 'Ship', // Handled on frontend
-            'timeline' => [
-            ['step' => 'Submitted', 'date' => $v->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => 'completed'],
-            ['step' => 'Under Review', 'date' => '', 'user' => 'Port Officer', 'status' => $v->status === 'awaiting' ? 'pending' : 'completed'],
-            ['step' => 'Approved', 'date' => $v->status === 'active' ? $v->updated_at->toDateTimeString() : '', 'user' => 'Port Officer', 'status' => $v->status === 'active' ? 'completed' : 'pending'],
-            ]
+                'id' => 'AN-' . $v->id,
+                'type' => 'arrival',
+                'vessel' => $v->name,
+                'title' => 'Arrival Notification',
+                'submittedDate' => $v->created_at->toDateTimeString(),
+                'status' => $isAwaiting ? 'pending' : ($v->status === 'active' || $v->status === 'approved' ? 'approved' : $v->status),
+                'completedDate' => $v->updated_at->toDateTimeString(),
+                'rejectionReason' => $v->rejection_reason ?? null,
+                'timeline' => [
+                    ['step' => 'Submitted', 'date' => $v->created_at->toDateTimeString(), 'user' => 'Agent', 'status' => !$isDraft ? 'completed' : 'pending'],
+                    ['step' => 'Under Review', 'date' => '', 'user' => 'Port Officer', 'status' => $isAwaiting ? 'pending' : ($isApproved ? 'completed' : ($isRejected ? 'rejected' : 'pending'))],
+                    ['step' => 'Approved', 'date' => $isApproved ? $v->updated_at->toDateTimeString() : '', 'user' => 'Port Officer', 'status' => $isApproved ? 'completed' : ($isRejected ? 'rejected' : 'pending')],
+                ]
             ];
         });
 

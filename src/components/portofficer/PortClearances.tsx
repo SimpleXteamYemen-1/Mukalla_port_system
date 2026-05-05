@@ -126,12 +126,28 @@ export function PortClearances({ language }: PortClearancesProps) {
     // Mark this card as loading
     setApprovingIds((prev) => new Set(prev).add(id));
     try {
-      await approveClearance(id);
+      const response = await approveClearance(id);
+      
+      const data = response.data || response;
+      
+      // Calculate new hours remaining
+      const expiry = new Date(data.expiry_date);
+      const now = new Date();
+      const hours = Math.round((expiry.getTime() - now.getTime()) / (1000 * 60 * 60));
 
-      // Optimistically mutate local state → triggers instant re-render without a round-trip
+      // Optimistically mutate local state → triggers instant re-render
       setClearances((prev) =>
         prev.map((c) =>
-          c.id === id ? { ...c, status: 'clearance_approved' } : c
+          c.id === id ? { 
+            ...c, 
+            status: 'clearance_approved',
+            certificate_path: data.certificate_path,
+            vessel: data.vessel?.name || c.vessel,
+            nextPort: data.next_port || c.nextPort,
+            issueTime: data.issue_date,
+            expiryTime: data.expiry_date,
+            hoursRemaining: hours,
+          } : c
         )
       );
 

@@ -16,54 +16,94 @@ class TraderController extends Controller
         $user = $request->user();
         $userName = strtolower(trim($user->name));
         
-        $containers = Container::whereRaw('LOWER(TRIM(consignee_name)) = ?', [$userName])
-            ->whereHas('vessel', function ($q) {
-                // Include all active states where a trader should track their assets
-                $q->whereIn(DB::raw('LOWER(status)'), [
-                    'anchored', 
-                    'wharf_assigned', 
-                    'wharf assigned', 
-                    'approved', 
-                    'scheduled', 
-                    'docked'
-                ]);
+        $vessels = \App\Models\Vessel::whereIn(DB::raw('LOWER(status)'), [
+                'anchored', 
+                'wharf_assigned', 
+                'wharf assigned', 
+                'approved', 
+                'scheduled', 
+                'docked',
+                'departed'
+            ])
+            ->whereHas('containers', function ($q) use ($userName) {
+                $q->whereRaw('LOWER(TRIM(consignee_name)) = ?', [$userName]);
             })
-            ->with(['vessel.wharf', 'arrivalNotification'])
+            ->with(['wharf', 'containers' => function ($q) use ($userName) {
+                $q->whereRaw('LOWER(TRIM(consignee_name)) = ?', [$userName])
+                  ->orderBy('created_at', 'desc');
+            }])
+            ->orderBy('eta', 'desc')
             ->get();
             
-        return response()->json($containers);
+        return response()->json($vessels);
     }
 
     public function requestDischarge(Request $request)
     {
         $request->validate([
-            'container_id' => 'required|exists:containers,id',
+            'vessel_id' => 'required|exists:vessels,id',
+            'container_ids' => 'required|array|min:1',
+            'container_ids.*' => 'exists:containers,id',
             'requested_date' => 'required|date',
+            'notes' => 'nullable|string',
         ]);
 
-        // Ensure container belongs to trader
-        $container = Container::where('id', $request->container_id)
+        $batchId = uniqid('batch_');
+
+        // Verify all containers belong to this trader
+        $containers = Container::whereIn('id', $request->container_ids)
             ->where(function ($query) use ($request) {
                 $query->where('trader_user_id', $request->user()->id)
                       ->orWhere('consignee_phone', $request->user()->phone);
             })
-            ->firstOrFail();
+            ->get();
 
-        $discharge = DischargeRequest::create([
-            'container_id' => $container->id,
-            'trader_id' => $request->user()->id,
-            'status' => 'pending',
-            'requested_date' => $request->requested_date,
-        ]);
+        if ($containers->count() !== count($request->container_ids)) {
+            return response()->json(['message' => 'One or more selected containers do not belong to you or do not exist.'], 403);
+        }
 
-        return response()->json($discharge, 201);
+        $discharges = [];
+        foreach ($containers as $container) {
+            $discharges[] = DischargeRequest::create([
+                'container_id' => $container->id,
+                'vessel_id' => $request->vessel_id,
+                'trader_id' => $request->user()->id,
+                'status' => 'pending',
+                'batch_id' => $batchId,
+                'requested_date' => $request->requested_date,
+                'notes' => $request->notes,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Discharge requests created successfully',
+            'batch_id' => $batchId,
+            'count' => count($discharges)
+        ], 201);
     }
 
     public function getDischargeRequests(Request $request)
     {
         $requests = DischargeRequest::where('trader_id', $request->user()->id)
-            ->with(['container.manifest.vessel'])
-            ->get();
+            ->with(['container', 'vessel'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('batch_id')
+            ->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'batch_id'         => $first->batch_id,
+                    'vessel'           => $first->vessel,
+                    'status'           => $first->status,
+                    'requested_date'   => $first->requested_date,
+                    'rejection_reason' => $first->rejection_reason,
+                    'notes'            => $first->notes,
+                    'containers'       => $group->pluck('container')->filter()->values(),
+                    'created_at'       => $first->created_at,
+                ];
+            })
+            ->values();
+
         return response()->json($requests);
     }
 

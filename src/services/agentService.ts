@@ -308,6 +308,7 @@ export const agentService = {
                     clearanceId: `CLR-${c.id}`,
                     vessel_id: c.vessel_id,
                     vessel: c.vessel ? c.vessel.name : 'Unknown',
+                    vesselStatus: c.vessel ? c.vessel.status : null,
                     // Full vessel object for PDF export
                     vesselData: c.vessel ? {
                         name: c.vessel.name,

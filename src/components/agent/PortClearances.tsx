@@ -96,7 +96,7 @@ export function PortClearances({ language }: PortClearancesProps) {
             setEditingId(null);
         } catch (error: any) {
             console.error('Error issuing clearance:', error);
-            toast.error(error.message || (isRTL ? 'فشل طلب التصريح' : 'Failed to request clearance'));
+            toast.error(error.response?.data?.message || error.message || (isRTL ? 'فشل طلب التصريح' : 'Failed to request clearance'));
         } finally {
 
             setIssuing(false);
@@ -322,7 +322,12 @@ export function PortClearances({ language }: PortClearancesProps) {
                                             });
                                         }
                                     }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-sm font-bold transition-all"
+                                    disabled={clearance.status !== 'clearance_approved'}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border ${
+                                        clearance.status === 'clearance_approved'
+                                        ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20'
+                                        : 'bg-slate-500/10 text-slate-400 border-slate-500/20 cursor-not-allowed opacity-50'
+                                    }`}
                                     title={isRTL ? 'تنزيل PDF' : 'Download PDF'}
                                 >
                                     <Download className="w-4 h-4" />
@@ -331,7 +336,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 {clearance.status === 'clearance_approved' && clearance.certificate_path && (
                                     <button
                                         onClick={() => handleDeparture(clearance.vessel_id as string)}
-                                        disabled={processingDepartures[clearance.vessel_id as string] || departedVessels[clearance.vessel_id as string]}
+                                        disabled={processingDepartures[clearance.vessel_id as string] || departedVessels[clearance.vessel_id as string] || clearance.vesselStatus === 'departed'}
                                         className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-bold transition-all disabled:opacity-50 ${
                                             departedVessels[clearance.vessel_id as string]
                                             ? 'bg-[var(--surface-highlight)] text-[var(--text-disabled)] cursor-not-allowed border border-[var(--border)]'
@@ -345,7 +350,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                         )}
                                         {processingDepartures[clearance.vessel_id as string] 
                                             ? (isRTL ? 'جاري التنفيذ...' : 'Processing...') 
-                                            : departedVessels[clearance.vessel_id as string] 
+                                            : (departedVessels[clearance.vessel_id as string] || clearance.vesselStatus === 'departed')
                                             ? (isRTL ? 'تم الخروج' : 'Departed') 
                                             : (isRTL ? 'خروج السفينة' : 'Vessel Get Out')}
                                     </button>

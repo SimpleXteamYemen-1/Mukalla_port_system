@@ -203,7 +203,7 @@ export function WharfDashboard({ language }: WharfDashboardProps) {
           </p>
         </div>
 
-        <StatCard label={isRTL ? 'حاويات في الانتظار' : 'Containers Awaiting'} value={stats.containersAwaiting} icon={BoxSelect} color="green" language={language} trend={{ value: isRTL ? 'تتطلب تعيين' : 'Requires assignment', direction: 'neutral' }} />
+        <StatCard label={isRTL ? 'طلبات التفريغ' : 'Discharge Requests'} value={stats.containersAwaiting} icon={BoxSelect} color="green" language={language} trend={{ value: isRTL ? 'تتطلب معالجة' : 'Requires processing', direction: 'neutral' }} />
         <StatCard label={isRTL ? 'اتجاه السعة' : 'Capacity Trend'} value="+12%" icon={TrendingUp} color="indigo" language={language} trend={{ value: isRTL ? 'آخر 7 أيام' : 'Last 7 days', direction: 'up' }} />
         <StatCard label={isRTL ? 'التنبيهات النشطة' : 'Active Alerts'} value={alerts.length} icon={AlertTriangle} color="orange" language={language} trend={{ value: isRTL ? 'تتطلب اهتمام' : 'Requires attention', direction: 'neutral' }} />
       </div>

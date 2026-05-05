@@ -44,9 +44,9 @@ export const traderService = {
         }
     },
 
-    requestDischarge: async (containerId: number, requestedDate: string, notes?: string) => {
+    requestDischarge: async (vesselId: number, containerIds: number[], requestedDate: string, notes?: string) => {
         try {
-            const response = await api.post('/trader/discharge-request', { container_id: containerId, requested_date: requestedDate, notes });
+            const response = await api.post('/trader/discharge-request', { vessel_id: vesselId, container_ids: containerIds, requested_date: requestedDate, notes });
             return response.data;
         } catch (error) {
             console.error('Error requesting discharge:', error);

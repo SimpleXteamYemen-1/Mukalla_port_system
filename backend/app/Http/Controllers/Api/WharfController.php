@@ -10,6 +10,7 @@ use App\Models\StorageArea;
 use App\Models\AnchorageRequest;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Vessel;
 
 class WharfController extends Controller
 {
@@ -24,7 +25,7 @@ class WharfController extends Controller
 
     public function getWharves()
     {
-        return response()->json(Wharf::with('vessels')->get());
+        return response()->json(Wharf::with('vessels.containers')->get());
     }
 
     public function updateWharfStatus(Request $request, $id)
@@ -34,6 +35,11 @@ class WharfController extends Controller
         ]);
 
         $wharf = Wharf::findOrFail($id);
+        
+        if (in_array($request->status, ['available', 'maintenance'])) {
+            Vessel::where('current_wharf_id', $wharf->id)->update(['current_wharf_id' => null]);
+        }
+
         $wharf->status = $request->status;
         $wharf->save();
 
@@ -43,7 +49,7 @@ class WharfController extends Controller
     public function getContainers(Request $request)
     {
         // Only return containers for vessels that have an APPROVED/ASSIGNED anchorage request
-        $anchoredVesselIds = AnchorageRequest::whereIn('status', ['approved', 'wharf_assigned', 'completed'])
+        $anchoredVesselIds = AnchorageRequest::whereIn('status', ['approved', 'wharf_assigned', 'completed', 'left_wharf'])
             ->pluck('vessel_id');
 
         $containers = Container::whereIn('vessel_id', $anchoredVesselIds)
@@ -56,6 +62,10 @@ class WharfController extends Controller
     public function getDashboardStats()
     {
         $usedCapacity = Container::where('status', 'assigned')->count();
+        
+        $pendingDischargeRequests = \App\Models\DischargeRequest::where('status', 'pending')
+            ->distinct('batch_id')
+            ->count('batch_id');
 
         return response()->json([
             'pending_availability' => AnchorageRequest::where('status', 'pending')->count(),
@@ -63,8 +73,90 @@ class WharfController extends Controller
             'occupied_wharves' => Wharf::where('status', 'occupied')->count(),
             'storage_used' => $usedCapacity,
             'storage_available' => 1000, // Hardcoded default as capacity is out of scope
-            'containers_awaiting' => Container::where('status', 'arrived')->count(),
+            'containers_awaiting' => $pendingDischargeRequests,
         ]);
+    }
+
+    public function getDischargeRequests()
+    {
+        $requests = \App\Models\DischargeRequest::with(['container', 'trader', 'vessel'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('batch_id')
+            ->map(function ($group) {
+                return [
+                    'batch_id' => $group->first()->batch_id,
+                    'vessel' => $group->first()->vessel,
+                    'trader' => $group->first()->trader,
+                    'status' => $group->first()->status,
+                    'requested_date' => $group->first()->requested_date,
+                    'rejection_reason' => $group->first()->rejection_reason,
+                    'notes' => $group->first()->notes,
+                    'containers' => $group->pluck('container'),
+                    'created_at' => $group->first()->created_at,
+                ];
+            })->values();
+
+        return response()->json($requests);
+    }
+
+    public function approveDischargeRequest($batchId)
+    {
+        $requests = \App\Models\DischargeRequest::where('batch_id', $batchId)->get();
+        if ($requests->isEmpty()) {
+            return response()->json(['message' => 'Batch not found'], 404);
+        }
+
+        foreach ($requests as $req) {
+            $req->update(['status' => 'approved']);
+            if ($req->container) {
+                // 'cleared' is the final valid status for a container after discharge
+                $req->container->update(['status' => 'cleared']);
+            }
+        }
+
+        $firstReq = $requests->first();
+        if ($firstReq && $firstReq->trader_id) {
+            $vesselName = $firstReq->vessel ? $firstReq->vessel->name : 'your vessel';
+            Notification::create([
+                'user_id' => $firstReq->trader_id,
+                'title' => 'Discharge Approved',
+                'message' => "Your Containers from {$vesselName} have been discharged successfully.",
+            ]);
+        }
+
+        return response()->json(['message' => 'Discharge request approved and containers discharged.']);
+    }
+
+    public function declineDischargeRequest(Request $request, $batchId)
+    {
+        $request->validate([
+            'reason' => 'required|string'
+        ]);
+
+        $requests = \App\Models\DischargeRequest::where('batch_id', $batchId)->get();
+        if ($requests->isEmpty()) {
+            return response()->json(['message' => 'Batch not found'], 404);
+        }
+
+        foreach ($requests as $req) {
+            $req->update([
+                'status' => 'declined',
+                'rejection_reason' => $request->reason
+            ]);
+        }
+        
+        $firstReq = $requests->first();
+        if ($firstReq && $firstReq->trader_id) {
+            $vesselName = $firstReq->vessel ? $firstReq->vessel->name : 'your vessel';
+            Notification::create([
+                'user_id' => $firstReq->trader_id,
+                'title' => 'Discharge Declined',
+                'message' => "Your Discharge Request for {$vesselName} has been declined. Reason: {$request->reason}",
+            ]);
+        }
+
+        return response()->json(['message' => 'Discharge request declined.']);
     }
 
     public function assignContainer(Request $request)
@@ -115,16 +207,53 @@ class WharfController extends Controller
     // ─── NEW: Anchorage Workflow ────────────────────────────────────────────────
 
     /**
+     * Physical discharge of containers from vessel to wharf storage
+     */
+    public function dischargeContainers(Request $request, $id)
+    {
+        $request->validate([
+            'container_ids' => 'required|array',
+            'container_ids.*' => 'integer|exists:containers,id',
+        ]);
+
+        $vessel = Vessel::findOrFail($id);
+
+        if (!$vessel->current_wharf_id) {
+            return response()->json(['message' => 'Vessel is not currently assigned to a wharf'], 422);
+        }
+
+        // Update container statuses from 'pending' to 'discharged'
+        Container::where('vessel_id', $vessel->id)
+            ->whereIn('id', $request->container_ids)
+            ->where('status', 'pending')
+            ->update(['status' => 'discharged']);
+
+        // Fetch updated containers to return
+        $containers = Container::where('vessel_id', $vessel->id)->get();
+
+        // Check if all containers have been discharged
+        $pendingCount = Container::where('vessel_id', $vessel->id)
+            ->where('status', 'pending')
+            ->count();
+
+        return response()->json([
+            'message' => 'Containers successfully discharged to storage.',
+            'containers' => $containers,
+            'all_discharged' => $pendingCount === 0
+        ]);
+    }
+
+    /**
      * Get all pending anchorage requests for the wharf worker to review.
      */
     public function getAnchorageRequests()
     {
-        $requests = AnchorageRequest::with(['vessel', 'wharf'])
-            ->whereIn('status', ['pending', 'wharf_assigned', 'waiting'])
+        $requests = AnchorageRequest::with(['vessel.containers', 'wharf'])
+            ->whereIn('status', ['pending', 'wharf_assigned', 'waiting', 'left_wharf', 'departed'])
             ->latest()
             ->get();
 
-        $wharves = Wharf::all();
+        $wharves = Wharf::with('vessels.containers')->get();
 
         return response()->json([
             'requests' => $requests,
@@ -159,6 +288,9 @@ class WharfController extends Controller
 
         // Sync Vessel mapping
         if ($anchorage->vessel) {
+            // Ensure no old vessels remain stuck on this wharf
+            Vessel::where('current_wharf_id', $wharf->id)->update(['current_wharf_id' => null]);
+            
             $anchorage->vessel->current_wharf_id = $wharf->id;
             $anchorage->vessel->save();
         }

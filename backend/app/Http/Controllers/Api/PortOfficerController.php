@@ -167,22 +167,99 @@ class PortOfficerController extends Controller
             'expiry_date' => now()->addHours(24),
         ]);
 
-        // Generate PDF
+        // Generate Professional PDF
         $vessel = $clearance->vessel;
+        $officer = $request->user();
+        
+        // Handle Signature: Save to temp file for better DOMPDF compatibility
+        $signaturePath = null;
+        if ($officer->signature) {
+            try {
+                $signatureData = str_replace('data:image/png;base64,', '', $officer->signature);
+                $signatureData = str_replace(' ', '+', $signatureData);
+                $signatureImage = base64_decode($signatureData);
+                $signatureName = 'sig_' . $officer->id . '.png';
+                \Storage::disk('public')->put('temp/' . $signatureName, $signatureImage);
+                $signaturePath = public_path('storage/temp/' . $signatureName);
+            } catch (\Exception $e) {
+                \Log::error('Signature conversion failed: ' . $e->getMessage());
+            }
+        }
+
+        $signatureHtml = $signaturePath && file_exists($signaturePath)
+            ? "<img src='{$signaturePath}' style='height: 60px; max-width: 180px; display: block; margin: 0 auto;'>" 
+            : "<div style='height: 60px; color: #94a3b8; font-style: italic; line-height: 60px; font-size: 12px;'>No Digital Signature</div>";
+
+        $yemenLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Emblem_of_Yemen.svg/512px-Emblem_of_Yemen.svg.png";
+
         $html = "
             <html>
-            <head><style>body { font-family: sans-serif; text-align: center; padding: 50px; } .header { font-size: 24px; font-weight: bold; margin-bottom: 20px;} .content { font-size: 16px; line-height: 1.6;}</style></head>
+            <head>
+                <style>
+                    @page { margin: 15px; }
+                    body { font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; margin: 0; padding: 15px; font-size: 13px; }
+                    .border-container { border: 4px double #1e293b; padding: 15px; position: relative; }
+                    .header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 10px; margin-bottom: 15px; }
+                    .logo { height: 70px; margin-bottom: 5px; }
+                    .header h1 { font-size: 20px; margin: 0; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
+                    .header p { margin: 2px 0 0; color: #64748b; font-weight: bold; font-size: 11px; }
+                    
+                    .cert-body { line-height: 1.5; }
+                    .intro { text-align: center; margin-bottom: 10px; font-style: italic; font-size: 13px; }
+                    
+                    .details-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                    .details-table td { padding: 6px 10px; border: 1px solid #e2e8f0; }
+                    .details-table .label { font-weight: bold; background-color: #f8fafc; width: 35%; color: #475569; }
+                    .details-table .value { font-weight: 600; color: #0f172a; }
+                    
+                    .declaration { margin-top: 15px; text-align: justify; border-left: 4px solid #1e293b; padding: 8px 12px; background: #f1f5f9; font-size: 12px; }
+                    
+                    .footer { margin-top: 25px; }
+                    .signature-box { float: right; text-align: center; width: 220px; border-top: 1px solid #1e293b; padding-top: 5px; }
+                    
+                    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 70px; color: rgba(226, 232, 240, 0.25); z-index: -1; text-transform: uppercase; pointer-events: none; }
+                    .clearfix::after { content: ''; clear: both; display: table; }
+                </style>
+            </head>
             <body>
-                <div class='header'>PORT CLEARANCE CERTIFICATE</div>
-                <div class='content'>
-                    <p>This is to certify that the vessel <strong>{$vessel->name}</strong></p>
-                    <p>with IMO number <strong>{$vessel->imo_number}</strong></p>
-                    <p>has been granted clearance to depart for <strong>{$clearance->next_port}</strong>.</p>
-                    <br><br>
-                    <p>Issued on: <strong>{$clearance->issue_date->format('Y-m-d H:i:s')}</strong></p>
-                    <p>Valid until: <strong>{$clearance->expiry_date->format('Y-m-d H:i:s')}</strong></p>
-                    <br><br>
-                    <p>Authorized Officer: <strong>{$request->user()->name}</strong></p>
+                <div class='border-container'>
+                    <div class='watermark'>OFFICIAL</div>
+                    
+                    <div class='header'>
+                        <img src='{$yemenLogoUrl}' class='logo'>
+                        <h1>Republic of Yemen</h1>
+                        <p>Ministry of Transport - Mukalla Port Authority</p>
+                        <h2 style='margin-top: 8px; font-size: 18px; text-transform: uppercase;'>Port Clearance Certificate</h2>
+                        <p style='color: #1e293b;'>No: CLR-".str_pad($clearance->id, 6, '0', STR_PAD_LEFT)."</p>
+                    </div>
+
+                    <div class='cert-body'>
+                        <p class='intro'>To all to whom these presents shall come, Greeting:</p>
+                        
+                        <p>This is to formally certify that the vessel described below has complied with all port regulations, settled all required dues, and is hereby granted official clearance to depart from the Port of Mukalla.</p>
+
+                        <table class='details-table'>
+                            <tr><td class='label'>Vessel Name</td><td class='value'>{$vessel->name}</td></tr>
+                            <tr><td class='label'>IMO Number</td><td class='value'>{$vessel->imo_number}</td></tr>
+                            <tr><td class='label'>Vessel Type</td><td class='value'>{$vessel->type}</td></tr>
+                            <tr><td class='label'>Destination Port</td><td class='value'>{$clearance->next_port}</td></tr>
+                            <tr><td class='label'>Issue Date</td><td class='value'>{$clearance->issue_date->format('M d, Y - H:i')}</td></tr>
+                            <tr><td class='label'>Expiry Date</td><td class='value'>{$clearance->expiry_date->format('M d, Y - H:i')}</td></tr>
+                        </table>
+
+                        <div class='declaration'>
+                            <strong>Official Approval Statement:</strong><br>
+                            The vessel <strong>{$vessel->name}</strong> has successfully completed all intended cargo operations, safety inspections, and administrative protocols within the jurisdiction of Mukalla Port. No outstanding liabilities exist at the time of issuance.
+                        </div>
+
+                        <div class='footer clearfix'>
+                            <div class='signature-box'>
+                                <div style='height: 65px; margin-bottom: 2px;'>{$signatureHtml}</div>
+                                <div style='font-weight: bold; font-size: 13px;'>{$officer->name}</div>
+                                <div style='font-size: 10px; color: #64748b;'>Authorized Port Officer</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </body>
             </html>

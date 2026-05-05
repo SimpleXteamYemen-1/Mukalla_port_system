@@ -93,10 +93,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/wharf/assign-container', [WharfController::class, 'assignContainer']);
         Route::post('/wharf/containers/{id}/log', [WharfController::class, 'logContainerOperation']);
         Route::post('/wharf/containers/{id}/reclassify', [WharfController::class, 'reclassifyContainer']);
+        Route::post('/wharf/vessels/{id}/discharge-containers', [WharfController::class, 'dischargeContainers']);
+
         // NEW: Anchorage request workflow endpoints
         Route::get('/wharf/anchorage-requests', [WharfController::class, 'getAnchorageRequests']);
         Route::post('/wharf/anchorage-requests/{id}/approve', [WharfController::class, 'approveAnchorageRequest']);
         Route::post('/wharf/anchorage-requests/{id}/waitlist', [WharfController::class, 'waitlistAnchorageRequest']);
+        
+        // NEW: Discharge requests workflow endpoints
+        Route::get('/wharf/discharge-requests', [WharfController::class, 'getDischargeRequests']);
+        Route::post('/wharf/discharge-requests/{batchId}/approve', [WharfController::class, 'approveDischargeRequest']);
+        Route::post('/wharf/discharge-requests/{batchId}/decline', [WharfController::class, 'declineDischargeRequest']);
+
         // Vessel History (reuses ExecutiveController)
         Route::get('/wharf/vessels-list', [ExecutiveController::class, 'getAllVessels']);
         Route::get('/wharf/vessels/{id}/history', [ExecutiveController::class, 'getVesselHistory']);

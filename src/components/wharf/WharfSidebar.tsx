@@ -16,7 +16,7 @@ export function WharfSidebar({ language, currentPage, onNavigate }: WharfSidebar
     { id: 'dashboard', label: isRTL ? 'لوحة التحكم' : 'Dashboard', icon: LayoutDashboard },
     { id: 'availability', label: isRTL ? 'توفر الأرصفة' : 'Wharf Availability', icon: Anchor },
     { id: 'storage', label: isRTL ? 'إدارة التخزين' : 'Storage Management', icon: Package },
-    { id: 'containers', label: isRTL ? 'تعيين الحاويات' : 'Container Assignment', icon: BoxSelect },
+    { id: 'discharge', label: isRTL ? 'طلبات التفريغ' : 'Discharge Requests', icon: BoxSelect },
     { id: 'capacity', label: isRTL ? 'نظرة عامة على السعة' : 'Capacity Overview', icon: BarChart3 },
     { id: 'vessel-history', label: isRTL ? 'سجل السفن' : 'Vessel History', icon: History }
   ];

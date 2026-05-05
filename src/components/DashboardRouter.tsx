@@ -37,7 +37,7 @@ import { WharfSidebar } from './wharf/WharfSidebar';
 import { WharfDashboard } from './wharf/WharfDashboard';
 import { WharfAvailability } from './wharf/WharfAvailability';
 import { StorageManagement } from './wharf/StorageManagement';
-import { ContainerAssignment } from './wharf/ContainerAssignment';
+import { WharfDischargeRequests } from './wharf/WharfDischargeRequests';
 import { CapacityOverview } from './wharf/CapacityOverview';
 import { TraderSidebar } from './trader/TraderSidebar';
 import { TraderDashboard } from './trader/TraderDashboard';
@@ -59,7 +59,7 @@ interface DashboardRouterProps {
 const VALID_PAGES: Record<string, string[]> = {
   executive: ['dashboard', 'notifications', 'arrivals', 'vessel-history', 'anchorage', 'user-approvals', 'user-directory', 'logs', 'reports', 'emergency-exits', 'settings'],
   officer:   ['dashboard', 'notifications', 'berthing', 'vessels', 'clearances', 'logs', 'report', 'vessel-history', 'settings'],
-  wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'containers', 'capacity', 'vessel-history', 'settings'],
+  wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'discharge', 'capacity', 'vessel-history', 'settings'],
   trader:    ['dashboard', 'notifications', 'containers', 'discharge', 'settings'],
   agent:     ['dashboard', 'notifications', 'vessels', 'arrivals', 'anchorage', 'manifests', 'clearances', 'tracker', 'report', 'settings'],
 };
@@ -443,7 +443,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {currentPage === 'dashboard' && (isRTL ? 'لوحة التحكم' : 'Dashboard')}
                   {currentPage === 'availability' && (isRTL ? 'توفر الأرصفة' : 'Wharf Availability')}
                   {currentPage === 'storage' && (isRTL ? 'إدارة التخزين' : 'Storage Management')}
-                  {currentPage === 'containers' && (isRTL ? 'تعيين الحاويات' : 'Container Assignment')}
+                  {currentPage === 'discharge' && (isRTL ? 'طلبات التفريغ' : 'Discharge Requests')}
                   {currentPage === 'capacity' && (isRTL ? 'نظرة عامة على السعة' : 'Capacity Overview')}
                   {currentPage === 'vessel-history' && (isRTL ? 'سجل السفن' : 'Vessel History')}
                 </h2>
@@ -522,7 +522,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'availability' && <WharfAvailability language={language} />}
             {currentPage === 'storage' && <StorageManagement language={language} />}
-            {currentPage === 'containers' && <ContainerAssignment language={language} />}
+            {currentPage === 'discharge' && <WharfDischargeRequests language={language} />}
             {currentPage === 'capacity' && <CapacityOverview language={language} />}
             {currentPage === 'vessel-history' && (
               <WharfVesselHistory 

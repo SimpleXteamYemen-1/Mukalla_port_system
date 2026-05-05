@@ -26,6 +26,7 @@ export interface Clearance {
   clearanceId: string; // id
   vessel_id?: string;
   vessel: string; // vessel name
+  vesselStatus?: string;
   nextPort: string; // Not in backend yet? default to 'Unknown'
   issueTime: string; // issue_date
   expiryTime: string; // expiry_date

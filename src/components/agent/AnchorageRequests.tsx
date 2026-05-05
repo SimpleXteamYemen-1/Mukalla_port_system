@@ -71,8 +71,15 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
         agentService.getVessels(),
         agentService.getAnchorageRequests(),
       ]);
-      // Filter for approved vessels only
-      const approved = vesselsData.filter((v: any) => v.status === 'approved');
+      
+      // Get IDs of vessels that already have an anchorage request
+      const vesselsWithRequests = new Set(requestsData.map((r: any) => r.vessel_id));
+
+      // Filter: Approved arrival status AND not already requested anchorage
+      const approved = vesselsData.filter((v: any) => 
+        v.status === 'approved' && !vesselsWithRequests.has(v.id)
+      );
+      
       setApprovedVessels(approved);
       setRequests(requestsData);
     } catch (error) {
