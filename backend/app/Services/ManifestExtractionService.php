@@ -141,7 +141,7 @@ class ManifestExtractionService
         $trader = null;
 
         // Fetch all active traders
-        $traders = User::where('role', 'trader')->get();
+        $traders = User::role('trader')->get();
         foreach ($traders as $t) {
             $nameExists = \Str::contains(strtolower($rawText), strtolower($t->name));
             $orgExists = $t->organization && \Str::contains(strtolower($rawText), strtolower($t->organization));

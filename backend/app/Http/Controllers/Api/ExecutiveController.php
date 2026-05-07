@@ -201,6 +201,9 @@ class ExecutiveController extends Controller
             'type' => $requestFormat,
             'file_path' => $path,
             'size' => $readableSize,
+            'generated_by' => $request->user()->id,
+            'report_date_from' => $startDate->toDateString(),
+            'report_date_to' => $endDate->toDateString(),
         ]);
 
         return response()->json([

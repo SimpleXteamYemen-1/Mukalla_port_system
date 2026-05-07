@@ -17,4 +17,9 @@ class StorageArea extends Model
         'type',
         'status',
     ];
+
+    public function containers()
+    {
+        return $this->hasMany(Container::class);
+    }
 }

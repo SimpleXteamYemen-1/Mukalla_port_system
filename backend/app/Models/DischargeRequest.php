@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Container;
 use App\Models\User;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DischargeRequest extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'container_id',
         'trader_id',

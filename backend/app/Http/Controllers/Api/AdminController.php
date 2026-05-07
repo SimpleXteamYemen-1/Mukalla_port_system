@@ -35,7 +35,7 @@ class AdminController extends Controller
 
         // Filters
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $query->role($request->role);
         }
 
         if ($request->filled('status')) {
@@ -81,7 +81,6 @@ class AdminController extends Controller
             'name'         => $request->name,
             'email'        => $request->email,
             'password'     => Hash::make($rawPassword),
-            'role'         => $request->role,
             'organization' => $request->organization,
             'status'       => User::STATUS_ACTIVE,   // bypass approval
         ]);
@@ -122,7 +121,7 @@ class AdminController extends Controller
         $oldStatus = $user->status;
 
         $user->fill($request->only([
-            'name', 'email', 'role', 'organization',
+            'name', 'email', 'organization',
             'status', 'rejection_reason', 'phone',
         ]));
 

@@ -53,7 +53,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'agent@example.com'],
             [
                 'name' => 'Test Agent',
-                'role' => 'agent',
                 'verified' => true,
                 'password' => Hash::make('password'),
             ]
@@ -64,7 +63,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'officer@example.com'],
             [
                 'name' => 'Test Officer',
-                'role' => 'officer',
                 'verified' => true,
                 'password' => Hash::make('password'),
             ]
@@ -75,7 +73,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'wharf@example.com'],
             [
                 'name' => 'Test Wharf Manager',
-                'role' => 'wharf',
                 'verified' => true,
                 'password' => Hash::make('password'),
             ]
@@ -86,7 +83,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'trader@example.com'],
             [
                 'name' => 'Test Trader',
-                'role' => 'trader',
                 'verified' => true,
                 'password' => Hash::make('password'),
             ]
@@ -97,7 +93,6 @@ class RolesAndPermissionsSeeder extends Seeder
             ['email' => 'executive@example.com'],
             [
                 'name' => 'Test Executive',
-                'role' => 'executive',
                 'verified' => true,
                 'password' => Hash::make('password'),
             ]

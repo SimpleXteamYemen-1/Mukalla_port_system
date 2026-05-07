@@ -34,7 +34,6 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
             'status' => User::STATUS_PENDING,
             'verified' => false,
             'signature' => $signatureUrl,
@@ -86,7 +85,7 @@ class AuthController extends Controller
         // System-created accounts (executive, officer, wharf) always bypass this check.
         $publicRoles = ['trader', 'agent'];
 
-        if (in_array($user->role, $publicRoles)) {
+        if ($user->hasAnyRole($publicRoles)) {
             if ($user->status === User::STATUS_PENDING) {
                 return response()->json([
                     'status'  => 'pending',

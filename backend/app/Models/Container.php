@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Container extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'vessel_id',
         'manifest_file_path',
@@ -20,6 +23,7 @@ class Container extends Model
         'extraction_status',
         'extraction_errors',
         'error_reason',
+        'storage_area_id',
     ];
 
     protected $casts = [
@@ -56,5 +60,13 @@ class Container extends Model
     public function dischargeRequest()
     {
         return $this->hasOne(DischargeRequest::class);
+    }
+
+    /**
+     * Optional mapped storage area
+     */
+    public function storageArea()
+    {
+        return $this->belongsTo(StorageArea::class);
     }
 }

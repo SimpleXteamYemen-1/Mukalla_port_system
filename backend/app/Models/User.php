@@ -32,7 +32,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
         'organization',
         'status',
         'rejection_reason',
