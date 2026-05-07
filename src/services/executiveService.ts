@@ -137,25 +137,7 @@ export const executiveService = {
         }
     },
 
-    approveAnchorage: async (id: number) => {
-        try {
-            const response = await api.post(`/executive/anchorage/${id}/approve`);
-            return response.data;
-        } catch (error) {
-            console.error('Error approving anchorage:', error);
-            throw error;
-        }
-    },
 
-    rejectAnchorage: async (id: number, reason: string) => {
-        try {
-            const response = await api.post(`/executive/anchorage/${id}/reject`, { reason });
-            return response.data;
-        } catch (error) {
-            console.error('Error rejecting anchorage:', error);
-            throw error;
-        }
-    },
 
     getPendingUsers: async () => {
         try {

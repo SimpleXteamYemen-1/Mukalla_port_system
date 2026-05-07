@@ -66,5 +66,22 @@ class User extends Authenticatable
             'verified' => 'boolean',
         ];
     }
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['role'];
+
+    /**
+     * Get the user's primary role for backward compatibility.
+     *
+     * @return string|null
+     */
+    public function getRoleAttribute()
+    {
+        return $this->roles->first()->name ?? null;
+    }
 }
 

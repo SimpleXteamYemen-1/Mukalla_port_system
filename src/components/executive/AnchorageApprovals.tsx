@@ -13,9 +13,6 @@ interface AnchorageApprovalsProps {
 
 export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsProps) {
   const t = translations[language]?.executive?.anchorage || translations.en.executive.anchorage;
-  const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,39 +31,10 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
     }
   };
 
-  const handleApprove = async (id: number) => {
-    try {
-      await executiveService.approveAnchorage(id);
-      toast.success(language === 'ar' ? 'تمت الموافقة على طلب الرسو' : 'Anchorage request approved successfully');
-      fetchRequests();
-    } catch (error) {
-      console.error('Failed to approve request', error);
-      toast.error(language === 'ar' ? 'فشل الموافقة على الطلب' : 'Failed to approve request');
-    }
-  };
 
-  const handleReject = (id: number) => { setSelectedRequest(id.toString()); setShowRejectModal(true); };
-
-  const confirmReject = async () => {
-    if (!rejectionReason.trim() || !selectedRequest) {
-      toast.warning(language === 'ar' ? 'يرجى إدخال سبب الرفض' : 'Please enter rejection reason');
-      return;
-    }
-    try {
-      await executiveService.rejectAnchorage(parseInt(selectedRequest), rejectionReason);
-      toast.success(language === 'ar' ? 'تم رفض الطلب' : 'Request rejected successfully');
-      setShowRejectModal(false);
-      setRejectionReason('');
-      setSelectedRequest(null);
-      fetchRequests();
-    } catch (error) {
-      console.error('Failed to reject request', error);
-      toast.error(language === 'ar' ? 'فشل رفض الطلب' : 'Failed to reject request');
-    }
-  };
 
   const getDecisionStatusIcon = (request: any, isVesselApproved: boolean) => {
-    if (request.status === 'approved') return <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-400" />;
+    if (request.status === 'approved' || request.status === 'wharf_assigned') return <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-400" />;
     if (request.status === 'rejected') return <XCircle className="w-4 h-4 text-red-700 dark:text-red-400" />;
     if (isVesselApproved) return <Unlock className="w-4 h-4 text-blue-700 dark:text-blue-400" />;
     return <Lock className="w-4 h-4 text-slate-400" />;
@@ -96,30 +64,6 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{t.title}</h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{t.subtitle}</p>
-      </div>
-
-      {/* Dependency Info Banner */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-lg p-5">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-blue-700 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-blue-700 dark:text-blue-400 font-semibold text-sm mb-1">{t.dependencyTitle}</h3>
-            <p className="text-blue-600 dark:text-blue-300 text-sm mb-3">{t.dependencyMessage}</p>
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-900/30 text-green-700 dark:text-green-400 rounded-lg">
-                <CheckCircle2 className="w-3.5 h-3.5" />{t.arrivalApproved}
-              </span>
-              <span className="text-slate-400">+</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg">
-                <CheckCircle2 className="w-3.5 h-3.5" />{t.wharfApproved}
-              </span>
-              <span className="text-slate-400">=</span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg">
-                <Unlock className="w-3.5 h-3.5" />{t.canApprove}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Stats */}
@@ -181,19 +125,19 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                       {[
                         {
                           label: t.arrivalApprovalCheck,
-                          subLabel: isVesselApproved ? t.approved : t.notApproved,
-                          passed: isVesselApproved,
+                          subLabel: t.approved,
+                          passed: true,
                         },
-                        { label: t.wharfApprovalCheck, subLabel: t.approved, passed: true },
                         {
                           label: t.executiveDecision,
-                          subLabel: request.status === 'approved' ? t.approved : request.status === 'rejected' ? (language === 'ar' ? 'مرفوض' : 'Rejected') : isVesselApproved ? t.readyForDecision : t.blocked,
+                          subLabel: (request.status === 'approved' || request.status === 'wharf_assigned') ? t.approvedFromWharf : request.status === 'rejected' ? t.rejectedFromWharf : t.readyForDecision,
                           icon: getDecisionStatusIcon(request, isVesselApproved),
+                          passed: request.status === 'approved' || request.status === 'wharf_assigned' ? true : request.status === 'rejected' ? false : null,
                         },
                       ].map((step, i) => (
                         <div key={i} className="flex items-center gap-3">
                           <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${step.passed === true ? 'bg-green-100 border-green-500 dark:bg-green-900/30 dark:border-green-400' : step.passed === false ? 'bg-amber-100 border-amber-500 dark:bg-amber-900/30 dark:border-amber-400' : 'bg-blue-100 border-blue-500 dark:bg-blue-900/30 dark:border-blue-400'}`}>
-                            {i === 2 ? step.icon : step.passed ? <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-400" /> : <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />}
+                            {i === 1 ? step.icon : step.passed ? <CheckCircle2 className="w-4 h-4 text-green-700 dark:text-green-400" /> : <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />}
                           </div>
                           <div>
                             <div className="text-slate-900 dark:text-slate-50 text-sm font-medium">{step.label}</div>
@@ -241,19 +185,11 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                   </div>
 
                   {/* Actions */}
-                  {request.status === 'pending' && (
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <button onClick={() => handleApprove(request.id)} disabled={!isVesselApproved} className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm transition-colors ${isVesselApproved ? 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}`}>
-                        <CheckCircle2 className="w-4 h-4" />{t.approve}
-                      </button>
-                      <button onClick={() => handleReject(request.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 rounded-lg font-medium text-sm transition-colors">
-                        <XCircle className="w-4 h-4" />{t.reject}
-                      </button>
-                      <button onClick={() => onNavigate('vessel-history', { vesselId: request.vessel_id || request.vessel?.id })} className="flex-1 sm:flex-none sm:px-4 flex items-center justify-center gap-2 py-2.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg font-medium text-sm transition-colors">
-                        <Clock className="w-4 h-4" /><span className="sm:hidden md:inline">{language === 'ar' ? 'السجل' : 'History'}</span>
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button onClick={() => onNavigate('vessel-history', { vesselId: request.vessel_id || request.vessel?.id })} className="flex-1 items-center justify-center gap-2 py-2.5 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 rounded-lg font-medium text-sm transition-colors flex">
+                      <Clock className="w-4 h-4" /><span>{language === 'ar' ? 'السجل' : 'History'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -261,29 +197,7 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
         </div>
       )}
 
-      {/* Rejection Modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg"><XCircle className="w-5 h-5 text-red-700 dark:text-red-400" /></div>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{t.rejectRequest}</h2>
-              </div>
-              <button onClick={() => { setShowRejectModal(false); setRejectionReason(''); setSelectedRequest(null); }} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                <X className="w-5 h-5 text-slate-400" />
-              </button>
-            </div>
-            <label className="block text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">{t.justification}</label>
-            <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder={t.justificationPlaceholder} rows={4} className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 resize-none text-sm mb-2" />
-            <p className="text-slate-400 dark:text-slate-500 text-xs mb-5">{t.justificationNote}</p>
-            <div className="flex gap-3">
-              <button onClick={confirmReject} className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-medium text-sm transition-colors">{t.confirmReject}</button>
-              <button onClick={() => { setShowRejectModal(false); setRejectionReason(''); setSelectedRequest(null); }} className="flex-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 py-2.5 rounded-lg font-medium text-sm transition-colors">{t.cancel}</button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
