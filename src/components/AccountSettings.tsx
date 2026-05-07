@@ -53,6 +53,7 @@ export function AccountSettings({
   onToggleLanguage 
 }: AccountSettingsProps) {
   const t = translations[language].accountSettings;
+  const tRegister = translations[language].register;
   const isRTL = language === 'ar';
   
   const [activeTab, setActiveTab] = useState('profile');
@@ -75,6 +76,40 @@ export function AccountSettings({
   });
 
   const [signatureBase64, setSignatureBase64] = useState<string | null>(null);
+
+  const getPasswordStrength = (password: string): { strength: number; label: string; color: string } => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    const strength = score === 0 && password.length > 0 ? 1 : score;
+
+    const labels = [
+      tRegister.passwordStrength.weak,
+      tRegister.passwordStrength.weak,
+      tRegister.passwordStrength.fair,
+      tRegister.passwordStrength.good,
+      tRegister.passwordStrength.strong
+    ];
+    
+    const colors = [
+      'bg-muted',
+      'bg-destructive',
+      'bg-amber-500',
+      'bg-yellow-500',
+      'bg-green-500'
+    ];
+
+    return {
+      strength,
+      label: labels[strength],
+      color: colors[strength],
+    };
+  };
+
+  const passwordStrength = securityForm.newPassword ? getPasswordStrength(securityForm.newPassword) : null;
 
   // Fetch real user data on mount
   useEffect(() => {
@@ -405,7 +440,7 @@ export function AccountSettings({
                 <CardContent>
                   <SignaturePad 
                     language={language}
-                    initialSignature={user.signature}
+                    initialSignature={user.signature_base64 || user.signature}
                     onSignatureChange={setSignatureBase64}
                   />
                   {!user.signature && (
@@ -542,8 +577,24 @@ export function AccountSettings({
                             value={securityForm.newPassword}
                             onChange={e => setSecurityForm({...securityForm, newPassword: e.target.value})}
                             className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-[var(--secondary)]`}
+                            dir="ltr"
                           />
                         </div>
+                        {securityForm.newPassword && passwordStrength && (
+                          <div className="mt-2 space-y-1.5">
+                            <div className="flex gap-1 h-1">
+                              {[...Array(4)].map((_, i) => (
+                                <div
+                                  key={i}
+                                  className={`flex-1 rounded-sm transition-colors ${
+                                    i < passwordStrength.strength ? passwordStrength.color : "bg-[var(--secondary)]/50"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{passwordStrength.label}</p>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="confirmPassword">{t.confirmNewPassword}</Label>

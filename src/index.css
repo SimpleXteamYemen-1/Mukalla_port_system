@@ -133,9 +133,9 @@
     font-weight: 700;
   }
 
-  /* Force OS Color Scheme Recognition */
-  :root, input, select, textarea {
-    color-scheme: light dark;
+  /* Synchronize OS Color Scheme with App Theme */
+  :root, .light, .light input, .light select, .light textarea {
+    color-scheme: light;
   }
 
   .dark, .dark input, .dark select, .dark textarea {
@@ -156,14 +156,7 @@
   /* Webkit calendar icons */
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: none;
-    opacity: 1;
-  }
-
-  .dark input[type="date"]::-webkit-calendar-picker-indicator,
-  .dark input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: invert(1) brightness(100);
-    opacity: 1;
+    cursor: pointer;
   }
 }
 

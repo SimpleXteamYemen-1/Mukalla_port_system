@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Eraser, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/components/ui/utils';
+import { API_BASE_URL } from '@/services/api';
 
 interface SignaturePadProps {
   onSignatureChange: (signatureBase64: string | null) => void;
@@ -15,6 +16,13 @@ export function SignaturePad({ onSignatureChange, initialSignature, className, l
   const [hasSignature, setHasSignature] = useState(!!initialSignature);
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
+  // Sync hasSignature with initialSignature prop updates
+  useEffect(() => {
+    if (initialSignature) {
+      setHasSignature(true);
+    }
+  }, [initialSignature]);
+
   // Labels
   const labels = {
     clear: language === 'ar' ? 'مسح التوقيع' : 'Clear Signature',
@@ -25,29 +33,54 @@ export function SignaturePad({ onSignatureChange, initialSignature, className, l
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      // Setup canvas context
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.lineWidth = 2.5;
-        ctx.strokeStyle = '#111827'; // Tailwind gray-900 (dark mode needs contrast, wait, if we support dark mode we should use current color, but canvas is usually white bg)
+        ctx.strokeStyle = '#111827'; 
         setContext(ctx);
-
-        // Fill with white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (initialSignature) {
-          const img = new Image();
-          img.onload = () => {
-             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          };
-          img.src = initialSignature;
-        }
       }
     }
-  }, [initialSignature]);
+  }, []);
+
+  useEffect(() => {
+    if (!context || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    
+    // Fill with white background
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (initialSignature) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (context && canvas) {
+          context.drawImage(img, 0, 0, canvas.width, canvas.height);
+          setHasSignature(true);
+        }
+      };
+      
+      let src = initialSignature;
+      
+      // Handle different URL formats
+      if (src.startsWith('data:')) {
+        // Already base64, no change needed
+      } else if (src.startsWith('/')) {
+        // Relative path, prefix with backend URL
+        src = `${API_BASE_URL}${src}`;
+      } else if ((src.startsWith('http://localhost/') || src.startsWith('http://127.0.0.1/')) && !src.includes(':8000')) {
+        // Fix missing port 8000 if backend is on 8000 but URL was generated with default port
+        src = src.replace('localhost/', 'localhost:8000/').replace('127.0.0.1/', '127.0.0.1:8000/');
+      }
+      
+      img.src = src;
+    } else {
+      setHasSignature(false);
+    }
+  }, [initialSignature, context]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();

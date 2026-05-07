@@ -45,19 +45,33 @@ export function RegisterPage({ language, onToggleLanguage, onRegister, onNavigat
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const getPasswordStrength = (password: string): { strength: number; label: string; color: string } => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
 
-    const labels = [t.passwordStrength.weak, t.passwordStrength.fair, t.passwordStrength.good, t.passwordStrength.strong];
-    const colors = ['bg-destructive', 'bg-amber-500', 'bg-yellow-500', 'bg-green-500'];
+    const strength = score === 0 && password.length > 0 ? 1 : score;
+
+    const labels = [
+      t.passwordStrength.weak,
+      t.passwordStrength.weak,
+      t.passwordStrength.fair,
+      t.passwordStrength.good,
+      t.passwordStrength.strong
+    ];
+    const colors = [
+      'bg-muted',
+      'bg-destructive',
+      'bg-amber-500',
+      'bg-yellow-500',
+      'bg-green-500'
+    ];
 
     return {
       strength,
-      label: labels[strength] || labels[0],
-      color: colors[strength] || colors[0],
+      label: labels[strength],
+      color: colors[strength],
     };
   };
 

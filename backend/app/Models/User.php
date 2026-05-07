@@ -45,6 +45,37 @@ class User extends Authenticatable
     ];
 
     /**
+     * The attributes that should be appended to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['signature_base64'];
+
+    /**
+     * Get the signature as a base64 data URL.
+     *
+     * @return string|null
+     */
+    public function getSignatureBase64Attribute()
+    {
+        if (!$this->signature) {
+            return null;
+        }
+
+        // Convert storage URL to internal path
+        // e.g., /storage/signatures/xyz.png -> signatures/xyz.png
+        $path = str_replace('/storage/', '', $this->signature);
+        
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+            $content = \Illuminate\Support\Facades\Storage::disk('public')->get($path);
+            $mime = \Illuminate\Support\Facades\Storage::disk('public')->mimeType($path);
+            return 'data:' . $mime . ';base64,' . base64_encode($content);
+        }
+
+        return null;
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
