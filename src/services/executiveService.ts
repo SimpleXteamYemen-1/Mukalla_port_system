@@ -72,6 +72,16 @@ export const executiveService = {
         }
     },
 
+    getLogs: async () => {
+        try {
+            const response = await api.get('/executive/logs');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching executive logs:', error);
+            return [];
+        }
+    },
+
     getPendingApprovals: async (): Promise<PendingApproval[]> => {
         try {
             const response = await api.get('/executive/approvals');
@@ -192,7 +202,7 @@ export const executiveService = {
         return { success: true };
     },
 
-    generateCustomReport: async (params: { dateRange: string; reportType: string; format: string }) => {
+    generateCustomReport: async (params: { dateRange: string; reportType: string; format: string; decisionType?: string }) => {
         try {
             const response = await api.post('/executive/reports/generate', params);
             return response.data;

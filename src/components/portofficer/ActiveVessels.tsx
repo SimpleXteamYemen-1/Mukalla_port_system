@@ -201,9 +201,9 @@ export function ActiveVessels({ language, onNavigate }: ActiveVesselsProps) {
                         <Eye className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                       </button>
                       {vessel.clearanceStatus !== 'issued' && (
-                        <button onClick={() => onNavigate('clearances')} className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-lg transition-colors" title={isRTL ? 'إصدار تصريح' : 'Issue Clearance'}>
-                          <FileCheck className="w-4 h-4 text-green-700 dark:text-green-400" />
-                        </button>
+                      <button onClick={() => onNavigate('clearances')} className="p-2 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded-lg transition-colors" title={isRTL ? 'عرض التصاريح' : 'View Clearances'}>
+                        <FileCheck className="w-4 h-4 text-green-700 dark:text-green-400" />
+                      </button>
                       )}
                       <button onClick={() => { setVesselToRelease(vessel); setShowReleaseModal(true); }} className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors" title={isRTL ? 'تحرير الرصيف' : 'Release Berth'}>
                         <XCircle className="w-4 h-4 text-red-700 dark:text-red-400" />
@@ -267,7 +267,7 @@ export function ActiveVessels({ language, onNavigate }: ActiveVesselsProps) {
 
             {selectedVessel.clearanceStatus !== 'issued' && (
               <button onClick={() => { setShowDetailsModal(false); onNavigate('clearances'); }} className="w-full bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                <FileCheck className="w-4 h-4" />{isRTL ? 'المتابعة لإصدار تصريح المغادرة' : 'Proceed to Issue Clearance'}
+                <FileCheck className="w-4 h-4" />{isRTL ? 'عرض حالة تصريح المغادرة' : 'View Departure Clearance Status'}
               </button>
             )}
           </div>

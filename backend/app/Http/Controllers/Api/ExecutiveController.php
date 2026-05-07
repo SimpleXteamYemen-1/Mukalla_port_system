@@ -14,7 +14,43 @@ class ExecutiveController extends Controller
 {
     public function getLogs(Request $request)
     {
-        return response()->json(Log::with(['user', 'vessel'])->latest()->take(50)->get());
+        $logs = Log::with(['user', 'vessel.owner'])->latest()->take(50)->get();
+
+        $mappedLogs = $logs->map(function ($log) {
+            $actionStr = strtolower($log->action ?? '');
+            
+            $decision = 'info';
+            if (str_contains($actionStr, 'reject')) {
+                $decision = 'rejected';
+            } elseif (str_contains($actionStr, 'approve')) {
+                $decision = 'approved';
+            }
+
+            $type = 'other';
+            if (str_contains($actionStr, 'arrival')) {
+                $type = 'arrival';
+            } elseif (str_contains($actionStr, 'anchorage')) {
+                $type = 'anchorage';
+            }
+
+            return [
+                'id' => 'LOG-' . str_pad($log->id, 3, '0', STR_PAD_LEFT),
+                'type' => $type,
+                'vessel' => $log->vessel_name ?? ($log->vessel ? $log->vessel->name : 'N/A'),
+                'agent' => ($log->vessel && $log->vessel->owner) ? $log->vessel->owner->name : 'Unknown',
+                'decision' => $decision,
+                'decidedBy' => $log->user ? $log->user->name : 'System',
+                'timestamp' => $log->created_at->format('Y-m-d H:i'),
+                'justification' => $log->details,
+            ];
+        });
+
+        // Filter to only include decision-type logs (approved or rejected)
+        $decisionLogs = $mappedLogs->filter(function ($log) {
+            return in_array($log['decision'], ['approved', 'rejected']);
+        })->values();
+
+        return response()->json($decisionLogs);
     }
 
     public function getReports(Request $request)
@@ -62,7 +98,20 @@ class ExecutiveController extends Controller
             'approvalRate' => $approvalRate . '%',
             'activeIncidents' => 2, // Mock 
             'operationalEfficiency' => '94%', // Mock
+            'dailyDecisions' => Log::whereDate('created_at', today())->count(),
         ];
+
+        // 5. Timeline Heatmap (past 7 weeks, 5 days each based on logs)
+        $heatmapData = [];
+        for ($w = 0; $w < 7; $w++) {
+            $weekData = [];
+            for ($d = 0; $d < 5; $d++) {
+                $date = now()->subDays((6 - $w) * 7 + (4 - $d));
+                $count = Log::whereDate('created_at', $date)->count();
+                $weekData[] = $count;
+            }
+            $heatmapData[] = $weekData;
+        }
 
         // 4. Recent Reports (From Database)
         $recentReports = \App\Models\Report::latest()->take(3)->get()->map(function($r) {
@@ -81,6 +130,7 @@ class ExecutiveController extends Controller
             'rejectionReasons' => $rejectionReasons,
             'performanceMetrics' => $performanceMetrics,
             'recentReports' => $recentReports,
+            'heatmapData' => $heatmapData,
         ]);
     }
 
@@ -88,8 +138,9 @@ class ExecutiveController extends Controller
     {
         $request->validate([
             'dateRange' => 'required|string',
-            'reportType' => 'required|in:Performance,Operational,Rejections,Comprehensive',
+            'reportType' => 'required|in:Performance,Operational,Rejections,Comprehensive,DecisionLogs',
             'format' => 'required|in:PDF,Excel,CSV',
+            'decisionType' => 'nullable|string|in:All,Approved,Rejected,all,approved,rejected',
         ]);
 
         $dateRangeStr = $request->dateRange;
@@ -102,6 +153,10 @@ class ExecutiveController extends Controller
         } elseif (str_contains(strtolower($dateRangeStr), 'last month')) {
             $startDate = now()->subMonth()->startOfMonth();
             $endDate = now()->subMonth()->endOfMonth();
+        } elseif (str_contains(strtolower($dateRangeStr), 'this year')) {
+            $startDate = now()->startOfYear();
+        } elseif (str_contains(strtolower($dateRangeStr), 'all time')) {
+            $startDate = now()->subYears(20); // effectively all time
         } else {
             $startDate = now()->subDays(7);
         }
@@ -157,6 +212,49 @@ class ExecutiveController extends Controller
                 ]);
                 break;
 
+            case 'decisionlogs':
+                $query = Log::with(['user', 'vessel.owner'])->whereBetween('created_at', [$startDate, $endDate]);
+                $decType = strtolower($request->input('decisionType', 'all'));
+                
+                if ($decType === 'approved') {
+                    $query->where('action', 'like', '%approve%');
+                } elseif ($decType === 'rejected') {
+                    $query->where('action', 'like', '%reject%');
+                } else {
+                    $query->where(function($q) {
+                        $q->where('action', 'like', '%approve%')
+                          ->orWhere('action', 'like', '%reject%');
+                    });
+                }
+
+                $logs = $query->latest()->get()->map(function ($log) {
+                    $actionStr = strtolower($log->action ?? '');
+                    $decision = 'info';
+                    if (str_contains($actionStr, 'reject')) $decision = 'rejected';
+                    elseif (str_contains($actionStr, 'approve')) $decision = 'approved';
+
+                    $type = 'other';
+                    if (str_contains($actionStr, 'arrival')) $type = 'arrival';
+                    elseif (str_contains($actionStr, 'anchorage')) $type = 'anchorage';
+
+                    return [
+                        'id' => 'LOG-' . str_pad($log->id, 3, '0', STR_PAD_LEFT),
+                        'type' => $type,
+                        'vessel' => $log->vessel_name ?? ($log->vessel ? $log->vessel->name : 'N/A'),
+                        'agent' => ($log->vessel && $log->vessel->owner) ? $log->vessel->owner->name : 'Unknown',
+                        'decision' => $decision,
+                        'decidedBy' => $log->user ? $log->user->name : 'System',
+                        'timestamp' => $log->created_at->format('Y-m-d H:i'),
+                        'justification' => $log->details,
+                    ];
+                });
+
+                $data = array_merge($data, [
+                    'logs' => $logs,
+                    'decisionType' => $decType
+                ]);
+                break;
+
             default: // Comprehensive / Other
                 $data = array_merge($data, [
                     'vesselCount' => Vessel::count(),
@@ -172,7 +270,7 @@ class ExecutiveController extends Controller
         $path = 'reports/' . $fileName;
 
         if ($ext === 'pdf') {
-            $template = "pdf.reports." . (in_array($reportType, ['performance', 'operational', 'rejections', 'comprehensive']) ? $reportType : 'operational');
+            $template = "pdf.reports." . (in_array($reportType, ['performance', 'operational', 'rejections', 'comprehensive', 'decisionlogs']) ? $reportType : 'operational');
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($template, $data);
             \Illuminate\Support\Facades\Storage::disk('public')->put($path, $pdf->output());
         } else {
