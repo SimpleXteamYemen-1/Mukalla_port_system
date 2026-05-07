@@ -28,6 +28,7 @@ export interface User {
   phone?: string;
   avatar_url?: string;
   signature?: string | null;
+  signature_base64?: string | null;
 }
 
 function App() {

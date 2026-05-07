@@ -22,12 +22,19 @@ class AgentController extends Controller
 {
     public function checkIMO($imo)
     {
+        // Get the latest record to populate fields (name, flag, etc.)
         $vessel = Vessel::where('imo_number', $imo)->latest()->first();
 
         if ($vessel) {
+            // Check if there is an ACTIVE notification for this vessel
+            // (One that isn't finished or rejected)
+            $isActive = !in_array($vessel->status, ['departed', 'archived', 'rejected']);
+            
             return response()->json([
                 'found' => true,
-                'vessel' => $vessel
+                'vessel' => $vessel,
+                'is_active' => $isActive,
+                'is_owner' => $vessel->owner_id === auth()->id()
             ]);
         }
 

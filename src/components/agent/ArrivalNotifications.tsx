@@ -13,7 +13,7 @@ import * as z from 'zod';
 
 // Define Zod schema matching the backend StoreVesselArrivalRequest
 const arrivalSchema = z.object({
-  imo: z.string().regex(/^IMO\d{7}$/, { message: 'IMO number must be exactly 9 characters starting with "IMO" followed by 7 digits' }),
+  imo: z.string().regex(/^\d{7}$/, { message: 'IMO number must be exactly 7 digits' }),
   vessel: z.string().min(1, { message: 'Vessel name is required' }),
   type: z.string().min(1, { message: 'Vessel type is required' }),
   flag: z.string().min(1, { message: 'Flag is required' }).optional().or(z.literal('')),
@@ -21,7 +21,7 @@ const arrivalSchema = z.object({
   arrivalTime: z.string().min(1, { message: 'Arrival time is required' }),
   purpose: z.string().min(1, { message: 'Purpose is required' }),
   cargo: z.string().optional(),
-  expected_containers: z.coerce.number().min(1, { message: 'Must be at least 1' }).optional().or(z.literal('')),
+  expected_containers: z.coerce.number().min(0, { message: 'Must be 0 or more' }).optional().or(z.literal('')),
   priority: z.enum(['Low', 'Medium', 'High']),
   priority_reason: z.string().optional(),
   priority_document: z.any().optional(),
@@ -254,24 +254,63 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   };
 
   const handleCheckIMO = async () => {
-    const currentImo = getValues('imo');
-    if (!currentImo || !/^IMO\d{7}$/.test(currentImo)) {
-      toast.error('IMO number must be exactly 9 characters starting with "IMO"');
+    const rawImo = getValues('imo');
+    if (!rawImo || !/^\d{7}$/.test(rawImo)) {
+      toast.error('IMO number must be exactly 7 digits');
       return;
     }
+    const currentImo = `IMO${rawImo}`;
     setCheckingIMO(true);
     try {
       const result = await agentService.checkIMO(currentImo);
       if (result.found) {
-        setImoVerified(true);
-        setVesselId(result.vessel.id);
-        setValue('vessel', result.vessel.name, { shouldValidate: true });
-        setValue('type', result.vessel.type, { shouldValidate: true });
-        setValue('expected_containers', result.vessel.expected_containers || '', { shouldValidate: true });
-        setValue('flag', result.vessel.flag || '', { shouldValidate: true });
+        // If it's an active notification owned by the user, enter Edit mode
+        if (result.is_active && result.is_owner) {
+          setEditingId(result.vessel.id);
+          setVesselId(result.vessel.id);
+          toast.info(language === 'ar' 
+            ? 'تم العثور على إشعار وصول نشط لهذه السفينة. يمكنك تحديث البيانات الآن.' 
+            : 'An active arrival notification exists for this vessel. You can now update its details.');
+            
+          // Populate ALL fields for the existing notification
+          setValue('vessel', result.vessel.name, { shouldValidate: true });
+          setValue('type', result.vessel.type, { shouldValidate: true });
+          setValue('expected_containers', result.vessel.expected_containers || '', { shouldValidate: true });
+          setValue('flag', result.vessel.flag || '', { shouldValidate: true });
+          setValue('purpose', result.vessel.purpose || '', { shouldValidate: true });
+          setValue('cargo', result.vessel.cargo || '', { shouldValidate: true });
+          setValue('priority', result.vessel.priority || 'Low', { shouldValidate: true });
+          setValue('priority_reason', result.vessel.priority_reason || '', { shouldValidate: true });
+          
+          if (result.vessel.eta) {
+            const parts = result.vessel.eta.replace('T', ' ').split(' ');
+            if (parts.length >= 2) {
+              setValue('arrivalDate', parts[0], { shouldValidate: true });
+              setValue('arrivalTime', parts[1].substring(0, 5), { shouldValidate: true });
+            }
+          }
+          setImoVerified(true);
+        } else if (result.is_active && !result.is_owner) {
+          // If active but owned by someone else, block it
+          toast.error(language === 'ar'
+            ? 'تنبيه: يوجد إشعار وصول نشط لهذه السفينة من قبل وكيل آخر.'
+            : 'Warning: An active arrival notification already exists for this vessel by another agent.');
+          return;
+        } else {
+          // Found in history but not active (or rejected/departed)
+          // Just populate basic vessel info for a NEW notification
+          setImoVerified(true);
+          setVesselId(result.vessel.id);
+          setEditingId(null);
+          setValue('vessel', result.vessel.name, { shouldValidate: true });
+          setValue('type', result.vessel.type, { shouldValidate: true });
+          setValue('expected_containers', result.vessel.expected_containers || '', { shouldValidate: true });
+          setValue('flag', result.vessel.flag || '', { shouldValidate: true });
+        }
       } else {
         setImoVerified(true);
         setVesselId(null);
+        setEditingId(null);
         setValue('vessel', '');
         setValue('type', '');
         setValue('expected_containers', '');
@@ -292,10 +331,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
       if (editingId) {
         await agentService.updateArrival(editingId, {
-          imo_number: data.imo,
+          imo_number: `IMO${data.imo}`,
           name: data.vessel,
           type: data.type || 'container',
-          expected_containers: data.type === 'container' ? (data.expected_containers || null) : null,
+          expected_containers: data.type === 'container' ? (data.expected_containers ?? null) : null,
           flag: data.flag || 'Unknown',
           eta: eta,
           purpose: data.purpose,
@@ -307,10 +346,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
         toast.success(language === 'ar' ? 'تم تعديل طلب الوصول بنجاح!' : 'Arrival notification updated successfully!');
       } else {
         await agentService.submitArrival({
-          imo_number: data.imo,
+          imo_number: `IMO${data.imo}`,
           name: data.vessel,
           type: data.type || 'container',
-          expected_containers: data.type === 'container' ? (data.expected_containers || null) : null,
+          expected_containers: data.type === 'container' ? (data.expected_containers ?? null) : null,
           flag: data.flag || 'Unknown',
           eta: eta,
           purpose: data.purpose,
@@ -360,10 +399,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     setImoVerified(true);
     setVesselId(notification.id);
 
-    setValue('imo', notification.imo_number, { shouldValidate: true });
+    setValue('imo', notification.imo_number.replace(/^IMO/, ''), { shouldValidate: true });
     setValue('vessel', notification.name, { shouldValidate: true });
     setValue('type', notification.type || '', { shouldValidate: true });
-    setValue('expected_containers', notification.expected_containers || '', { shouldValidate: true });
+    setValue('expected_containers', notification.expected_containers ?? '', { shouldValidate: true });
     setValue('flag', notification.flag || '', { shouldValidate: true });
     setValue('purpose', notification.purpose || 'Loading/Unloading Cargo', { shouldValidate: true });
     setValue('cargo', notification.cargo || '', { shouldValidate: true });
@@ -464,13 +503,17 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
               <div>
                 <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'رقم المنظمة البحرية الدولية (IMO)' : 'IMO Number'}</label>
                 <div className="flex gap-3">
-                  <input
-                    type="text"
-                    {...register('imo')}
-                    maxLength={10}
-                    placeholder="e.g. IMO1234567"
-                    className={`flex-1 px-4 py-3 bg-[var(--background)] border ${errors.imo ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
-                  />
+                  <div className="relative flex-1 flex items-center">
+                    <span className={`absolute ${language === 'ar' ? 'right-4' : 'left-4'} font-bold text-[var(--text-secondary)]`}>IMO</span>
+                    <input
+                      type="text"
+                      {...register('imo')}
+                      maxLength={7}
+                      placeholder="1234567"
+                      className={`w-full ${language === 'ar' ? 'pr-14 pl-4 text-right' : 'pl-14 pr-4'} py-3 bg-[var(--background)] border ${errors.imo ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                      dir="ltr"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={handleCheckIMO}
@@ -547,11 +590,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                         className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
                       >
                         <option value="">Select Type</option>
-                        <option value="general">General Cargo</option>
                         <option value="container">Container Ship</option>
-                        <option value="tanker">Oil Tanker</option>
-                        <option value="bulk">Bulk Carrier</option>
-                        <option value="ro-ro">Ro-Ro</option>
                       </select>
                       {errors.type && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.type.message}</p>}
                     </div>
@@ -570,9 +609,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
                 {watchType === 'container' && (
                   <div className="animate-in fade-in zoom-in duration-300">
-                    <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'عدد الحاويات المتوقع' : 'Expected Containers'}</label>
+                    <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'عدد الحاويات' : 'Number of containers'}</label>
                     <input
                       type="number"
+                      min="0"
                       {...register('expected_containers')}
                       placeholder="e.g. 50"
                       className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.expected_containers ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
@@ -587,7 +627,8 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <input
                     type="date"
                     {...register('arrivalDate')}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all dark-calendar-icon`}
+                    onClick={(e) => e.currentTarget.showPicker()}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] cursor-pointer transition-all`}
                   />
                   {errors.arrivalDate && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalDate.message}</p>}
                 </div>
@@ -598,7 +639,8 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <input
                     type="time"
                     {...register('arrivalTime')}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all dark-calendar-icon`}
+                    onClick={(e) => e.currentTarget.showPicker()}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] cursor-pointer transition-all`}
                   />
                   {errors.arrivalTime && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalTime.message}</p>}
                 </div>
