@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { Language } from '../../App';
 import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Download } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
-import { getClearances, issueClearance, approveClearance, rejectClearance, getVessels, Clearance } from '../../utils/portOfficerApi';
+import { getClearances, approveClearance, rejectClearance, Clearance } from '../../utils/portOfficerApi';
 
 // ─── Toast Notification System ────────────────────────────────────────────────
 type ToastType = 'success' | 'error' | 'info';
@@ -64,15 +64,10 @@ export function PortClearances({ language }: PortClearancesProps) {
   const isRTL = language === 'ar';
   const { toasts, showToast, dismiss } = useToast();
 
-  const [showIssueForm, setShowIssueForm]         = useState(false);
-  const [selectedVessel, setSelectedVessel]       = useState('');
-  const [nextPort, setNextPort]                   = useState('');
   const [selectedClearance, setSelectedClearance] = useState<Clearance | null>(null);
   const [showQRModal, setShowQRModal]             = useState(false);
   const [clearances, setClearances]               = useState<Clearance[]>([]);
-  const [availableVessels, setAvailableVessels]   = useState<string[]>([]);
   const [loading, setLoading]                     = useState(true);
-  const [issuing, setIssuing]                     = useState(false);
 
   // Inline rejection modal state
   const [rejectTargetId, setRejectTargetId]   = useState<string | null>(null);
@@ -85,41 +80,20 @@ export function PortClearances({ language }: PortClearancesProps) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [clearancesData, vesselsData] = await Promise.all([getClearances(), getVessels()]);
+      const clearancesData = await getClearances();
       setClearances(clearancesData);
-      const dockedVessels = vesselsData.filter(v => v.status !== 'awaiting').map(v => v.name);
-      setAvailableVessels(dockedVessels);
     } catch (error) {
       toast.error(isRTL ? 'فشل تحميل بيانات التصاريح' : 'Failed to load clearances data');
       console.error('Error loading clearances:', error);
       showToast(isRTL ? 'فشل تحميل البيانات' : 'Failed to load clearances', 'error');
     } finally {
-
       setLoading(false);
     }
   };
 
   useEffect(() => { loadData(); }, []);
 
-  const handleIssueClearance = async () => {
-    if (!selectedVessel || !nextPort || issuing) return;
-    setIssuing(true);
-    try {
-      await issueClearance(selectedVessel, nextPort, 'Port Officer');
-      toast.success(isRTL ? 'تم إصدار التصريح بنجاح!' : 'Clearance issued successfully!');
-      await loadData();
-      setShowIssueForm(false);
-      setSelectedVessel('');
-      setNextPort('');
-      showToast(isRTL ? 'تم إصدار التصريح بنجاح' : 'Clearance issued successfully', 'success');
-    } catch (error: any) {
-      console.error('Error issuing clearance:', error);
-      toast.error(error.message || (isRTL ? 'فشل إصدار التصريح' : 'Failed to issue clearance'));
-    } finally {
 
-      setIssuing(false);
-    }
-  };
 
   // ── Approve Handler ──────────────────────────────────────────────────────────
   const handleApprove = async (id: string) => {
@@ -287,9 +261,6 @@ export function PortClearances({ language }: PortClearancesProps) {
             {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
             {isRTL ? 'تحديث' : 'Refresh'}
           </button>
-          <button onClick={() => setShowIssueForm(true)} className="bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2">
-            <FileCheck className="w-4 h-4" />{isRTL ? 'إصدار تصريح جديد' : 'Issue New Clearance'}
-          </button>
         </div>
       </div>
 
@@ -438,50 +409,7 @@ export function PortClearances({ language }: PortClearancesProps) {
         </div>
       )}
 
-      {/* ── Issue New Clearance Modal ───────────────────────────────────────── */}
-      {showIssueForm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 max-w-lg w-full shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <FileCheck className="w-5 h-5 text-green-700 dark:text-green-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{isRTL ? 'إصدار تصريح مغادرة جديد' : 'Issue New Port Clearance'}</h3>
-              </div>
-              <button onClick={() => setShowIssueForm(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-              </button>
-            </div>
 
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">{isRTL ? 'اختر السفينة' : 'Select Vessel'}</label>
-                <select value={selectedVessel} onChange={(e) => setSelectedVessel(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors">
-                  <option value="">{isRTL ? 'اختر سفينة...' : 'Select a vessel...'}</option>
-                  {availableVessels.map((vessel) => <option key={vessel} value={vessel}>{vessel}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">{isRTL ? 'الميناء التالي' : 'Next Port'}</label>
-                <input type="text" value={nextPort} onChange={(e) => setNextPort(e.target.value)} placeholder={isRTL ? 'أدخل اسم الميناء التالي' : 'Enter next port name'} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/20 transition-colors" />
-              </div>
-              <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900/30 rounded-lg">
-                <AlertCircle className="w-4 h-4 text-blue-700 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                <p className="text-blue-700 dark:text-blue-400 text-xs">{isRTL ? 'سيتم إنشاء رقم تصريح تلقائي. صلاحية التصريح 24 ساعة من وقت الإصدار.' : 'Clearance ID will be auto-generated. Clearance valid for 24 hours from issue time.'}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button onClick={() => setShowIssueForm(false)} className="flex-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 py-2.5 rounded-lg font-medium transition-colors">{isRTL ? 'إلغاء' : 'Cancel'}</button>
-              <button onClick={handleIssueClearance} disabled={!selectedVessel || !nextPort || issuing} className="flex-1 bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                {issuing ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <CheckCircle className="w-4 h-4" />}
-                {isRTL ? 'إصدار التصريح' : 'Issue Clearance'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Inline Rejection Reason Modal ──────────────────────────────────── */}
       {rejectTargetId && (
