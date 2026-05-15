@@ -91,7 +91,7 @@ export function MainLayout({
 
               {/* Profile Menu Actions */}
               <div className="flex items-center gap-4">
-                <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => onNavigate('settings')}>Account</span>
+                <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => onNavigate('settings')}>{t.account}</span>
                 
                 {/* Mobile avatar link to settings */}
                 <button 
@@ -105,7 +105,7 @@ export function MainLayout({
                   onClick={onLogout} 
                   className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
                 >
-                  Log out
+                  {t.logout}
                 </button>
               </div>
             </div>

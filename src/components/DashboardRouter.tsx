@@ -230,7 +230,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
-                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>{t.account}</span>
                   
                   {/* Mobile avatar link to settings */}
                   <button 
@@ -244,7 +244,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                     onClick={onLogout} 
                     className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
                   >
-                    Log out
+                    {t.logout}
                   </button>
                 </div>
               </div>
@@ -375,7 +375,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
-                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>{t.account}</span>
                   
                   {/* Mobile avatar link to settings */}
                   <button 
@@ -389,7 +389,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                     onClick={onLogout} 
                     className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
                   >
-                    Log out
+                    {t.logout}
                   </button>
                 </div>
               </div>
@@ -520,7 +520,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
-                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>{t.account}</span>
                   
                   {/* Mobile avatar link to settings */}
                   <button 
@@ -534,7 +534,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                     onClick={onLogout} 
                     className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
                   >
-                    Log out
+                    {t.logout}
                   </button>
                 </div>
               </div>
@@ -662,7 +662,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                 {/* Profile Actions */}
                 <div className="flex items-center gap-4">
-                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>Account</span>
+                  <span className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors" onClick={() => setCurrentPage('settings')}>{t.account}</span>
                   
                   {/* Mobile avatar link to settings */}
                   <button 
@@ -676,7 +676,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                     onClick={onLogout} 
                     className="text-[var(--text-secondary)] hidden lg:block hover:text-[var(--text-primary)] cursor-pointer transition-colors"
                   >
-                    Log out
+                    {t.logout}
                   </button>
                 </div>
               </div>

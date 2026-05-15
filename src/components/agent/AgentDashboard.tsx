@@ -145,7 +145,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
     setExportingType(docType);
 
     try {
-      const result = await agentService.getVesselActivityReport(Number(activeVesselId), '2000-01-01');
+      const result = await agentService.getVesselActivityReport(Number(activeVesselId));
 
       if (!result) {
         toast.error(language === 'ar' ? 'فشل جلب بيانات الوثيقة.' : 'Failed to fetch document data.');

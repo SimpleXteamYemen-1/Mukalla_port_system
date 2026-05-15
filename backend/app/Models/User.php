@@ -48,7 +48,7 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $appends = ['signature_base64'];
+    protected $appends = ['signature_base64', 'role'];
 
     /**
      * Get the signature as a base64 data URL.
@@ -98,12 +98,6 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array
-     */
-    protected $appends = ['role'];
 
     /**
      * Get the user's primary role for backward compatibility.

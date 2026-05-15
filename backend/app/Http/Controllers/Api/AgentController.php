@@ -605,6 +605,11 @@ class AgentController extends Controller
         $date = $request->get('date');
         $user = $request->user();
 
+        // Enforce export mode: if vessel ID is provided, ignore the date filter
+        if ($vesselId) {
+            $date = null;
+        }
+
         if (!$vesselId && !$date) {
             return response()->json(['message' => 'Either Vessel or Date is required.'], 400);
         }

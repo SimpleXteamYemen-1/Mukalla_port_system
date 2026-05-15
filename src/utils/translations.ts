@@ -80,6 +80,7 @@ export const translations = {
       pendingVerification: 'حسابك في انتظار التحقق',
       verificationMessage: 'يتم حالياً مراجعة حسابك من قبل المسؤولين. سيتم تفعيل جميع الصلاحيات بعد الموافقة.',
       logout: 'تسجيل الخروج',
+      account: 'الحساب',
       roles: {
         agent: 'لوحة تحكم الوكيل البحري',
         executive: 'لوحة تحكم الإدارة التنفيذية',
@@ -96,6 +97,7 @@ export const translations = {
       pendingVerification: 'قيد التحقق',
       notifications: 'الإشعارات',
       logout: 'تسجيل الخروج',
+      account: 'الحساب',
       menu: {
         dashboard: 'لوحة التحكم',
         myVessels: 'سفني',
@@ -770,6 +772,7 @@ export const translations = {
       pendingVerification: 'Account Pending Verification',
       verificationMessage: 'Your account is currently being reviewed by administrators. Full access will be granted after approval.',
       logout: 'Logout',
+      account: 'Account',
       roles: {
         agent: 'Maritime Agent Dashboard',
         executive: 'Executive Management Dashboard',
@@ -786,6 +789,7 @@ export const translations = {
       pendingVerification: 'Pending Verification',
       notifications: 'Notifications',
       logout: 'Logout',
+      account: 'Account',
       menu: {
         dashboard: 'Dashboard',
         myVessels: 'My Vessels',

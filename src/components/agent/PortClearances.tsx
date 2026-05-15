@@ -172,7 +172,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                             setNextPort('');
                             setShowIssueForm(true);
                         }}
-                        className="flex items-center justify-center gap-2 px-6 py-2 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-xl shadow-lg shadow-[var(--primary)]/20 transition-all font-bold"
+                        className="flex items-center justify-center gap-2 px-6 py-2 bg-blue-900 hover:bg-blue-800 text-[#F9F9F9] dark:bg-[var(--primary)] dark:hover:bg-[var(--primary)]/90 dark:text-white rounded-xl shadow-lg shadow-blue-900/20 dark:shadow-[var(--primary)]/20 transition-all font-bold"
                     >
                         <FileCheck className="w-5 h-5" />
                         {t?.requestNew || 'Request New Clearance'}
@@ -340,7 +340,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                         className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-bold transition-all disabled:opacity-50 ${
                                             departedVessels[clearance.vessel_id as string]
                                             ? 'bg-[var(--surface-highlight)] text-[var(--text-disabled)] cursor-not-allowed border border-[var(--border)]'
-                                            : 'bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white shadow-md shadow-[var(--accent)]/20'
+                                            : 'bg-blue-900 hover:bg-blue-800 text-[#F9F9F9] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent)]/90 dark:text-white shadow-md shadow-blue-900/20 dark:shadow-[var(--accent)]/20'
                                         }`}
                                     >
                                         {processingDepartures[clearance.vessel_id as string] ? (
