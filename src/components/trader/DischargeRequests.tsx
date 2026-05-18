@@ -185,7 +185,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
           <button
             onClick={loadData}
             disabled={loading}
-            className="border border-[var(--secondary)]/30 text-[var(--text-primary)] hover:bg-[var(--secondary)]/10 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
+            className="border border-secondary/30 text-[var(--text-primary)] hover:bg-secondary/10 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
           >
             {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
             <span className="text-sm">{isRTL ? 'تحديث' : 'Refresh'}</span>
@@ -202,7 +202,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
+        <div className="bg-[var(--card)] border border-secondary/20 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
           <div className="text-[var(--text-secondary)] text-xs font-bold uppercase tracking-wider mb-2">{isRTL ? 'إجمالي الطلبات' : 'Total Requests'}</div>
           <div className="text-4xl font-black text-[var(--text-primary)]">{batches.length}</div>
         </div>
@@ -222,7 +222,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
 
       {/* New Request Form */}
       {showForm && (
-        <div className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl p-8 shadow-xl animate-in slide-in-from-top-4 duration-300">
+        <div className="bg-[var(--card)] border border-secondary/20 rounded-2xl p-8 shadow-xl animate-in slide-in-from-top-4 duration-300">
           <h2 className="text-xl font-black text-[var(--text-primary)] mb-6 flex items-center gap-2">
             <Package className="w-6 h-6 text-blue-500" />
             {isRTL ? 'تقديم طلب تفريغ جديد' : 'Submit New Discharge Request'}
@@ -239,7 +239,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                     setSelectedVesselId(Number(e.target.value));
                     setSelectedContainerIds([]); // reset selection
                   }}
-                  className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--secondary)]/30 rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-secondary/30 rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                   required
                 >
                   <option value="">
@@ -271,15 +271,15 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                   type="date"
                   value={requestedDate}
                   onChange={(e) => setRequestedDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--secondary)]/30 rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-secondary/30 rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                   required
                 />
               </div>
             </div>
 
             {selectedVesselId && (
-              <div className="bg-[var(--bg-primary)]/50 p-6 rounded-xl border border-[var(--secondary)]/20 animate-in fade-in">
-                <div className="flex justify-between items-center mb-4 border-b border-[var(--secondary)]/10 pb-4">
+              <div className="bg-[var(--bg-primary)]/50 p-6 rounded-xl border border-secondary/20 animate-in fade-in">
+                <div className="flex justify-between items-center mb-4 border-b border-secondary/10 pb-4">
                   <h3 className="font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Ship className="w-5 h-5 text-indigo-500" />
                     {isRTL ? 'الحاويات المتاحة للتفريغ' : 'Available Containers for Discharge'}
@@ -288,7 +288,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                     <label className="flex items-center gap-2 cursor-pointer bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg transition-colors font-medium text-sm">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded border-[var(--secondary)]/30 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 rounded border-secondary/30 text-blue-600 focus:ring-blue-500"
                         checked={selectedContainerIds.length === eligibleContainers.length && eligibleContainers.length > 0}
                         onChange={handleSelectAll}
                       />
@@ -304,10 +304,10 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto pr-2">
                     {eligibleContainers.map(container => (
-                      <label key={container.id} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${selectedContainerIds.includes(container.id) ? 'border-blue-500 bg-blue-500/5 shadow-sm' : 'border-[var(--secondary)]/20 hover:border-blue-500/50 bg-[var(--card)]'}`}>
+                      <label key={container.id} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${selectedContainerIds.includes(container.id) ? 'border-blue-500 bg-blue-500/5 shadow-sm' : 'border-secondary/20 hover:border-blue-500/50 bg-[var(--card)]'}`}>
                         <input
                           type="checkbox"
-                          className="mt-1 w-4 h-4 rounded border-[var(--secondary)]/30 text-blue-600 focus:ring-blue-500"
+                          className="mt-1 w-4 h-4 rounded border-secondary/30 text-blue-600 focus:ring-blue-500"
                           checked={selectedContainerIds.includes(container.id)}
                           onChange={() => toggleContainerSelection(container.id)}
                         />
@@ -335,7 +335,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder={isRTL ? 'أدخل أي ملاحظات إضافية...' : 'Enter any additional notes...'}
-                className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-[var(--secondary)]/30 rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-none"
+                className="w-full px-4 py-3 bg-[var(--bg-primary)] border border-secondary/30 rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-none"
               />
             </div>
 
@@ -355,7 +355,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="border border-[var(--secondary)]/30 text-[var(--text-primary)] hover:bg-[var(--secondary)]/10 px-6 py-3 rounded-xl font-bold transition-colors duration-200"
+                className="border border-secondary/30 text-[var(--text-primary)] hover:bg-secondary/10 px-6 py-3 rounded-xl font-bold transition-colors duration-200"
               >
                 {isRTL ? 'إلغاء' : 'Cancel'}
               </button>
@@ -366,12 +366,12 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
 
       {/* Requests List */}
       {loading ? (
-        <div className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl p-20 text-center shadow-sm">
+        <div className="bg-[var(--card)] border border-secondary/20 rounded-2xl p-20 text-center shadow-sm">
           <LoadingIndicator type="line-spinner" size="lg" label={isRTL ? 'جاري التحميل...' : 'Loading requests...'} />
         </div>
       ) : batches.length === 0 ? (
-        <div className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl p-20 text-center shadow-sm flex flex-col items-center justify-center">
-          <div className="w-20 h-20 bg-[var(--secondary)]/10 rounded-full flex items-center justify-center mb-6">
+        <div className="bg-[var(--card)] border border-secondary/20 rounded-2xl p-20 text-center shadow-sm flex flex-col items-center justify-center">
+          <div className="w-20 h-20 bg-secondary/10 rounded-full flex items-center justify-center mb-6">
             <FileText className="w-10 h-10 text-[var(--text-secondary)] opacity-50" />
           </div>
           <h3 className="text-xl font-black text-[var(--text-primary)] mb-2">
@@ -396,9 +396,9 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
             return (
               <div
                 key={batch.batch_id}
-                className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl p-6 shadow-sm hover:border-blue-500/30 transition-all duration-300 group"
+                className="bg-[var(--card)] border border-secondary/20 rounded-2xl p-6 shadow-sm hover:border-blue-500/30 transition-all duration-300 group"
               >
-                <div className="flex items-start justify-between mb-6 border-b border-[var(--secondary)]/10 pb-4">
+                <div className="flex items-start justify-between mb-6 border-b border-secondary/10 pb-4">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-500/10 rounded-xl">
                       <Ship className="w-6 h-6 text-blue-500" />
@@ -419,7 +419,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div className="flex items-center gap-4 bg-[var(--bg-primary)]/50 p-4 rounded-xl border border-[var(--secondary)]/10">
+                  <div className="flex items-center gap-4 bg-[var(--bg-primary)]/50 p-4 rounded-xl border border-secondary/10">
                     <div className="bg-indigo-500/10 p-2.5 rounded-lg">
                       <Package className="w-5 h-5 text-indigo-500" />
                     </div>
@@ -428,7 +428,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                       <div className="text-[var(--text-primary)] font-black text-lg">{batch.containers.length}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 bg-[var(--bg-primary)]/50 p-4 rounded-xl border border-[var(--secondary)]/10">
+                  <div className="flex items-center gap-4 bg-[var(--bg-primary)]/50 p-4 rounded-xl border border-secondary/10">
                     <div className="bg-teal-500/10 p-2.5 rounded-lg">
                       <Calendar className="w-5 h-5 text-teal-500" />
                     </div>
@@ -470,7 +470,7 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
 
                 {/* Expandable Containers Panel */}
                 {expandedBatchId === batch.batch_id && (
-                  <div className="mt-4 pt-4 border-t border-[var(--secondary)]/10 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="mt-4 pt-4 border-t border-secondary/10 animate-in fade-in slide-in-from-top-2 duration-200">
                     <p className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider mb-3">
                       {isRTL ? `الحاويات المشمولة (${batch.containers.length})` : `Included Containers (${batch.containers.length})`}
                     </p>
@@ -478,13 +478,13 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                       {batch.containers.filter(Boolean).map(c => (
                         <div
                           key={c.id}
-                          className="bg-[var(--bg-primary)]/60 border border-[var(--secondary)]/15 rounded-xl p-4 flex flex-col gap-2"
+                          className="bg-[var(--bg-primary)]/60 border border-secondary/15 rounded-xl p-4 flex flex-col gap-2"
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
                               #{c.id?.toString().padStart(5, '0')}
                             </span>
-                            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[var(--secondary)]/10 text-[var(--text-secondary)] capitalize">
+                            <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary/10 text-[var(--text-secondary)] capitalize">
                               {getStorageIcon(c.storage_type)}
                               {c.storage_type}
                             </span>

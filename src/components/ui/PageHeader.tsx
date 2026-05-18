@@ -23,7 +23,7 @@ export function PageHeader({ title, subtitle, actions = [] }: PageHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 group mb-8">
             <div>
-                <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">
+                <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-accent group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">
                     {title}
                 </h1>
                 {subtitle && (

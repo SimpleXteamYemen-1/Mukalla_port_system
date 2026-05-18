@@ -42,7 +42,7 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--bg-primary)]/40 backdrop-blur-md p-8 rounded-3xl border border-[var(--secondary)]/20 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[var(--bg-primary)]/40 backdrop-blur-md p-8 rounded-3xl border border-secondary/20 shadow-xl">
         <div className="flex items-center gap-5">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/20 transform hover:rotate-6 transition-transform">
             <ShieldAlert className="w-8 h-8 text-white" />
@@ -59,13 +59,13 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
 
         <div className="flex items-center gap-4">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)] group-focus-within:text-[var(--primary)] transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)] group-focus-within:text-primary transition-colors" />
             <input
               type="text"
               placeholder={language === 'ar' ? 'بحث بالسفينة أو الوكيل...' : 'Search vessel or agent...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-6 py-3 bg-[var(--background)] border border-[var(--secondary)]/50 rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all min-w-[300px] shadow-sm"
+              className="pl-12 pr-6 py-3 bg-[var(--background)] border border-secondary/50 rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all min-w-[300px] shadow-sm"
             />
           </div>
         </div>
@@ -84,12 +84,12 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
           <p className="text-[var(--text-secondary)] text-sm font-bold">Documented withdrawals</p>
         </div>
 
-        <div className="card-base p-6 border-l-4 border-[var(--primary)] hover:scale-[1.02] transition-transform cursor-default">
+        <div className="card-base p-6 border-l-4 border-primary hover:scale-[1.02] transition-transform cursor-default">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-xl bg-[var(--primary)]/10">
-              <Clock className="w-6 h-6 text-[var(--primary)]" />
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Clock className="w-6 h-6 text-primary" />
             </div>
-            <span className="text-xs font-black text-[var(--primary)] uppercase tracking-widest">Last 24h</span>
+            <span className="text-xs font-black text-primary uppercase tracking-widest">Last 24h</span>
           </div>
           <div className="text-4xl font-black text-[var(--text-primary)] mb-1">
             {exits.filter(e => new Date(e.exitTimestamp).getTime() > Date.now() - 86400000).length}
@@ -110,10 +110,10 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
       </div>
 
       {/* Main Content Table */}
-      <div className="bg-[var(--bg-primary)]/40 backdrop-blur-md rounded-3xl border border-[var(--secondary)]/20 overflow-hidden shadow-2xl">
-        <div className="p-6 border-b border-[var(--secondary)]/20 flex items-center justify-between bg-gradient-to-r from-transparent to-[var(--secondary)]/5">
+      <div className="bg-[var(--bg-primary)]/40 backdrop-blur-md rounded-3xl border border-secondary/20 overflow-hidden shadow-2xl">
+        <div className="p-6 border-b border-secondary/20 flex items-center justify-between bg-gradient-to-r from-transparent to-secondary/5">
           <h2 className="text-xl font-black text-[var(--text-primary)] flex items-center gap-3">
-            <FileText className="w-6 h-6 text-[var(--primary)]" />
+            <FileText className="w-6 h-6 text-primary" />
             {language === 'ar' ? 'سجل الانسحابات' : 'Withdrawal Logs'}
           </h2>
           <button className="btn-ghost text-xs uppercase font-black tracking-widest flex items-center gap-2">
@@ -137,7 +137,7 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="bg-[var(--secondary)]/5">
+                <tr className="bg-secondary/5">
                   <th className="px-6 py-4 text-left text-xs font-black text-[var(--text-secondary)] uppercase tracking-wider">{language === 'ar' ? 'السفينة' : 'Vessel'}</th>
                   <th className="px-6 py-4 text-left text-xs font-black text-[var(--text-secondary)] uppercase tracking-wider">{language === 'ar' ? 'الوكيل' : 'Agent'}</th>
                   <th className="px-6 py-4 text-left text-xs font-black text-[var(--text-secondary)] uppercase tracking-wider">{language === 'ar' ? 'التوقيت' : 'Timestamp'}</th>
@@ -145,13 +145,13 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
                   <th className="px-6 py-4 text-right text-xs font-black text-[var(--text-secondary)] uppercase tracking-wider">{language === 'ar' ? 'الإجراءات' : 'Actions'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--secondary)]/10">
+              <tbody className="divide-y divide-secondary/10">
                 {filteredExits.map((exit) => (
-                  <tr key={exit.id} className="hover:bg-[var(--primary)]/5 transition-colors group">
+                  <tr key={exit.id} className="hover:bg-primary/5 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[var(--background)] flex items-center justify-center border border-[var(--secondary)]/30 group-hover:border-[var(--primary)]/50 transition-colors">
-                          <Ship className="w-5 h-5 text-[var(--primary)]" />
+                        <div className="w-10 h-10 rounded-lg bg-[var(--background)] flex items-center justify-center border border-secondary/30 group-hover:border-primary/50 transition-colors">
+                          <Ship className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                           <div className="text-[var(--text-primary)] font-black">{exit.vesselName}</div>
@@ -179,7 +179,7 @@ export function EmergencyExits({ language, onNavigate }: EmergencyExitsProps) {
                     <td className="px-6 py-5 text-right">
                       <button 
                         onClick={() => onNavigate?.('vessel-history', { vesselId: exit.id })}
-                        className="p-2 hover:bg-[var(--primary)]/20 rounded-lg text-[var(--primary)] transition-all transform hover:scale-110"
+                        className="p-2 hover:bg-primary/20 rounded-lg text-primary transition-all transform hover:scale-110"
                         title={language === 'ar' ? 'عرض السجل' : 'View History'}
                       >
                         <ArrowUpRight className="w-5 h-5" />

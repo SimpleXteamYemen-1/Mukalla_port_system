@@ -14,7 +14,7 @@ window.Pusher = Pusher;
 export const echo = new Echo({
     broadcaster: 'reverb',
     key: import.meta.env.VITE_REVERB_APP_KEY || '1st4oap75rtksuokr12y',
-    wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
+    wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
     wsPort: import.meta.env.VITE_REVERB_PORT || 8081,
     wssPort: import.meta.env.VITE_REVERB_PORT || 8081,
     forceTLS: false,

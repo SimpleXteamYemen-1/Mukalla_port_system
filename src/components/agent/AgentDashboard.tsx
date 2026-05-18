@@ -240,8 +240,8 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
           <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight drop-shadow-sm">{t.title}</h1>
           <p className="text-[var(--text-secondary)] font-medium text-lg">{t.subtitle}</p>
         </div>
-        <div className="flex items-center gap-3 bg-[var(--surface)]/50 border border-[var(--border)] rounded-2xl px-5 py-3 backdrop-blur-md shadow-sm">
-          <Clock className="w-5 h-5 text-[var(--primary)]" />
+        <div className="flex items-center gap-3 bg-[var(--surface)]/50 border border-[var(--border-color)] rounded-2xl px-5 py-3 backdrop-blur-md shadow-sm">
+          <Clock className="w-5 h-5 text-primary" />
           <span className="text-[var(--text-primary)] font-semibold">
             {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US', {
               weekday: 'long',
@@ -288,10 +288,10 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
             <div key={stat.label} className="card-base card-hover p-8 group">
               <div className="flex items-center justify-between mb-6">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-sm ${stat.bgColor}`}>
-                  <Icon className={`w-7 h-7 ${stat.iconColor || 'text-[var(--primary)]'}`} />
+                  <Icon className={`w-7 h-7 ${stat.iconColor || 'text-primary'}`} />
                 </div>
                 <div className="w-8 h-8 rounded-full bg-[var(--surface-highlight)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <TrendingUp className="w-4 h-4 text-[var(--primary)]" />
+                  <TrendingUp className="w-4 h-4 text-primary" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -305,25 +305,25 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
 
       {/* Quick Actions */}
       <div className="card-base p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <h2 className="text-2xl font-black text-[var(--text-primary)] mb-6 relative z-10">{t.quickActions}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-          <button onClick={() => onNavigate('arrivals')} className="flex items-center gap-6 p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-highlight)] hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group text-left">
+          <button onClick={() => onNavigate('arrivals')} className="flex items-center gap-6 p-6 rounded-3xl border border-[var(--border-color)] bg-[var(--surface)] hover:bg-[var(--surface-highlight)] hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group text-left">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-all duration-300">
               <Plus className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
-              <div className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors mb-1">{t.submitArrival}</div>
+              <div className="text-lg font-bold text-[var(--text-primary)] group-hover:text-primary transition-colors mb-1">{t.submitArrival}</div>
               <div className="text-[var(--text-secondary)] text-sm leading-relaxed">{t.submitArrivalDesc}</div>
             </div>
           </button>
 
-          <button onClick={() => onNavigate('anchorage')} className="flex items-center gap-6 p-6 rounded-3xl border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-highlight)] hover:border-[var(--primary)]/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group text-left">
+          <button onClick={() => onNavigate('anchorage')} className="flex items-center gap-6 p-6 rounded-3xl border border-[var(--border-color)] bg-[var(--surface)] hover:bg-[var(--surface-highlight)] hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group text-left">
             <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20 group-hover:scale-110 transition-all duration-300">
               <Anchor className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
-              <div className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[var(--primary)] transition-colors mb-1">{t.requestAnchorage}</div>
+              <div className="text-lg font-bold text-[var(--text-primary)] group-hover:text-primary transition-colors mb-1">{t.requestAnchorage}</div>
               <div className="text-[var(--text-secondary)] text-sm leading-relaxed">{t.requestAnchorageDesc}</div>
             </div>
           </button>
@@ -331,9 +331,9 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       </div>
 
       {/* Official Documents Extraction */}
-      <div className="card-base p-8 relative overflow-hidden bg-gradient-to-br from-[var(--surface)] to-[var(--surface-highlight)] border-[var(--border)]">
+      <div className="card-base p-8 relative overflow-hidden bg-gradient-to-br from-[var(--surface)] to-[var(--surface-highlight)] border-[var(--border-color)]">
         <h2 className="text-2xl font-black text-[var(--text-primary)] mb-6 flex items-center gap-3 relative z-10">
-          <FileText className="w-6 h-6 text-[var(--primary)]" />
+          <FileText className="w-6 h-6 text-primary" />
           {language === 'ar' ? 'استخراج الوثائق الرسمية' : 'Official Documents Extraction'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end relative z-10">
@@ -345,7 +345,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
             <select
               value={activeVesselId}
               onChange={e => setActiveVesselId(e.target.value)}
-              className="w-full appearance-none bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 focus:border-[var(--primary)] transition-all"
+              className="w-full appearance-none bg-[var(--surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
             >
               <option value="">{language === 'ar' ? '— اختر سفينة —' : '— Select a vessel —'}</option>
               {vessels.map(v => (
@@ -387,28 +387,28 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Activity */}
         <div className="card-base flex flex-col">
-          <div className="p-6 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]/30">
+          <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--surface)]/30">
             <h2 className="text-xl font-black text-[var(--text-primary)] flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[var(--primary)]" />
+              <Activity className="w-5 h-5 text-primary" />
               {t.recentActivity}
             </h2>
-            <button onClick={() => onNavigate('tracker')} className="text-[var(--primary)] text-sm font-bold hover:text-[var(--primary-light)] transition-colors px-3 py-1 rounded-lg hover:bg-[var(--primary)]/10">
+            <button onClick={() => onNavigate('tracker')} className="text-primary text-sm font-bold hover:text-[var(--primary-light)] transition-colors px-3 py-1 rounded-lg hover:bg-primary/10">
               {t.viewAll}
             </button>
           </div>
           <div className="p-6 space-y-4 flex-1">
             {recentActivity.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-[var(--text-secondary)] py-12 border-2 border-dashed border-[var(--border)] rounded-2xl bg-[var(--background)]/30">
+              <div className="h-full flex flex-col items-center justify-center text-[var(--text-secondary)] py-12 border-2 border-dashed border-[var(--border-color)] rounded-2xl bg-[var(--background)]/30">
                 <Clock className="w-12 h-12 mb-3 opacity-20" />
                 <p className="font-medium">{t.noRecentActivity || 'No recent activity'}</p>
               </div>
             ) : recentActivity.map(activity => (
-              <div key={activity.id} className="relative pl-6 pb-6 last:pb-0 border-l border-[var(--border)] last:border-0 group">
-                <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-[var(--border)] group-hover:bg-[var(--primary)] transition-colors ring-4 ring-[var(--background)]" />
-                <div className="bg-[var(--surface-highlight)]/30 rounded-xl p-4 hover:bg-[var(--surface-highlight)] transition-colors border border-[var(--border)] hover:border-[var(--primary)]/20 cursor-default">
+              <div key={activity.id} className="relative pl-6 pb-6 last:pb-0 border-l border-[var(--border-color)] last:border-0 group">
+                <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-[var(--border-color)] group-hover:bg-primary transition-colors ring-4 ring-[var(--background)]" />
+                <div className="bg-[var(--surface-highlight)]/30 rounded-xl p-4 hover:bg-[var(--surface-highlight)] transition-colors border border-[var(--border-color)] hover:border-primary/20 cursor-default">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <div className="text-[var(--text-primary)] font-bold mb-1 group-hover:text-[var(--primary)] transition-colors">{activity.action}</div>
+                      <div className="text-[var(--text-primary)] font-bold mb-1 group-hover:text-primary transition-colors">{activity.action}</div>
                       <div className="text-[var(--text-secondary)] text-sm font-medium">{activity.details}</div>
                     </div>
                   </div>
@@ -424,31 +424,31 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
 
         {/* Upcoming Arrivals */}
         <div className="card-base flex flex-col">
-          <div className="p-6 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]/30">
+          <div className="p-6 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--surface)]/30">
             <h2 className="text-xl font-black text-[var(--text-primary)] flex items-center gap-2">
-              <Ship className="w-5 h-5 text-[var(--primary)]" />
+              <Ship className="w-5 h-5 text-primary" />
               {t.upcomingArrivals}
             </h2>
-            <button onClick={() => onNavigate('vessels')} className="text-[var(--primary)] text-sm font-bold hover:text-[var(--primary-light)] transition-colors px-3 py-1 rounded-lg hover:bg-[var(--primary)]/10">
+            <button onClick={() => onNavigate('vessels')} className="text-primary text-sm font-bold hover:text-[var(--primary-light)] transition-colors px-3 py-1 rounded-lg hover:bg-primary/10">
               {t.viewAll}
             </button>
           </div>
           <div className="p-6 space-y-4 flex-1">
             {upcomingArrivals.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-[var(--text-secondary)] py-12 border-2 border-dashed border-[var(--border)] rounded-2xl bg-[var(--background)]/30">
+              <div className="h-full flex flex-col items-center justify-center text-[var(--text-secondary)] py-12 border-2 border-dashed border-[var(--border-color)] rounded-2xl bg-[var(--background)]/30">
                 <Ship className="w-12 h-12 mb-3 opacity-20" />
                 <p className="font-medium">{t.noUpcomingArrivals || 'No upcoming arrivals'}</p>
               </div>
             ) : upcomingArrivals.map(arrival => (
-              <div key={arrival.id} className="flex flex-col p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-highlight)]/30 hover:bg-[var(--surface-highlight)] transition-all duration-300 hover:shadow-md cursor-pointer group gap-4">
+              <div key={arrival.id} className="flex flex-col p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--surface-highlight)]/30 hover:bg-[var(--surface-highlight)] transition-all duration-300 hover:shadow-md cursor-pointer group gap-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm">
                       <Ship className="w-6 h-6" />
                     </div>
                     <div>
-                      <div className="text-[var(--text-primary)] font-bold text-lg group-hover:text-[var(--primary)] transition-colors">{arrival.vessel_name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs font-medium bg-[var(--surface)] px-2 py-0.5 rounded-md inline-block mt-1 border border-[var(--border)]">
+                      <div className="text-[var(--text-primary)] font-bold text-lg group-hover:text-primary transition-colors">{arrival.vessel_name}</div>
+                      <div className="text-[var(--text-secondary)] text-xs font-medium bg-[var(--surface)] px-2 py-0.5 rounded-md inline-block mt-1 border border-[var(--border-color)]">
                         {language === 'ar' ? 'الوصول المتوقع' : 'ETA'}: {new Date(arrival.eta).toLocaleDateString()}
                       </div>
                     </div>

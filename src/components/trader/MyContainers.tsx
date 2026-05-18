@@ -188,14 +188,14 @@ export function MyContainers({ language, userEmail }: { language: Language; user
             placeholder={isRTL ? 'ابحث عن اسم السفينة...' : 'Search by vessel name...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`w-full ${isRTL ? 'pr-10 text-right' : 'pl-10'} py-2.5 bg-[var(--card)] border border-[var(--secondary)]/30 rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
+            className={`w-full ${isRTL ? 'pr-10 text-right' : 'pl-10'} py-2.5 bg-[var(--card)] border border-secondary/30 rounded-xl text-[var(--text-primary)] placeholder-[var(--text-secondary)]/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all`}
           />
         </div>
       </div>
 
       {filteredVessels.length === 0 ? (
-        <div className="bg-[var(--card)] border border-[var(--secondary)]/20 rounded-2xl p-16 text-center shadow-sm">
-          <div className="bg-[var(--secondary)]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-[var(--secondary)]/20">
+        <div className="bg-[var(--card)] border border-secondary/20 rounded-2xl p-16 text-center shadow-sm">
+          <div className="bg-secondary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-secondary/20">
              <Ship className="w-8 h-8 text-[var(--text-secondary)] opacity-40" />
           </div>
           <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">
@@ -212,10 +212,10 @@ export function MyContainers({ language, userEmail }: { language: Language; user
           {filteredVessels.map((vessel, idx) => (
             <div key={vessel.id} 
               onClick={() => setSelectedVessel(vessel)}
-              className="bg-[var(--card)] border border-[var(--secondary)]/20 hover:border-blue-500/50 hover:shadow-md transition-all rounded-2xl p-6 shadow-sm group flex flex-col h-full cursor-pointer"
+              className="bg-[var(--card)] border border-secondary/20 hover:border-blue-500/50 hover:shadow-md transition-all rounded-2xl p-6 shadow-sm group flex flex-col h-full cursor-pointer"
               style={{animationDelay: `${idx * 100}ms`}}
             >
-              <div className="flex justify-between items-start mb-4 border-b border-[var(--secondary)]/10 pb-4">
+              <div className="flex justify-between items-start mb-4 border-b border-secondary/10 pb-4">
                 <div>
                    <h3 className="font-extrabold text-xl text-[var(--text-primary)] flex items-center gap-2">
                       <Ship className="w-5 h-5 text-blue-500" />
@@ -250,7 +250,7 @@ export function MyContainers({ language, userEmail }: { language: Language; user
                   </div>
                 </div>
 
-                <div className="mt-4 bg-[var(--bg-primary)]/50 rounded-xl p-4 flex items-center justify-between border border-[var(--secondary)]/10">
+                <div className="mt-4 bg-[var(--bg-primary)]/50 rounded-xl p-4 flex items-center justify-between border border-secondary/10">
                    <div className="flex items-center gap-3">
                       <div className="bg-indigo-500/10 p-2 rounded-lg">
                         <Package className="w-5 h-5 text-indigo-500" />
@@ -273,9 +273,9 @@ export function MyContainers({ language, userEmail }: { language: Language; user
       {/* Modal for Vessel Containers */}
       {selectedVessel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[var(--card)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[var(--secondary)]/20 animate-in zoom-in-95 duration-200">
+          <div className="bg-[var(--card)] w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-secondary/20 animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="p-6 border-b border-[var(--secondary)]/20 flex justify-between items-center bg-[var(--bg-primary)]">
+            <div className="p-6 border-b border-secondary/20 flex justify-between items-center bg-[var(--bg-primary)]">
               <div>
                 <h3 className="text-2xl font-black text-[var(--text-primary)] flex items-center gap-2">
                   <Ship className="w-6 h-6 text-blue-500" />
@@ -287,7 +287,7 @@ export function MyContainers({ language, userEmail }: { language: Language; user
               </div>
               <button 
                 onClick={() => setSelectedVessel(null)}
-                className="p-2 bg-[var(--secondary)]/10 hover:bg-[var(--secondary)]/20 rounded-full transition-colors"
+                className="p-2 bg-secondary/10 hover:bg-secondary/20 rounded-full transition-colors"
               >
                 <X className="w-5 h-5 text-[var(--text-primary)]" />
               </button>
@@ -302,23 +302,23 @@ export function MyContainers({ language, userEmail }: { language: Language; user
 
                  return (
                    <div key={type} className="space-y-4">
-                      <div className="flex items-center gap-2 border-b border-[var(--secondary)]/10 pb-2">
+                      <div className="flex items-center gap-2 border-b border-secondary/10 pb-2">
                         <Package className={`w-5 h-5 ${type === 'chemical' ? 'text-amber-500' : type === 'frozen' ? 'text-cyan-500' : 'text-slate-500'}`} />
                         <h4 className="font-bold text-lg text-[var(--text-primary)] uppercase tracking-wide">
                           {type === 'chemical' ? (isRTL ? 'حاويات كيميائية' : 'Chemical Containers') :
                            type === 'frozen' ? (isRTL ? 'حاويات مجمدة' : 'Frozen Containers') :
                            (isRTL ? 'حاويات جافة' : 'Dry Containers')}
                         </h4>
-                        <span className="px-2 py-0.5 bg-[var(--secondary)]/10 rounded-full text-xs font-bold text-[var(--text-secondary)]">
+                        <span className="px-2 py-0.5 bg-secondary/10 rounded-full text-xs font-bold text-[var(--text-secondary)]">
                           {typeContainers.length}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {typeContainers.map(container => (
-                          <div key={container.id} className="p-4 rounded-xl border border-[var(--secondary)]/20 bg-[var(--bg-primary)]/50 hover:border-blue-500/30 transition-colors">
+                          <div key={container.id} className="p-4 rounded-xl border border-secondary/20 bg-[var(--bg-primary)]/50 hover:border-blue-500/30 transition-colors">
                              <div className="flex justify-between items-start mb-3">
-                                <span className="font-mono text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--secondary)]/10 px-2 py-1 rounded">
+                                <span className="font-mono text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-secondary/10 px-2 py-1 rounded">
                                   ID: {container.id.toString().padStart(6, '0')}
                                 </span>
                                 {getContainerStatusBadge(container.status)}
@@ -344,21 +344,21 @@ export function MyContainers({ language, userEmail }: { language: Language; user
                  
                  return (
                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 border-b border-[var(--secondary)]/10 pb-2">
+                      <div className="flex items-center gap-2 border-b border-secondary/10 pb-2">
                         <Package className="w-5 h-5 text-gray-500" />
                         <h4 className="font-bold text-lg text-[var(--text-primary)] uppercase tracking-wide">
                           {isRTL ? 'غير محدد' : 'Unspecified Storage'}
                         </h4>
-                        <span className="px-2 py-0.5 bg-[var(--secondary)]/10 rounded-full text-xs font-bold text-[var(--text-secondary)]">
+                        <span className="px-2 py-0.5 bg-secondary/10 rounded-full text-xs font-bold text-[var(--text-secondary)]">
                           {unknownContainers.length}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {unknownContainers.map(container => (
-                          <div key={container.id} className="p-4 rounded-xl border border-[var(--secondary)]/20 bg-[var(--bg-primary)]/50 hover:border-blue-500/30 transition-colors">
+                          <div key={container.id} className="p-4 rounded-xl border border-secondary/20 bg-[var(--bg-primary)]/50 hover:border-blue-500/30 transition-colors">
                              <div className="flex justify-between items-start mb-3">
-                                <span className="font-mono text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-[var(--secondary)]/10 px-2 py-1 rounded">
+                                <span className="font-mono text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider bg-secondary/10 px-2 py-1 rounded">
                                   ID: {container.id.toString().padStart(6, '0')}
                                 </span>
                                 {getContainerStatusBadge(container.status)}

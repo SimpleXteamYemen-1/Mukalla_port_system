@@ -105,7 +105,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
         <button
           onClick={loadData}
           disabled={loading}
-          className="border border-[var(--secondary)]/30 text-[var(--text-primary)] hover:bg-[var(--secondary)]/10 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
+          className="border border-secondary/30 text-[var(--text-primary)] hover:bg-secondary/10 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 min-w-[100px] justify-center"
         >
           {loading ? <LoadingIndicator type="line-spinner" size="xs" /> : <RefreshCw className="w-4 h-4" />}
           {isRTL ? 'تحديث' : 'Refresh'}
@@ -167,17 +167,17 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
         )}
 
         <div className="grid grid-cols-3 gap-6 relative z-10">
-          <div className="bg-[var(--card)]/40 rounded-2xl p-5 border border-[var(--secondary)]/10 backdrop-blur-md">
+          <div className="bg-[var(--card)]/40 rounded-2xl p-5 border border-secondary/10 backdrop-blur-md">
             <p className="text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-2 tracking-widest">{isRTL ? 'معلّق' : 'Pending'}</p>
             <p className="text-3xl font-black text-amber-500 leading-none mb-1">{pendingCount}</p>
             <p className="text-[10px] text-[var(--text-secondary)]/60 font-medium">{isRTL ? 'حاوية' : 'ITS units'}</p>
           </div>
-          <div className="bg-[var(--card)]/40 rounded-2xl p-5 border border-[var(--secondary)]/10 backdrop-blur-md">
+          <div className="bg-[var(--card)]/40 rounded-2xl p-5 border border-secondary/10 backdrop-blur-md">
             <p className="text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-2 tracking-widest">{isRTL ? 'في الرصيف' : 'In Wharf'}</p>
             <p className="text-3xl font-black text-blue-500 leading-none mb-1">{inWharfCount}</p>
             <p className="text-[10px] text-[var(--text-secondary)]/60 font-medium">{isRTL ? 'حاوية' : 'ITS units'}</p>
           </div>
-          <div className="bg-[var(--card)]/40 rounded-2xl p-5 border border-[var(--secondary)]/10 backdrop-blur-md">
+          <div className="bg-[var(--card)]/40 rounded-2xl p-5 border border-secondary/10 backdrop-blur-md">
             <p className="text-[10px] uppercase font-bold text-[var(--text-secondary)] mb-2 tracking-widest">{isRTL ? 'تم التخليص' : 'Cleared'}</p>
             <p className="text-3xl font-black text-green-500 leading-none mb-1">{clearedCount}</p>
             <p className="text-[10px] text-[var(--text-secondary)]/60 font-medium">{isRTL ? 'حاوية' : 'ITS units'}</p>
@@ -198,7 +198,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
             return (
               <div
                 key={cat.id}
-                className={`bg-[var(--card)] rounded-3xl p-6 border border-[var(--secondary)]/10 shadow-lg relative group overflow-hidden`}
+                className={`bg-[var(--card)] rounded-3xl p-6 border border-secondary/10 shadow-lg relative group overflow-hidden`}
               >
                 <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity`}>
                    <cat.icon className="w-24 h-24" />
@@ -219,7 +219,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
                   <div className={`text-2xl font-black ${cat.textColor}`}>{percentage.toFixed(0)}%</div>
                 </div>
 
-                <div className="w-full bg-[var(--background)]/60 rounded-full h-3 overflow-hidden mb-4 border border-[var(--secondary)]/5">
+                <div className="w-full bg-[var(--background)]/60 rounded-full h-3 overflow-hidden mb-4 border border-secondary/5">
                   <div
                     className={`h-3 bg-gradient-to-r ${cat.color} transition-all duration-1000 ease-out`}
                     style={{ width: `${percentage}%` }}
@@ -242,7 +242,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
 
       {/* Analytics Briefing */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[var(--card)] border border-[var(--secondary)]/10 rounded-2xl p-6 shadow-lg">
+          <div className="bg-[var(--card)] border border-secondary/10 rounded-2xl p-6 shadow-lg">
              <div className="flex items-center gap-3 mb-6">
                <div className="p-2.5 bg-green-500/10 rounded-xl">
                  <TrendingUp className="w-5 h-5 text-green-500" />
@@ -255,7 +255,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
                   { label: isRTL ? 'كثافة التخزين' : 'Storage Density', value: `${((totalCount / 500) * 100).toFixed(1)}%`, color: 'text-blue-500' },
                   { label: isRTL ? 'وقت الانتظار' : 'Dwell Time', value: '2.4d', color: 'text-amber-500' }
                 ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center py-3 border-b border-[var(--secondary)]/5 last:border-0">
+                  <div key={i} className="flex justify-between items-center py-3 border-b border-secondary/5 last:border-0">
                     <span className="text-sm font-medium text-[var(--text-secondary)]">{item.label}</span>
                     <span className={`text-sm font-black ${item.color}`}>{item.value}</span>
                   </div>
@@ -263,7 +263,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
              </div>
           </div>
 
-          <div className="bg-[var(--card)] border border-[var(--secondary)]/10 rounded-2xl p-6 shadow-lg">
+          <div className="bg-[var(--card)] border border-secondary/10 rounded-2xl p-6 shadow-lg">
              <div className="flex items-center gap-3 mb-6">
                <div className="p-2.5 bg-amber-500/10 rounded-xl">
                  <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -290,7 +290,7 @@ export function CapacityOverview({ language }: CapacityOverviewProps) {
       </div>
 
       {/* Real-time Status Briefing */}
-      <div className="bg-[var(--card)] border border-[var(--secondary)]/10 rounded-3xl p-8 shadow-xl">
+      <div className="bg-[var(--card)] border border-secondary/10 rounded-3xl p-8 shadow-xl">
         <div className="flex items-center gap-4 mb-8">
           <div className="p-3 bg-indigo-500/10 rounded-2xl">
             <Activity className="w-6 h-6 text-indigo-500" />

@@ -161,7 +161,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       case 'pending':
         return 'status-warning';
       case 'cancelled':
-        return 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--secondary)]';
+        return 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-secondary';
       default:
         return 'status-info';
     }
@@ -176,15 +176,15 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       case 'approved':
       case 'completed':
       case 'wharf_assigned':
-        return <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />;
+        return <CheckCircle2 className="w-5 h-5 text-success" />;
       case 'rejected':
-        return <XCircle className="w-5 h-5 text-[var(--danger)]" />;
+        return <XCircle className="w-5 h-5 text-danger" />;
       case 'waiting':
         return <Clock className="w-5 h-5 text-orange-400" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-[var(--warning)] animate-pulse" />;
+        return <Clock className="w-5 h-5 text-warning animate-pulse" />;
       default:
-        return <AlertCircle className="w-5 h-5 text-[var(--info)]" />;
+        return <AlertCircle className="w-5 h-5 text-info" />;
     }
   };
 
@@ -192,7 +192,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-8 group">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">
+          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-accent group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">
             {t.title}
           </h1>
           <p className="text-[var(--text-secondary)] font-medium">{t.subtitle}</p>
@@ -210,9 +210,9 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
       </div>
 
       {showForm && (
-        <div className="bg-[var(--bg-primary)] rounded-3xl border border-[var(--secondary)] p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500">
+        <div className="bg-[var(--bg-primary)] rounded-3xl border border-secondary p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500">
           <h2 className="text-xl font-black text-[var(--text-primary)] mb-6 flex items-center gap-2">
-            <Anchor className="w-6 h-6 text-[var(--primary)]" />
+            <Anchor className="w-6 h-6 text-primary" />
             {editingId ? (language === 'ar' ? 'تعديل طلب الرسو' : 'Edit Anchorage Request') : t.formTitle}
           </h2>
 
@@ -231,14 +231,14 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.selectVessel}</label>
                 <select
                   {...register('vesselId')}
-                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vesselId ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
+                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vesselId ? 'border-danger' : 'border-secondary'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary transition-all [&>option]:bg-[var(--bg-primary)]`}
                 >
                   <option value="">{t.selectVesselPlaceholder}</option>
                   {approvedVessels.map((v) => (
                     <option key={v.id} value={v.id}>{v.name}</option>
                   ))}
                 </select>
-                {errors.vesselId && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.vesselId.message}</p>}
+                {errors.vesselId && <p className="text-danger text-xs font-bold mt-1">{errors.vesselId.message}</p>}
               </div>
 
               {/* Duration */}
@@ -246,7 +246,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                 <label className="block text-[var(--text-primary)] text-sm font-black uppercase tracking-widest">{t.duration}</label>
                   <select
                     {...register('duration')}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.duration ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.duration ? 'border-danger' : 'border-secondary'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary transition-all [&>option]:bg-[var(--bg-primary)]`}
                   >
                     <option value="">{t.selectDuration}</option>
                     <option value="24">24 {t.hours}</option>
@@ -254,7 +254,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                     <option value="72">72 {t.hours}</option>
                     <option value="custom">{t.custom}</option>
                   </select>
-                  {errors.duration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.duration.message}</p>}
+                  {errors.duration && <p className="text-danger text-xs font-bold mt-1">{errors.duration.message}</p>}
                   
                   {watchedDuration === 'custom' && (
                     <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
@@ -265,9 +265,9 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                         type="number"
                         {...register('customDuration')}
                         placeholder="e.g. 12"
-                        className={`w-full px-4 py-2 bg-[var(--background)] border ${errors.customDuration ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all`}
+                        className={`w-full px-4 py-2 bg-[var(--background)] border ${errors.customDuration ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary transition-all`}
                       />
-                      {errors.customDuration && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.customDuration.message}</p>}
+                      {errors.customDuration && <p className="text-danger text-xs font-bold mt-1">{errors.customDuration.message}</p>}
                     </div>
                   )}
               </div>
@@ -280,9 +280,9 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                 <input
                   type="datetime-local"
                   {...register('dockingTime')}
-                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.dockingTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all dark-calendar-icon`}
+                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.dockingTime ? 'border-danger' : 'border-secondary'} rounded-2xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary transition-all dark-calendar-icon`}
                 />
-                {errors.dockingTime && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.dockingTime.message}</p>}
+                {errors.dockingTime && <p className="text-danger text-xs font-bold mt-1">{errors.dockingTime.message}</p>}
               </div>
 
               {/* Reason — auto-populated from arrival, remains editable */}
@@ -299,9 +299,9 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                   {...register('reason')}
                   placeholder={t.reasonPlaceholder}
                   rows={3}
-                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.reason ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-2xl text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-all resize-none`}
+                  className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.reason ? 'border-danger' : 'border-secondary'} rounded-2xl text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none`}
                 />
-                {errors.reason && <p className="text-[var(--danger)] text-xs font-bold mt-1">{errors.reason.message}</p>}
+                {errors.reason && <p className="text-danger text-xs font-bold mt-1">{errors.reason.message}</p>}
               </div>
             </div>
 
@@ -333,7 +333,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
             />
           </div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--bg-primary)]/50">
+          <div className="text-center py-16 border-2 border-dashed border-secondary rounded-3xl bg-[var(--bg-primary)]/50">
             <Anchor className="w-12 h-12 mx-auto mb-4 opacity-20" />
             <p className="text-lg font-bold text-[var(--text-secondary)]">
               {language === 'ar' ? 'لا توجد طلبات رسو.' : 'No anchorage requests found.'}
@@ -342,20 +342,20 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {requests.map((request) => (
-              <div key={request.id} className="bg-[var(--bg-primary)] rounded-3xl border border-[var(--secondary)] p-6 card-interaction group relative overflow-hidden shadow-sm">
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div key={request.id} className="bg-[var(--bg-primary)] rounded-3xl border border-secondary p-6 card-interaction group relative overflow-hidden shadow-sm">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 <div className="flex items-start justify-between mb-8">
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-14 h-14 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
                       <Anchor className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-[var(--text-primary)] font-black text-xl mb-1 group-hover:text-[var(--primary)] transition-colors">
+                      <h3 className="text-[var(--text-primary)] font-black text-xl mb-1 group-hover:text-primary transition-colors">
                         {request.vessel?.name || 'Unknown Vessel'}
                       </h3>
                       <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 bg-[var(--secondary)] rounded-lg text-[var(--text-secondary)] text-[10px] font-black font-mono">#{request.id}</span>
+                        <span className="px-2 py-0.5 bg-secondary rounded-lg text-[var(--text-secondary)] text-[10px] font-black font-mono">#{request.id}</span>
                         <div className="flex items-center gap-1.5 text-[var(--text-secondary)] text-xs font-bold uppercase tracking-wider">
                           <Calendar className="w-3.5 h-3.5" />
                           {new Date(request.created_at).toLocaleDateString()}
@@ -369,7 +369,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                     </span>
                     {request.status === 'pending' && (
                       <button onClick={() => handleEdit(request)} className="btn-ghost p-2" title={language === 'ar' ? 'تعديل' : 'Edit'}>
-                        <Edit2 className="w-5 h-5 text-[var(--primary)]" />
+                        <Edit2 className="w-5 h-5 text-primary" />
                       </button>
                     )}
                     <button
@@ -385,11 +385,11 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                  <div className="border border-[var(--secondary)]/50 rounded-2xl p-4 bg-[var(--background)]/50">
+                  <div className="border border-secondary/50 rounded-2xl p-4 bg-[var(--background)]/50">
                     <div className="text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest mb-1">{t.duration}</div>
                     <div className="text-[var(--text-primary)] font-black text-lg">{request.duration} <span className="text-xs font-bold opacity-60">HRS</span></div>
                   </div>
-                  <div className="border border-[var(--secondary)]/50 rounded-2xl p-4 bg-[var(--background)]/50">
+                  <div className="border border-secondary/50 rounded-2xl p-4 bg-[var(--background)]/50">
                     <div className="text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest mb-1">
                       {language === 'ar' ? 'الرصيف المعين' : 'Assigned Wharf'}
                     </div>
@@ -397,7 +397,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                       {request.wharf?.name || (request.status === 'waiting' ? '—' : language === 'ar' ? 'قيد المراجعة' : 'Under Review')}
                     </div>
                   </div>
-                  <div className="md:col-span-2 border border-[var(--secondary)]/50 rounded-2xl p-4 bg-[var(--background)]/50">
+                  <div className="md:col-span-2 border border-secondary/50 rounded-2xl p-4 bg-[var(--background)]/50">
                     <div className="text-[var(--text-secondary)] text-[10px] font-black uppercase tracking-widest mb-1">{t.reason}</div>
                     <div className="text-[var(--text-primary)] font-medium text-sm line-clamp-2">{request.reason || 'N/A'}</div>
                   </div>
@@ -443,16 +443,16 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                 )}
 
                 {/* Timeline */}
-                <div className="pt-6 border-t border-[var(--secondary)]/30">
+                <div className="pt-6 border-t border-secondary/30">
                   <h4 className="text-[var(--text-primary)] font-black text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                     {t.approvalProcess}
                   </h4>
                   <div className="flex items-center gap-6 flex-wrap">
                     {/* Step 1: Submitted */}
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[var(--success)]/10 border-2 border-[var(--success)] shadow-sm shadow-[var(--success)]/20">
-                        <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-success/10 border-2 border-success shadow-sm shadow-success/20">
+                        <CheckCircle2 className="w-5 h-5 text-success" />
                       </div>
                       <div>
                         <div className="text-[var(--text-primary)] font-black text-xs">{language === 'ar' ? 'تم التقديم' : 'Submitted'}</div>
@@ -460,15 +460,15 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
                       </div>
                     </div>
 
-                    <div className="flex-1 border-t-2 border-dashed border-[var(--secondary)] min-w-8" />
+                    <div className="flex-1 border-t-2 border-dashed border-secondary min-w-8" />
 
                     {/* Step 2: Wharf Review */}
                     <div className={`flex items-center gap-3 ${request.status === 'pending' ? 'opacity-50' : ''}`}>
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm ${
                         request.status === 'wharf_assigned' ? 'bg-cyan-500/10 border-cyan-500' :
                         request.status === 'waiting' ? 'bg-orange-500/10 border-orange-500' :
-                        request.status === 'pending' ? 'bg-[var(--background)] border-[var(--secondary)] border-dashed' :
-                        'bg-[var(--success)]/10 border-[var(--success)]'
+                        request.status === 'pending' ? 'bg-[var(--background)] border-secondary border-dashed' :
+                        'bg-success/10 border-success'
                       }`}>
                         {getStatusIcon(request.status)}
                       </div>

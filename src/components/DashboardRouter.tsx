@@ -176,7 +176,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
       <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Background Decor */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[var(--primary)]/5 to-transparent opacity-50"></div>
+          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent opacity-50"></div>
         </div>
 
         {/* Sidebar */}
@@ -189,7 +189,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {/* Main Content Area */}
         <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-secondary shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex-1 flex items-center gap-4">
                 <button
@@ -198,7 +198,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 >
                   <Menu className="w-5 h-5" />
                 </button>
-                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-secondary focus-within:border-primary transition-colors">
                   <Search className="w-4 h-4 text-[var(--text-secondary)]" />
                   <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
                 </div>
@@ -234,9 +234,9 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {/* Mobile avatar link to settings */}
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 lg:hidden bg-primary/10 rounded-lg flex items-center justify-center"
                   >
-                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
+                    <UserIcon className="w-4 h-4 text-primary" />
                   </button>
 
                   <button 
@@ -266,7 +266,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   </p>
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                    className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                   >
                     {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
                   </button>
@@ -312,7 +312,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
       <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Background Decor */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[var(--primary)]/5 to-transparent opacity-50"></div>
+          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent opacity-50"></div>
         </div>
 
         {/* Sidebar */}
@@ -325,7 +325,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {/* Main Content Area */}
         <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-secondary shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex-1 flex items-center gap-4">
                 <button
@@ -334,7 +334,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 >
                   <Menu className="w-5 h-5" />
                 </button>
-                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-secondary focus-within:border-primary transition-colors">
                   <Search className="w-4 h-4 text-[var(--text-secondary)]" />
                   <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
                 </div>
@@ -379,9 +379,9 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {/* Mobile avatar link to settings */}
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 lg:hidden bg-primary/10 rounded-lg flex items-center justify-center"
                   >
-                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
+                    <UserIcon className="w-4 h-4 text-primary" />
                   </button>
 
                   <button 
@@ -411,7 +411,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   </p>
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                    className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                   >
                     {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
                   </button>
@@ -458,7 +458,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
       <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Background Decor */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[var(--primary)]/5 to-transparent opacity-50"></div>
+          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent opacity-50"></div>
         </div>
 
         {/* Sidebar */}
@@ -471,7 +471,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {/* Main Content Area */}
         <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-secondary shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex-1 flex items-center gap-4">
                 <button
@@ -480,7 +480,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 >
                   <Menu className="w-5 h-5" />
                 </button>
-                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-secondary focus-within:border-primary transition-colors">
                   <Search className="w-4 h-4 text-[var(--text-secondary)]" />
                   <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
                 </div>
@@ -524,9 +524,9 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {/* Mobile avatar link to settings */}
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 lg:hidden bg-primary/10 rounded-lg flex items-center justify-center"
                   >
-                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
+                    <UserIcon className="w-4 h-4 text-primary" />
                   </button>
 
                   <button 
@@ -556,7 +556,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   </p>
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                    className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                   >
                     {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
                   </button>
@@ -602,7 +602,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
       <div className={`min-h-screen ${language === 'ar' ? 'rtl' : 'ltr'} bg-[var(--bg-primary)] transition-colors duration-300`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Background Decor */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-[var(--primary)]/5 to-transparent opacity-50"></div>
+          <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent opacity-50"></div>
         </div>
 
         {/* Sidebar */}
@@ -615,7 +615,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {/* Main Content Area */}
         <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
           {/* Top Bar */}
-          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
+          <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-secondary shadow-sm transition-colors duration-300">
             <div className="flex items-center justify-between px-6 py-4">
               <div className="flex-1 flex items-center gap-4">
                 <button
@@ -624,7 +624,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 >
                   <Menu className="w-5 h-5" />
                 </button>
-                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+                <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-secondary focus-within:border-primary transition-colors">
                   <Search className="w-4 h-4 text-[var(--text-secondary)]" />
                   <input type="text" placeholder={language === 'ar' ? 'بحث...' : 'Search'} className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" />
                 </div>
@@ -666,9 +666,9 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   {/* Mobile avatar link to settings */}
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                    className="w-8 h-8 lg:hidden bg-primary/10 rounded-lg flex items-center justify-center"
                   >
-                    <UserIcon className="w-4 h-4 text-[var(--primary)]" />
+                    <UserIcon className="w-4 h-4 text-primary" />
                   </button>
 
                   <button 
@@ -698,7 +698,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                   </p>
                   <button 
                     onClick={() => setCurrentPage('settings')}
-                    className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                    className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                   >
                     {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
                   </button>
@@ -754,7 +754,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </p>
                 <button 
                   onClick={() => setCurrentPage('settings')}
-                  className="w-full py-2.5 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white rounded-lg font-medium transition-colors"
+                  className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                 >
                   {language === 'ar' ? 'الانتقال للإعدادات' : 'Go to Settings'}
                 </button>
@@ -808,9 +808,9 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                 <div className="grid grid-cols-1 gap-4">
                   {/* Custom Duration Expand */}
-                  <div className="p-4 bg-[var(--secondary)]/5 rounded-2xl border border-[var(--secondary)] hover:border-[var(--primary)] transition-all">
+                  <div className="p-4 bg-secondary/5 rounded-2xl border border-secondary hover:border-primary transition-all">
                     <div className="flex items-center gap-3 mb-3">
-                      <Clock className="w-5 h-5 text-[var(--primary)] flex-shrink-0" />
+                      <Clock className="w-5 h-5 text-primary flex-shrink-0" />
                       <div>
                         <p className="text-[var(--text-primary)] font-bold">
                           {isRTL ? 'تمديد مخصص' : 'Custom Duration Expand'}
@@ -827,28 +827,28 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                         placeholder={isRTL ? 'عدد الساعات...' : 'Hours...'}
                         value={expandHours}
                         onChange={(e) => setExpandHours(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
-                        className="flex-1 px-3 py-2 bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] text-sm outline-none focus:border-[var(--primary)] transition-colors"
+                        className="flex-1 px-3 py-2 bg-[var(--bg-primary)] border border-secondary rounded-xl text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors"
                       />
                       <button
                         onClick={handleExpand}
                         disabled={!expandHours || Number(expandHours) < 1}
-                        className="px-4 py-2 bg-[var(--primary)] hover:bg-[var(--primary)]/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-colors"
+                        className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-primary-foreground font-bold rounded-xl text-sm transition-colors"
                       >
                         {isRTL ? 'تمديد' : 'Expand'}
                       </button>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-[var(--primary)]/10 rounded-2xl border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-all cursor-pointer" onClick={handleClearance}>
+                  <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer" onClick={handleClearance}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Ship className="w-5 h-5 text-[var(--primary)]" />
+                        <Ship className="w-5 h-5 text-primary" />
                         <div>
-                          <p className="text-[var(--primary)] font-bold">{isRTL ? 'طلب تصريح مغادرة' : 'Request Port Clearance'}</p>
+                          <p className="text-primary font-bold">{isRTL ? 'طلب تصريح مغادرة' : 'Request Port Clearance'}</p>
                           <p className="text-xs text-[var(--text-secondary)]">{isRTL ? 'إنهاء الرسو والمغادرة' : 'End session and initiate departure'}</p>
                         </div>
                       </div>
-                      <ChevronDown className={`w-5 h-5 text-[var(--primary)] ${isRTL ? 'rotate-90' : '-rotate-90'}`} />
+                      <ChevronDown className={`w-5 h-5 text-primary ${isRTL ? 'rotate-90' : '-rotate-90'}`} />
                     </div>
                   </div>
                 </div>
@@ -896,11 +896,11 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] transition-colors duration-300">
       {/* Navigation Bar */}
-      <nav className="bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-[var(--secondary)]">
+      <nav className="bg-[var(--bg-primary)]/80 backdrop-blur-xl border-b border-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
                 <Anchor className="w-6 h-6" />
               </div>
               <div>
@@ -947,10 +947,10 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             )}
 
             {/* Welcome Card */}
-            <div className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)]/50 shadow-xl p-8 md:p-12 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+            <div className="bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-primary)] rounded-2xl border border-secondary/50 shadow-xl p-8 md:p-12 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
               <div className="text-center relative z-10">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] text-white rounded-2xl mb-6 shadow-lg shadow-[var(--primary)]/20">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-accent text-white rounded-2xl mb-6 shadow-lg shadow-primary/20">
                   {getRoleIcon()}
                 </div>
                 <h2 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
@@ -960,7 +960,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                 {/* Role-specific Dashboard Content */}
                 <div className="grid md:grid-cols-3 gap-6 mt-8">
-                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-secondary/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                     <div className="text-[var(--text-secondary)] text-sm mb-2">Status</div>
                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${user.verified
                       ? 'bg-green-500/10 border border-green-500/20 text-green-500'
@@ -971,12 +971,12 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                     </div>
                   </div>
 
-                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-secondary/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                     <div className="text-[var(--text-secondary)] text-sm mb-2">Role</div>
                     <div className="text-[var(--text-primary)] font-semibold capitalize">{(user.role as string).replace('_', ' ')}</div>
                   </div>
 
-                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-[var(--secondary)]/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                  <div className="bg-[var(--bg-card)]/50 backdrop-blur-sm border border-secondary/50 rounded-xl p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                     <div className="text-[var(--text-secondary)] text-sm mb-2">Access Level</div>
                     <div className="text-[var(--text-primary)] font-semibold">{user.verified ? 'Full Access' : 'Limited'}</div>
                   </div>
@@ -986,13 +986,13 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 <div className="mt-12 text-left">
                   <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-6">Quick Actions</h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--primary)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
-                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--primary)] transition-colors">View Reports</h4>
+                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-primary rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
+                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-primary transition-colors">View Reports</h4>
                       <p className="text-[var(--text-secondary)] text-sm">Access system reports and analytics</p>
                     </button>
 
-                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--accent)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
-                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--accent)] transition-colors">Manage Operations</h4>
+                    <button className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-accent rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]">
+                      <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-accent transition-colors">Manage Operations</h4>
                       <p className="text-[var(--text-secondary)] text-sm">Handle daily operations and tasks</p>
                     </button>
 
@@ -1006,7 +1006,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
 
                     <button 
                       onClick={() => setCurrentPage('settings')}
-                      className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-[var(--secondary)] rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]"
+                      className="group bg-[var(--bg-card)] hover:bg-[var(--bg-card)] border-l-4 border-secondary rounded-r-xl p-6 text-left shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]"
                     >
                       <h4 className="text-[var(--text-primary)] font-semibold mb-2 group-hover:text-[var(--text-primary)] transition-colors">Settings</h4>
                       <p className="text-[var(--text-secondary)] text-sm">Manage your account settings</p>

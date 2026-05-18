@@ -3,7 +3,7 @@ import { User, Language } from '../App';
 import { translations } from '../utils/translations';
 import { useNotifications } from '../hooks/useNotifications';
 import { Bell, ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle, CheckCheck } from 'lucide-react';
-import { getLocalizedNotificationMessage } from '../utils/notificationUtils';
+import { getLocalizedNotificationMessage, getLocalizedNotificationTitle } from '../utils/notificationUtils';
 
 interface NotificationsPageProps {
   user: User;
@@ -14,13 +14,17 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
   const t = translations[language]?.agent || translations.en.agent;
   const { data: notifications = [], isLoading, markAllAsRead, markAsRead } = useNotifications(user);
 
+  const hasUnreadDb = notifications.some(n => 
+    (n.status === 'unread' || n.status === 'pending') && 
+    String(n.id).startsWith('db-')
+  );
+
   useEffect(() => {
-    // Automatically mark all as read when unread notifications are loaded
-    const hasUnread = notifications.some(n => n.status === 'unread' || n.status === 'pending');
-    if (hasUnread) {
+    // Automatically mark all database notifications as read when page is opened
+    if (hasUnreadDb) {
       markAllAsRead();
     }
-  }, [notifications.length, markAllAsRead]);
+  }, [hasUnreadDb, markAllAsRead]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -28,7 +32,7 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
       case 'rejected': return <XCircle className="w-5 h-5 text-red-500" />;
       case 'pending': 
       case 'unread': return <Clock className="w-5 h-5 text-amber-500" />;
-      default: return <AlertCircle className="w-5 h-5 text-[var(--primary)]" />;
+      default: return <AlertCircle className="w-5 h-5 text-primary" />;
     }
   };
 
@@ -38,14 +42,14 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
       case 'rejected': return 'bg-red-500/10 border-red-500/20 text-red-500';
       case 'pending': 
       case 'unread': return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-      default: return 'bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]';
+      default: return 'bg-primary/10 border-primary/20 text-primary';
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center text-[var(--primary)] shadow-sm">
+        <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shadow-sm">
           <Bell className="w-6 h-6" />
         </div>
         <div>
@@ -58,10 +62,10 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
         </div>
       </div>
 
-      <div className="bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-[var(--bg-primary)] border border-secondary rounded-xl shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-[var(--text-secondary)]">
-            <div className="animate-spin w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
             {language === 'ar' ? 'جاري تحميل الإشعارات...' : 'Loading notifications...'}
           </div>
         ) : notifications.length === 0 ? (
@@ -70,11 +74,11 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
             <p className="text-lg">{language === 'ar' ? 'لا توجد إشعارات' : 'No notifications available'}</p>
           </div>
         ) : (
-          <div className="divide-y divide-[var(--secondary)]">
+          <div className="divide-y divide-secondary">
             {notifications.map((notif) => (
               <div 
                 key={notif.id} 
-                className={`p-6 transition-colors flex items-start gap-4 cursor-pointer ${notif.status === 'unread' || notif.status === 'pending' ? 'bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10' : 'hover:bg-[var(--secondary)]/5'}`}
+                className={`p-6 transition-colors flex items-start gap-4 cursor-pointer ${notif.status === 'unread' || notif.status === 'pending' ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-secondary/5'}`}
                 onClick={() => {
                   if (notif.status === 'unread' || notif.status === 'pending') {
                     markAsRead(notif.id);
@@ -86,7 +90,7 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-lg font-semibold text-[var(--text-primary)] truncate">{notif.operationType}</h3>
+                    <h3 className="text-lg font-semibold text-[var(--text-primary)] truncate">{getLocalizedNotificationTitle(notif, language)}</h3>
                     <span className="text-sm text-[var(--text-secondary)] flex-shrink-0 ml-4">
                       {new Date(notif.submittedTimestamp).toLocaleString()}
                     </span>

@@ -73,7 +73,7 @@ function ArrivalCard({ data, language }: { data: ReportArrival; language: Langua
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:grid-cols-2">
       {rows.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-highlight)]/40 border border-[var(--border)] print:bg-gray-50 print:border-gray-200">
+        <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-highlight)]/40 border border-[var(--border-color)] print:bg-gray-50 print:border-gray-200">
           <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 print:bg-blue-100">
             <Icon className="w-4 h-4 text-blue-400 print:text-blue-600" />
           </div>
@@ -109,7 +109,7 @@ function AnchorageCard({ data, language }: { data: ReportAnchorage; language: La
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:grid-cols-2">
       {rows.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-highlight)]/40 border border-[var(--border)] print:bg-gray-50 print:border-gray-200">
+        <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-highlight)]/40 border border-[var(--border-color)] print:bg-gray-50 print:border-gray-200">
           <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 print:bg-violet-100">
             <Icon className="w-4 h-4 text-violet-400 print:text-violet-600" />
           </div>
@@ -144,7 +144,7 @@ function ClearanceCard({ data, language }: { data: ReportClearance; language: La
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:grid-cols-2">
       {rows.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-highlight)]/40 border border-[var(--border)] print:bg-gray-50 print:border-gray-200">
+        <div key={label} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-highlight)]/40 border border-[var(--border-color)] print:bg-gray-50 print:border-gray-200">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 print:bg-emerald-100">
             <Icon className="w-4 h-4 text-emerald-400 print:text-emerald-600" />
           </div>
@@ -183,7 +183,7 @@ function ModuleSection({
     <div className={`card-base overflow-hidden print:border print:border-gray-200 print:rounded-xl print:shadow-none print:break-inside-avoid ${isMissing ? 'border-rose-500/30' : ''}`}>
       {/* Section Header */}
       <div
-        className={`flex items-center justify-between p-5 border-b border-[var(--border)] cursor-pointer group select-none print:border-gray-200 ${isMissing ? 'bg-rose-500/5' : 'bg-[var(--surface)]/30'}`}
+        className={`flex items-center justify-between p-5 border-b border-[var(--border-color)] cursor-pointer group select-none print:border-gray-200 ${isMissing ? 'bg-rose-500/5' : 'bg-[var(--surface)]/30'}`}
         onClick={() => !isMissing && setOpen(o => !o)}
       >
         <div className="flex items-center gap-4">
@@ -402,9 +402,9 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
 
         {/* ── Selection Panel ── */}
         <div className="card-base p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--primary)]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
           <h2 className="text-lg font-black text-[var(--text-primary)] mb-5 flex items-center gap-2">
-            <Search className="w-5 h-5 text-[var(--primary)]" />
+            <Search className="w-5 h-5 text-primary" />
             {isRTL ? 'اختر السفينة والتاريخ' : 'Select Vessel & Date'}
           </h2>
 
@@ -421,7 +421,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                   value={selectedVesselId}
                   onChange={e => { setSelectedVesselId(Number(e.target.value) || ''); setReport(null); setHasSearched(false); }}
                   disabled={loadingVessels}
-                  className="w-full appearance-none bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 focus:border-[var(--primary)] transition-all disabled:opacity-50"
+                  className="w-full appearance-none bg-[var(--surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all disabled:opacity-50"
                 >
                   <option value="">{loadingVessels ? 'Loading…' : (isRTL ? '— اختر سفينة —' : '— Select a vessel —')}</option>
                   {vessels.map(v => (
@@ -444,7 +444,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                 max={today}
                 value={selectedDate}
                 onChange={e => { setSelectedDate(e.target.value); setReport(null); setHasSearched(false); }}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 focus:border-[var(--primary)] transition-all"
+                className="w-full bg-[var(--surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
               />
             </div>
 
@@ -453,7 +453,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
               id="btn-generate-preview"
               onClick={handleSearch}
               disabled={(!selectedVesselId && !selectedDate) || isLoading}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-light)] text-white font-bold shadow-md shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/30 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 min-w-[160px]"
+              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 min-w-[160px]"
             >
               {isLoading
                 ? <LoadingIndicator type="line-spinner" size="xs" label={isRTL ? 'جارٍ التحميل…' : 'Loading…'} className="text-white" />
@@ -502,7 +502,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                     <div 
                       key={r.vessel.id}
                       onClick={() => setReport(r)}
-                      className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] hover:border-blue-500/50 hover:bg-blue-500/5 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-blue-500/10"
+                      className="group p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border-color)] hover:border-blue-500/50 hover:bg-blue-500/5 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-blue-500/10"
                     >
                       <div className="flex justify-between items-start mb-4">
                         <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -546,20 +546,20 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                 )}
 
                 {/* Report meta bar */}
-                <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border)]">
+                <div className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-[var(--surface)] border border-[var(--border-color)]">
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <Ship className="w-4 h-4 text-[var(--primary)]" />
+                    <Ship className="w-4 h-4 text-primary" />
                     <span className="font-bold text-[var(--text-primary)]">{report.vessel?.name || 'Unknown Vessel'}</span>
                     <span className="text-[var(--text-muted)]">({report.vessel?.imo || 'N/A'})</span>
                   </div>
-                  <span className="text-[var(--border)]">·</span>
+                  <span className="text-[var(--text-muted)]">·</span>
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <Calendar className="w-4 h-4 text-[var(--primary)]" />
+                    <Calendar className="w-4 h-4 text-primary" />
                     <span className="font-semibold">{fmtDate(report.date)}</span>
                   </div>
-                  <span className="text-[var(--border)]">·</span>
+                  <span className="text-[var(--text-muted)]">·</span>
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                    <Printer className="w-4 h-4 text-[var(--primary)]" />
+                    <Printer className="w-4 h-4 text-primary" />
                     <span>{isRTL ? 'تاريخ الاستخراج:' : 'Generated:'} {new Date().toLocaleString()}</span>
                   </div>
                 </div>
@@ -630,7 +630,7 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
 
             {/* No Results found on specific date */}
             {hasSearched && reportList.length === 0 && !report && (
-              <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/20">
+              <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-[var(--border-color)] rounded-3xl bg-[var(--surface)]/20">
                 <AlertTriangle className="w-12 h-12 text-rose-500 opacity-20 mb-4" />
                 <h3 className="text-xl font-black text-[var(--text-secondary)] mb-2">
                   {isRTL ? 'لا توجد نتائج' : 'No Activity Found'}
@@ -647,9 +647,9 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
 
         {/* ── Empty State ── */}
         {!hasSearched && !isLoading && (
-          <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface)]/20">
+          <div className="flex flex-col items-center justify-center py-24 border-2 border-dashed border-[var(--border-color)] rounded-3xl bg-[var(--surface)]/20">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-600/20 to-indigo-700/20 flex items-center justify-center mb-5 shadow-inner">
-              <FileText className="w-9 h-9 text-[var(--primary)] opacity-60" />
+              <FileText className="w-9 h-9 text-primary opacity-60" />
             </div>
             <h3 className="text-xl font-black text-[var(--text-secondary)] mb-2">
               {isRTL ? 'ابدأ بتحديد السفينة أو التاريخ' : 'Select a Vessel or Date to Begin'}

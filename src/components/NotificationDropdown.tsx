@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { User, Language } from '../App';
 import { useNotifications } from '../hooks/useNotifications';
-import { getLocalizedNotificationMessage } from '../utils/notificationUtils';
+import { getLocalizedNotificationMessage, getLocalizedNotificationTitle } from '../utils/notificationUtils';
 
 interface NotificationDropdownProps {
   user: User;
@@ -14,7 +14,7 @@ interface NotificationDropdownProps {
 export function NotificationDropdown({ user, language, onNavigate }: NotificationDropdownProps) {
   const t = translations[language]?.agent || translations.en.agent;
   const [showNotifications, setShowNotifications] = useState(false);
-  const { data: notifications = [], isLoading, markAllAsRead } = useNotifications(user);
+  const { data: notifications = [], isLoading, markAllAsRead, markAsRead } = useNotifications(user);
 
   // Derive unread count from items marked as pending or unread
   const unreadCount = notifications.filter((notif) => ['pending', 'unread'].includes(notif.status)).length;
@@ -22,13 +22,25 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
   // Limit preview to 5 most recent pending items
   const previewNotifications = notifications.slice(0, 5);
 
+  const hasUnreadDb = notifications.some(n => 
+    (n.status === 'unread' || n.status === 'pending') && 
+    String(n.id).startsWith('db-')
+  );
+
+  useEffect(() => {
+    // Automatically mark all database notifications as read when dropdown is opened
+    if (showNotifications && hasUnreadDb) {
+      markAllAsRead();
+    }
+  }, [showNotifications, hasUnreadDb, markAllAsRead]);
+
   const getNotificationColor = (status: string) => {
     switch (status) {
       case 'approved': return 'bg-green-500/10 border-green-500/20 text-green-500';
       case 'rejected': return 'bg-red-500/10 border-red-500/20 text-red-500';
       case 'pending': 
       case 'unread': return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-      default: return 'bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]';
+      default: return 'bg-primary/10 border-primary/20 text-primary';
     }
   };
 
@@ -70,8 +82,8 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
 
       {/* Notifications Dropdown */}
       {showNotifications && (
-        <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-80 bg-[var(--bg-primary)] rounded-lg border border-[var(--secondary)] shadow-xl overflow-hidden z-50`}>
-          <div className="p-4 border-b border-[var(--secondary)] flex justify-between items-center">
+        <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-80 bg-[var(--bg-primary)] rounded-lg border border-secondary shadow-xl overflow-hidden z-50`}>
+          <div className="p-4 border-b border-secondary flex justify-between items-center">
             <h3 className="font-semibold text-[var(--text-primary)]">{t.notifications || 'Notifications'}</h3>
             <span className="text-xs text-[var(--text-secondary)]">{unreadCount} Pending</span>
           </div>
@@ -84,9 +96,12 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
               previewNotifications.map((notif) => (
                 <div 
                   key={notif.id} 
-                  className="p-4 border-b border-[var(--secondary)] hover:bg-[var(--secondary)]/5 transition-colors cursor-pointer"
+                  className="p-4 border-b border-secondary hover:bg-secondary/5 transition-colors cursor-pointer"
                   onClick={() => {
                     setShowNotifications(false);
+                    if (notif.status === 'unread' || notif.status === 'pending') {
+                      markAsRead(notif.id);
+                    }
                     onNavigate(notif.route ? notif.route.replace(/^\//, '') : 'notifications'); // Try to navigate to route directly (strip leading slash)
                   }}
                 >
@@ -103,7 +118,7 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
                   </p>
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-[10px] text-[var(--text-secondary)] opacity-80">Ref: {notif.operationId}</span>
-                    <span className="text-[10px] text-[var(--text-secondary)] opacity-80">{notif.operationType}</span>
+                    <span className="text-[10px] text-[var(--text-secondary)] opacity-80">{getLocalizedNotificationTitle(notif, language)}</span>
                   </div>
                 </div>
               ))
@@ -113,13 +128,13 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
               </div>
             )}
           </div>
-          <div className="p-3 text-center border-t border-[var(--secondary)] bg-[var(--secondary)]/5">
+          <div className="p-3 text-center border-t border-secondary bg-secondary/5">
             <button 
               onClick={() => {
                 markAllAsRead();
                 onNavigate('notifications');
               }}
-              className="text-sm text-[var(--accent)] hover:text-[var(--primary)] font-medium"
+              className="text-sm text-accent hover:text-primary font-medium"
             >
               {t.viewAll || 'View All Notifications'}
             </button>

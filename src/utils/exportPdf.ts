@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '@/services/api';
+
 /**
  * Agent PDF Export Utility
  *
@@ -224,9 +226,9 @@ function getSignatureUrl(): string | null {
   }
 
   // If it's a relative path (e.g. /storage/signatures/...)
-  // Append the backend URL (defaulting to localhost:8000 based on standard setup)
+  // Append the backend URL dynamically using the resolved API_BASE_URL
   if (sig.startsWith('/')) {
-    return `http://localhost:8000${sig}`;
+    return `${API_BASE_URL}${sig}`;
   }
 
   // Otherwise, assume it's raw base64 and prefix it

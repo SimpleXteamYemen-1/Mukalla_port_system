@@ -89,7 +89,7 @@ const ExitReasonModal = ({
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-[var(--bg-primary)] rounded-2xl border border-[var(--secondary)]/30 p-8 w-full max-auto max-w-lg shadow-2xl animate-in zoom-in duration-300">
+      <div className="bg-[var(--bg-primary)] rounded-2xl border border-secondary/30 p-8 w-full max-auto max-w-lg shadow-2xl animate-in zoom-in duration-300">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
             <XCircle className="w-6 h-6 text-red-500" />
@@ -111,7 +111,7 @@ const ExitReasonModal = ({
               onChange={(e) => setExitReason(e.target.value)}
               placeholder={t.leaveVesselReasonPlaceholder}
               rows={4}
-              className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none"
+              className="w-full px-4 py-3 bg-[var(--background)] border border-secondary rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none"
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ const ExitReasonModal = ({
           </button>
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-[var(--secondary)]/10 hover:bg-[var(--secondary)]/20 text-[var(--text-primary)] font-bold rounded-xl transition-all"
+            className="px-6 py-3 bg-secondary/10 hover:bg-secondary/20 text-[var(--text-primary)] font-bold rounded-xl transition-all"
           >
             {t.cancel}
           </button>
@@ -431,11 +431,11 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle2 className="w-5 h-5 text-[var(--success)]" />;
-      case 'rejected': return <XCircle className="w-5 h-5 text-[var(--danger)]" />;
-      case 'pending': return <Clock className="w-5 h-5 text-[var(--warning)] animate-pulse" />;
+      case 'approved': return <CheckCircle2 className="w-5 h-5 text-success" />;
+      case 'rejected': return <XCircle className="w-5 h-5 text-danger" />;
+      case 'pending': return <Clock className="w-5 h-5 text-warning animate-pulse" />;
       case 'draft': return <Edit2 className="w-5 h-5 text-slate-400" />;
-      default: return <AlertCircle className="w-5 h-5 text-[var(--info)]" />;
+      default: return <AlertCircle className="w-5 h-5 text-info" />;
     }
   };
 
@@ -473,7 +473,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
       />
       <div className="flex items-center justify-between mb-8 group">
         <div>
-          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-[var(--primary)] group-hover:to-[var(--accent)] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">{t.title}</h1>
+          <h1 className="text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-accent group-hover:bg-clip-text group-hover:text-transparent transition-all duration-500 cursor-default">{t.title}</h1>
           <p className="text-[var(--text-secondary)] font-medium">{t.subtitle}</p>
         </div>
         {!showForm && (
@@ -489,7 +489,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
       {/* Submission Form - Glassmorphism */}
       {showForm && (
-        <div className="bg-[var(--bg-primary)]/80 backdrop-blur-xl rounded-2xl border border-[var(--secondary)]/30 p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500 ring-1 ring-black/5">
+        <div className="bg-[var(--bg-primary)]/80 backdrop-blur-xl rounded-2xl border border-secondary/30 p-8 mb-8 shadow-2xl animate-in fade-in zoom-in duration-500 ring-1 ring-black/5">
           <h2 className="text-2xl font-black text-[var(--text-primary)] mb-6">
             {editingId ? (language === 'ar' ? 'تعديل طلب الوصول' : 'Edit Arrival Notification') : t.formTitle}
           </h2>
@@ -507,7 +507,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       {...register('imo')}
                       maxLength={7}
                       placeholder="1234567"
-                      className={`w-full ${language === 'ar' ? 'pr-14 pl-4 text-right' : 'pl-14 pr-4'} py-3 bg-[var(--background)] border ${errors.imo ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                      className={`w-full ${language === 'ar' ? 'pr-14 pl-4 text-right' : 'pl-14 pr-4'} py-3 bg-[var(--background)] border ${errors.imo ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all`}
                       dir="ltr"
                     />
                   </div>
@@ -520,7 +520,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     {checkingIMO ? <LoadingIndicator type="line-spinner" size="xs" /> : (language === 'ar' ? 'تحقق من IMO' : 'Verify IMO')}
                   </button>
                 </div>
-                {errors.imo && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.imo.message}</p>}
+                {errors.imo && <p className="text-danger text-xs font-bold mt-2">{errors.imo.message}</p>}
               </div>
               <div className="flex justify-end pt-2">
                 <button
@@ -548,7 +548,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
               <div className="alert-info">
                 <Ship className="w-5 h-5 flex-shrink-0" />
                 <div className="font-bold">IMO: {getValues('imo')}</div>
-                <CheckCircle2 className="w-5 h-5 text-[var(--success)] ml-auto" />
+                <CheckCircle2 className="w-5 h-5 text-success ml-auto" />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -559,10 +559,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     type="text"
                     {...register('vessel')}
                     placeholder={language === 'ar' ? 'اسم السفينة' : 'Vessel Name'}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vessel ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.vessel ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all`}
                     readOnly={!!vesselId} // Read-only if fetched from DB
                   />
-                  {errors.vessel && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.vessel.message}</p>}
+                  {errors.vessel && <p className="text-danger text-xs font-bold mt-2">{errors.vessel.message}</p>}
                 </div>
 
                 {/* Purpose */}
@@ -572,9 +572,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     type="text"
                     {...register('purpose')}
                     placeholder={t.purposePlaceholder}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.purpose ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.purpose ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all`}
                   />
-                  {errors.purpose && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.purpose.message}</p>}
+                  {errors.purpose && <p className="text-danger text-xs font-bold mt-2">{errors.purpose.message}</p>}
                 </div>
 
                 {/* Type & Flag (Visible if new vessel) */}
@@ -584,7 +584,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'نوع السفينة' : 'Vessel Type'}</label>
                       <select
                         {...register('type')}
-                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
+                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all [&>option]:bg-[var(--bg-primary)]`}
                       >
                         <option value="">{language === 'ar' ? 'اختر النوع' : 'Select Type'}</option>
                         <option value="container">{getTranslatedVesselType('container', language)}</option>
@@ -592,7 +592,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                         <option value="cargo">{getTranslatedVesselType('cargo', language)}</option>
                         <option value="bulk">{getTranslatedVesselType('bulk', language)}</option>
                       </select>
-                      {errors.type && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.type.message}</p>}
+                      {errors.type && <p className="text-danger text-xs font-bold mt-2">{errors.type.message}</p>}
                     </div>
                     <div>
                       <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{language === 'ar' ? 'علم السفينة' : 'Flag'}</label>
@@ -600,9 +600,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                         type="text"
                         {...register('flag')}
                         placeholder="e.g. Panama"
-                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.flag ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                        className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.flag ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all`}
                       />
-                      {errors.flag && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.flag.message}</p>}
+                      {errors.flag && <p className="text-danger text-xs font-bold mt-2">{errors.flag.message}</p>}
                     </div>
                   </>
                 )}
@@ -615,9 +615,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       min="0"
                       {...register('expected_containers')}
                       placeholder="e.g. 50"
-                      className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.expected_containers ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all`}
+                      className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.expected_containers ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all`}
                     />
-                    {errors.expected_containers && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.expected_containers.message}</p>}
+                    {errors.expected_containers && <p className="text-danger text-xs font-bold mt-2">{errors.expected_containers.message}</p>}
                   </div>
                 )}
 
@@ -628,9 +628,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     type="date"
                     {...register('arrivalDate')}
                     onClick={(e) => e.currentTarget.showPicker()}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] cursor-pointer transition-all`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalDate ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer transition-all`}
                   />
-                  {errors.arrivalDate && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalDate.message}</p>}
+                  {errors.arrivalDate && <p className="text-danger text-xs font-bold mt-2">{errors.arrivalDate.message}</p>}
                 </div>
 
                 {/* Arrival Time */}
@@ -640,9 +640,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     type="time"
                     {...register('arrivalTime')}
                     onClick={(e) => e.currentTarget.showPicker()}
-                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] cursor-pointer transition-all`}
+                    className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.arrivalTime ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary cursor-pointer transition-all`}
                   />
-                  {errors.arrivalTime && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.arrivalTime.message}</p>}
+                  {errors.arrivalTime && <p className="text-danger text-xs font-bold mt-2">{errors.arrivalTime.message}</p>}
                 </div>
 
                 {/* Cargo Info */}
@@ -652,16 +652,16 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     {...register('cargo')}
                     placeholder={t.cargoPlaceholder}
                     rows={3}
-                    className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--secondary)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all resize-none"
+                    className="w-full px-4 py-3 bg-[var(--background)] border border-secondary rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
                   />
                 </div>
 
                 {/* Priority Selection */}
-                <div className="md:col-span-2 bg-[var(--background)]/40 p-5 rounded-2xl border border-[var(--secondary)]/50">
+                <div className="md:col-span-2 bg-[var(--background)]/40 p-5 rounded-2xl border border-secondary/50">
                   <label className="block text-[var(--text-primary)] text-sm font-bold mb-3">{t.priorityLevel}</label>
                   <div className="flex flex-wrap gap-4 mb-4">
                     {(['Low', 'Medium', 'High'] as const).map((level) => (
-                      <label key={level} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl border transition-all ${watchPriority === level ? 'bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]' : 'bg-[var(--background)] border-[var(--secondary)] text-[var(--text-secondary)] hover:border-[var(--primary)]/50'}`}>
+                      <label key={level} className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl border transition-all ${watchPriority === level ? 'bg-primary/10 border-primary text-primary' : 'bg-[var(--background)] border-secondary text-[var(--text-secondary)] hover:border-primary/50'}`}>
                         <input
                           type="radio"
                           value={level}
@@ -682,9 +682,9 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                           {...register('priority_reason')}
                           placeholder={(t as any).priorityReasonPlaceholder}
                           rows={2}
-                          className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.priority_reason ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all resize-none`}
+                          className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.priority_reason ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none`}
                         />
-                        {errors.priority_reason && <p className="text-[var(--danger)] text-xs font-bold mt-2 hover:text-[var(--danger)]/80 transition-colors">{(t.errors as any).priorityReasonRequired}</p>}
+                        {errors.priority_reason && <p className="text-danger text-xs font-bold mt-2 hover:text-danger/80 transition-colors">{(t.errors as any).priorityReasonRequired}</p>}
                       </div>
                     )}
                     {watchPriority === 'High' && (
@@ -694,10 +694,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                           type="file"
                           accept=".pdf,.jpeg,.jpg"
                           {...register('priority_document')}
-                          className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.priority_document ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-[var(--primary)]/10 file:text-[var(--primary)] hover:file:bg-[var(--primary)]/20 transition-all cursor-pointer`}
+                          className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.priority_document ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer`}
                         />
                         <p className="text-xs text-[var(--text-secondary)] mt-2 font-medium">{(t as any).priorityDocNote}</p>
-                        {errors.priority_document && <p className="text-[var(--danger)] text-xs font-bold mt-2 hover:text-[var(--danger)]/80 transition-colors">{(errors.priority_document?.message as string)?.includes('format') ? (t.errors as any).priorityDocFormat : (t.errors as any).priorityDocRequired}</p>}
+                        {errors.priority_document && <p className="text-danger text-xs font-bold mt-2 hover:text-danger/80 transition-colors">{(errors.priority_document?.message as string)?.includes('format') ? (t.errors as any).priorityDocFormat : (t.errors as any).priorityDocRequired}</p>}
                       </div>
                     )}
                   </div>
@@ -737,7 +737,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center text-[var(--text-secondary)] py-20 bg-[var(--bg-primary)] border border-[var(--secondary)] rounded-3xl">
+          <div className="text-center text-[var(--text-secondary)] py-20 bg-[var(--bg-primary)] border border-secondary rounded-3xl">
             <LoadingIndicator 
               type="line-spinner" 
               size="lg" 
@@ -745,7 +745,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
             />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center text-[var(--text-secondary)] py-16 border-2 border-dashed border-[var(--secondary)] rounded-3xl bg-[var(--bg-primary)]/50">
+          <div className="text-center text-[var(--text-secondary)] py-16 border-2 border-dashed border-secondary rounded-3xl bg-[var(--bg-primary)]/50">
             <Ship className="w-12 h-12 mx-auto mb-4 opacity-20" />
             <p className="text-lg font-bold">{language === 'ar' ? 'لا توجد إشعارات وصول.' : 'No arrival notifications found.'}</p>
           </div>
@@ -762,7 +762,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
             <div
               key={notification.id}
               id={`arrival-notification-${notification.imo_number}`}
-              className={`card-base card-hover p-6 group relative overflow-hidden transition-all duration-500 ${highlightedImo === notification.imo_number ? 'ring-4 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--background)] scale-[1.02] bg-[var(--surface-highlight)]' : ''} ${notification.status === 'draft' ? 'border-dashed border-slate-500/40' : ''}`}
+              className={`card-base card-hover p-6 group relative overflow-hidden transition-all duration-500 ${highlightedImo === notification.imo_number ? 'ring-4 ring-primary ring-offset-2 ring-offset-[var(--background)] scale-[1.02] bg-[var(--surface-highlight)]' : ''} ${notification.status === 'draft' ? 'border-dashed border-slate-500/40' : ''}`}
             >
               <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-6">
                 <div className="flex items-start gap-4">
@@ -790,7 +790,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   </span>
 
                   {/* Manifest Status Badge */}
-                  <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--bg-primary)] border-[var(--secondary)] text-[var(--text-secondary)]'}`}>
+                  <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--bg-primary)] border-secondary text-[var(--text-secondary)]'}`}>
                     {hasManifest ? (
                       <span className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5" /> {getManifestStatusLabel(true, language)}
@@ -815,7 +815,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                         disabled={hasManifestErrors}
                         className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold transition-all shadow-lg active:scale-95 w-full md:w-auto justify-center
                           ${hasManifestErrors
-                            ? 'bg-[var(--secondary)] text-[var(--text-secondary)] cursor-not-allowed opacity-40 shadow-none'
+                            ? 'bg-secondary text-[var(--text-secondary)] cursor-not-allowed opacity-40 shadow-none'
                             : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/20'
                           }
                         `}
@@ -832,7 +832,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       className="btn-ghost p-2 mt-1"
                       title={language === 'ar' ? 'تعديل' : 'Edit'}
                     >
-                      <Edit2 className="w-5 h-5 text-[var(--primary)]" />
+                      <Edit2 className="w-5 h-5 text-primary" />
                     </button>
                   ) : null}
 
@@ -882,16 +882,16 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="border border-[var(--secondary)] rounded-2xl p-4 bg-[var(--background)]/40 hover:border-[var(--primary)] transition-colors">
+                <div className="border border-secondary rounded-2xl p-4 bg-[var(--background)]/40 hover:border-primary transition-colors">
                   <div className="text-[var(--text-secondary)] text-xs font-black uppercase tracking-widest mb-1">{t.expectedArrival}</div>
                   <div className="text-[var(--text-primary)] font-black">{notification.eta}</div>
                 </div>
-                <div className="border border-[var(--secondary)] rounded-2xl p-4 bg-[var(--background)]/40 hover:border-[var(--primary)] transition-colors">
+                <div className="border border-secondary rounded-2xl p-4 bg-[var(--background)]/40 hover:border-primary transition-colors">
                   <div className="text-[var(--text-secondary)] text-xs font-black uppercase tracking-widest mb-1">{t.submittedOn}</div>
                   <div className="text-[var(--text-primary)] font-black">{new Date(notification.created_at).toLocaleString()}</div>
                 </div>
                 {notification.approvedBy && (
-                  <div className="border border-[var(--secondary)] rounded-2xl p-4 bg-[var(--background)]/40 hover:border-[var(--primary)] transition-colors">
+                  <div className="border border-secondary rounded-2xl p-4 bg-[var(--background)]/40 hover:border-primary transition-colors">
                     <div className="text-[var(--text-secondary)] text-xs font-black uppercase tracking-widest mb-1">{t.approvedBy}</div>
                     <div className="text-[var(--text-primary)] font-black">{notification.approvedBy}</div>
                   </div>
@@ -928,7 +928,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   ) : (
                     <button
                       onClick={() => setExpandedManifestId(notification.id)}
-                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-[var(--secondary)]/40 hover:border-[var(--primary)]/60 rounded-xl text-[var(--text-secondary)] hover:text-[var(--primary)] font-bold text-sm transition-all hover:bg-[var(--primary)]/5"
+                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-secondary/40 hover:border-primary/60 rounded-xl text-[var(--text-secondary)] hover:text-primary font-bold text-sm transition-all hover:bg-primary/5"
                     >
                       <UploadCloud className="w-5 h-5" />
                       {hasManifest

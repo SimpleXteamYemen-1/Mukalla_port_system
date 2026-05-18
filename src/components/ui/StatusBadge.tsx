@@ -21,7 +21,7 @@ export function StatusBadge({ status, type = 'neutral', label, language = 'en' }
         warning: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
         error: 'bg-red-500/10 text-red-500 border-red-500/20',
         info: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-        neutral: 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border)]',
+        neutral: 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border-color)]',
         pending: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
         active: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
     };

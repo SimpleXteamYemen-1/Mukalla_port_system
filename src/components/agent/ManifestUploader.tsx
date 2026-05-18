@@ -28,6 +28,7 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
   const [isUploading, setIsUploading] = useState(false);
   const [extractedContainers, setExtractedContainers] = useState<ContainerData[]>([]);
   const [uploadErrors, setUploadErrors] = useState<any[]>([]);
+  const [manifestToDelete, setManifestToDelete] = useState<number | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -92,20 +93,20 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
     }
   };
 
-  const handleDeleteManifest = async (id: number) => {
-    if (!window.confirm(isRTL ? 'هل أنت متأكد من حذف هذا البيان؟' : 'Are you sure you want to delete this manifest?')) return;
-
+  const confirmDeleteManifest = async (id: number) => {
     try {
       await api.delete(`/agent/manifests/${id}`);
       setExtractedContainers(prev => prev.filter(c => c.id !== id));
       toast.info(isRTL ? 'تم حذف البيان بنجاح' : 'Manifest record deleted successfully');
     } catch (error) {
       toast.error(isRTL ? 'فشل حذف البيان' : 'Failed to delete manifest');
+    } finally {
+      setManifestToDelete(null);
     }
   };
 
   return (
-    <div className={`bg-[var(--bg-card)] border border-[var(--secondary)]/30 rounded-xl p-6 ${isRTL ? 'rtl rtl-text-right' : 'ltr'} shadow-sm`}>
+    <div className={`bg-[var(--bg-card)] border border-secondary/30 rounded-xl p-6 ${isRTL ? 'rtl rtl-text-right' : 'ltr'} shadow-sm`}>
       <div className="mb-6">
         <h3 className="text-xl font-bold text-[var(--text-primary)]">
           {isRTL ? 'رفع ملفات بيان الحمولة' : 'Upload Cargo Manifests'}
@@ -144,10 +145,10 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
         <div className="space-y-6">
           {/* File Picker Area */}
           <div 
-            className="border-2 border-dashed border-[var(--secondary)] rounded-xl p-10 flex flex-col items-center justify-center bg-[var(--bg-primary)]/50 hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/50 transition-colors cursor-pointer group shadow-inner"
+            className="border-2 border-dashed border-secondary rounded-xl p-10 flex flex-col items-center justify-center bg-[var(--bg-primary)]/50 hover:bg-primary/5 hover:border-primary/50 transition-colors cursor-pointer group shadow-inner"
             onClick={() => fileInputRef.current?.click()}
           >
-            <UploadCloud className="w-12 h-12 text-[var(--text-secondary)] group-hover:text-[var(--primary)] mb-4 transition-colors" />
+            <UploadCloud className="w-12 h-12 text-[var(--text-secondary)] group-hover:text-primary mb-4 transition-colors" />
             <h4 className="text-[var(--text-primary)] font-medium mb-1">
               {isRTL ? 'انقر أو اسحب الملفات هنا' : 'Click to select or drag manifests here'}
             </h4>
@@ -166,15 +167,15 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
 
           {/* Selected Files Preview List */}
           {selectedFiles.length > 0 && (
-            <div className="bg-[var(--bg-primary)]/30 p-5 border border-[var(--secondary)]/20 rounded-xl">
-              <h5 className="text-sm font-semibold text-[var(--text-primary)] mb-4 pb-2 border-b border-[var(--secondary)]/20">
+            <div className="bg-[var(--bg-primary)]/30 p-5 border border-secondary/20 rounded-xl">
+              <h5 className="text-sm font-semibold text-[var(--text-primary)] mb-4 pb-2 border-b border-secondary/20">
                 {isRTL ? 'الملفات المحددة:' : 'Selected Manifests Queue:'}
               </h5>
               <ul className="space-y-2 mb-5 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                 {selectedFiles.map((f, idx) => (
-                  <li key={idx} className="flex items-center justify-between bg-[var(--bg-card)] border border-[var(--secondary)]/30 rounded-lg py-2.5 px-4 text-sm shadow-sm transition-all hover:border-[var(--primary)]/30">
+                  <li key={idx} className="flex items-center justify-between bg-[var(--bg-card)] border border-secondary/30 rounded-lg py-2.5 px-4 text-sm shadow-sm transition-all hover:border-primary/30">
                     <div className="flex items-center gap-3 truncate">
-                      <FileText className="w-4 h-4 text-[var(--primary)] flex-shrink-0" />
+                      <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                       <span className="text-[var(--text-primary)] font-medium truncate max-w-[200px]" title={f.name}>{f.name}</span>
                       <span className="text-[var(--text-secondary)] text-xs">({(f.size / 1024 / 1024).toFixed(2)} MB)</span>
                     </div>
@@ -188,11 +189,11 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
                   </li>
                 ))}
               </ul>
-              <div className="flex justify-end pt-3 border-t border-[var(--secondary)]/20">
+              <div className="flex justify-end pt-3 border-t border-secondary/20">
                 <button
                   onClick={handleUpload}
                   disabled={isUploading}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[var(--primary)] to-blue-600 hover:to-blue-500 active:scale-[0.98] text-white rounded-lg font-semibold transition-all shadow-lg shadow-[var(--primary)]/25 disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-blue-600 hover:to-blue-500 active:scale-[0.98] text-white rounded-lg font-semibold transition-all shadow-lg shadow-primary/25 disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
                 >
                   {isUploading ? (
                     <>
@@ -231,18 +232,18 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
              </div>
            </div>
 
-           <div className="overflow-hidden rounded-xl border border-[var(--secondary)]/30 ring-1 ring-black/5 shadow-md">
+           <div className="overflow-hidden rounded-xl border border-secondary/30 ring-1 ring-black/5 shadow-md">
              <table className="w-full text-left border-collapse">
                 <thead className="bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-card)] text-[var(--text-secondary)] text-xs uppercase tracking-wider">
                   <tr>
-                    <th className="px-5 py-4 font-semibold border-b border-[var(--secondary)]/20">{isRTL ? 'المستند' : 'Source'}</th>
-                    <th className="px-5 py-4 font-semibold border-b border-[var(--secondary)]/20">{isRTL ? 'ميناء الشحن' : 'Loading Port'}</th>
-                    <th className="px-5 py-4 font-semibold border-b border-[var(--secondary)]/20">{isRTL ? 'المُرسل إليه' : 'Consignee'}</th>
-                    <th className="px-5 py-4 font-semibold border-b border-[var(--secondary)]/20">{isRTL ? 'الحالة والفئة' : 'Status & Category'}</th>
-                    <th className="px-5 py-4 font-semibold border-b border-[var(--secondary)]/20 text-center">{isRTL ? 'الإجراء' : 'Action'}</th>
+                    <th className="px-5 py-4 font-semibold border-b border-secondary/20">{isRTL ? 'المستند' : 'Source'}</th>
+                    <th className="px-5 py-4 font-semibold border-b border-secondary/20">{isRTL ? 'ميناء الشحن' : 'Loading Port'}</th>
+                    <th className="px-5 py-4 font-semibold border-b border-secondary/20">{isRTL ? 'المُرسل إليه' : 'Consignee'}</th>
+                    <th className="px-5 py-4 font-semibold border-b border-secondary/20">{isRTL ? 'الحالة والفئة' : 'Status & Category'}</th>
+                    <th className="px-5 py-4 font-semibold border-b border-secondary/20 text-center">{isRTL ? 'الإجراء' : 'Action'}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--secondary)]/10 bg-[var(--bg-primary)]/40">
+                <tbody className="divide-y divide-secondary/10 bg-[var(--bg-primary)]/40">
                   {extractedContainers.map((container, idx) => {
                     const isFailed = container.extraction_status === 'failed' || container.extraction_status === 'incomplete';
                     return (
@@ -294,7 +295,7 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
                          </td>
                          <td className="px-5 py-4 text-center">
                            <button 
-                             onClick={() => handleDeleteManifest(container.id)}
+                             onClick={() => setManifestToDelete(container.id)}
                              className="text-[var(--text-secondary)] hover:text-red-500 p-2 rounded-lg hover:bg-red-500/10 mb-1.5 transition-all text-sm active:scale-95"
                              title={isRTL ? 'حذف' : 'Delete'}
                            >
@@ -311,12 +312,58 @@ export function ManifestUploader({ vesselId, language, onUploadSuccess }: Manife
            <div className="mt-6 flex justify-end">
               <button 
                 onClick={() => setExtractedContainers([])}
-                className="flex items-center gap-2 px-5 py-2.5 border border-[var(--secondary)]/40 text-[var(--text-primary)] font-medium rounded-lg hover:bg-[var(--secondary)]/10 hover:border-[var(--secondary)]/60 transition-all text-sm active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 border border-secondary/40 text-[var(--text-primary)] font-medium rounded-lg hover:bg-secondary/10 hover:border-secondary/60 transition-all text-sm active:scale-95"
               >
                  <UploadCloud className="w-4 h-4" />
                  {isRTL ? 'رفع الدفعة التالية' : 'Upload Another Batch'}
               </button>
            </div>
+        </div>
+      )}
+      {/* Custom Confirmation Modal */}
+      {manifestToDelete !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setManifestToDelete(null)}
+          />
+          
+          {/* Modal Container */}
+          <div className="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl max-w-sm w-full animate-in fade-in zoom-in-95 duration-200 text-center">
+            {/* Warning Icon */}
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
+              <Trash2 className="w-5 h-5 animate-pulse" />
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-2">
+              {isRTL ? 'تأكيد حذف البيان' : 'Confirm Manifest Deletion'}
+            </h3>
+            
+            {/* Description */}
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+              {isRTL 
+                ? 'هل أنت متأكد من حذف بيان الحمولة هذا؟ هذا الإجراء سيقوم بحذف البيان وكافة البيانات المرتبطة به نهائياً.' 
+                : 'Are you sure you want to delete this manifest? This action will permanently delete the manifest and all associated data.'}
+            </p>
+            
+            {/* Actions */}
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setManifestToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm transition-colors"
+              >
+                {isRTL ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                onClick={() => confirmDeleteManifest(manifestToDelete)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition-colors shadow-sm"
+              >
+                {isRTL ? 'حذف نهائي' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

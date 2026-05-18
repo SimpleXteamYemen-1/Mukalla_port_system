@@ -39,8 +39,9 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
     fetchVessels();
   }, []);
 
-  const handleDeleteVessel = async (id: number) => {
-    if (!window.confirm(isRTL ? 'هل أنت متأكد من إزالة هذه السفينة؟' : 'Are you sure you want to remove this vessel?')) return;
+  const [vesselToDelete, setVesselToDelete] = useState<number | null>(null);
+
+  const confirmDeleteVessel = async (id: number) => {
     try {
       await api.delete(`/agent/vessels/${id}`);
       setVessels(vessels.filter(v => v.id !== id));
@@ -48,6 +49,8 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
     } catch (error) {
       console.error(error);
       toast.error(isRTL ? 'حدث خطأ أثناء الإزالة' : 'Failed to remove vessel');
+    } finally {
+      setVesselToDelete(null);
     }
   };
 
@@ -169,7 +172,7 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleDeleteVessel(vessel.id)}
+                      onClick={() => setVesselToDelete(vessel.id)}
                       className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shadow-sm"
                       title={isRTL ? 'إزالة' : 'Remove'}
                     >
@@ -191,6 +194,53 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal */}
+      {vesselToDelete !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setVesselToDelete(null)}
+          />
+          
+          {/* Modal Container */}
+          <div className="relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl max-w-sm w-full animate-in fade-in zoom-in-95 duration-200 text-center">
+            {/* Warning Icon */}
+            <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
+              <Trash2 className="w-5 h-5 animate-pulse" />
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-2">
+              {isRTL ? 'تأكيد إزالة السفينة' : 'Confirm Vessel Removal'}
+            </h3>
+            
+            {/* Description */}
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+              {isRTL 
+                ? 'هل أنت متأكد من إزالة هذه السفينة؟ هذا الإجراء سيقوم بحذف السفينة وكافة البيانات المرتبطة بها نهائياً.' 
+                : 'Are you sure you want to remove this vessel? This action will permanently delete the vessel and all associated data.'}
+            </p>
+            
+            {/* Actions */}
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setVesselToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold rounded-lg text-sm transition-colors"
+              >
+                {isRTL ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                onClick={() => confirmDeleteVessel(vesselToDelete)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition-colors shadow-sm"
+              >
+                {isRTL ? 'إزالة نهائية' : 'Remove Permanently'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -3,7 +3,7 @@ import { Language } from '../../App';
 import { Bell, CheckCircle2, XCircle, FileText, RefreshCw, Eye, Package } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
-import { getLocalizedNotificationMessage } from '../../utils/notificationUtils';
+import { getLocalizedNotificationMessage, getLocalizedNotificationTitle } from '../../utils/notificationUtils';
 
 interface TraderNotificationsProps {
   language: Language;
@@ -209,7 +209,12 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-1">
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm">{notification.title}</h3>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-50 text-sm">
+                        {getLocalizedNotificationTitle({
+                          ...notification,
+                          operationType: notification.title
+                        } as any, language)}
+                      </h3>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
                           {formatDate(notification.timestamp)}

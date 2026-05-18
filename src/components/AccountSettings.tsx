@@ -291,8 +291,8 @@ export function AccountSettings({
                 value="profile" 
                 className={`w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all
                   ${activeTab === 'profile' 
-                    ? 'bg-[var(--primary)]/10 text-[var(--primary)] border-l-2 md:border-l-0 md:border-r-2 border-[var(--primary)]' 
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--secondary)]/10'}`}
+                    ? 'bg-primary/10 text-primary border-l-2 md:border-l-0 md:border-r-2 border-primary' 
+                    : 'text-[var(--text-secondary)] hover:bg-secondary/10'}`}
               >
                 <UserIcon className="w-4 h-4" />
                 {t.profile}
@@ -301,8 +301,8 @@ export function AccountSettings({
                 value="preferences" 
                 className={`w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all
                   ${activeTab === 'preferences' 
-                    ? 'bg-[var(--primary)]/10 text-[var(--primary)] border-l-2 md:border-l-0 md:border-r-2 border-[var(--primary)]' 
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--secondary)]/10'}`}
+                    ? 'bg-primary/10 text-primary border-l-2 md:border-l-0 md:border-r-2 border-primary' 
+                    : 'text-[var(--text-secondary)] hover:bg-secondary/10'}`}
               >
                 <Settings className="w-4 h-4" />
                 {t.preferences}
@@ -311,8 +311,8 @@ export function AccountSettings({
                 value="security" 
                 className={`w-full justify-start gap-3 px-4 py-3 text-sm font-medium transition-all
                   ${activeTab === 'security' 
-                    ? 'bg-[var(--primary)]/10 text-[var(--primary)] border-l-2 md:border-l-0 md:border-r-2 border-[var(--primary)]' 
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--secondary)]/10'}`}
+                    ? 'bg-primary/10 text-primary border-l-2 md:border-l-0 md:border-r-2 border-primary' 
+                    : 'text-[var(--text-secondary)] hover:bg-secondary/10'}`}
               >
                 <Shield className="w-4 h-4" />
                 {t.security}
@@ -324,7 +324,7 @@ export function AccountSettings({
           <div className="flex-1">
             {/* Profile Content */}
             <TabsContent value="profile" className="mt-0">
-              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50">
+              <Card className="bg-[var(--bg-card)] border-secondary/50">
                 <form onSubmit={handleUpdateProfile}>
                   <CardHeader>
                     <CardTitle>{t.personalInfo}</CardTitle>
@@ -332,19 +332,19 @@ export function AccountSettings({
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Avatar Upload */}
-                    <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-[var(--secondary)]/30">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-secondary/30">
                       <div className="relative group">
-                        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-[var(--primary)]/10 flex items-center justify-center border-2 border-dashed border-[var(--primary)]/30 group-hover:border-[var(--primary)] transition-colors">
+                        <div className="w-24 h-24 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center border-2 border-dashed border-primary/30 group-hover:border-primary transition-colors">
                           {avatarPreview ? (
                             <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                           ) : (
-                            <UserIcon className="w-10 h-10 text-[var(--primary)]/40" />
+                            <UserIcon className="w-10 h-10 text-primary/40" />
                           )}
                         </div>
                         <button 
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute -bottom-2 -right-2 p-2 bg-[var(--primary)] text-white rounded-lg shadow-lg hover:scale-110 transition-transform"
+                          className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-lg shadow-lg hover:scale-110 transition-transform"
                         >
                           <Camera className="w-4 h-4" />
                         </button>
@@ -380,7 +380,7 @@ export function AccountSettings({
                             id="name" 
                             value={profileForm.name} 
                             onChange={e => setProfileForm({...profileForm, name: e.target.value})}
-                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-[var(--secondary)]`}
+                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-secondary`}
                           />
                         </div>
                       </div>
@@ -393,7 +393,7 @@ export function AccountSettings({
                             type="email" 
                             disabled
                             value={profileForm.email} 
-                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)]/50 border-[var(--secondary)] cursor-not-allowed`}
+                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)]/50 border-secondary cursor-not-allowed`}
                           />
                         </div>
                       </div>
@@ -405,13 +405,13 @@ export function AccountSettings({
                             id="phone" 
                             value={profileForm.phone} 
                             onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
-                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-[var(--secondary)]`}
+                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-secondary`}
                           />
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end border-t border-[var(--secondary)]/30 pt-6">
+                  <CardFooter className="flex justify-end border-t border-secondary/30 pt-6">
                     <Button type="submit" disabled={isLoading} className="gap-2">
                       {isLoading ? (
                         <LoadingIndicator type="line-spinner" size="xs" className="text-white" />
@@ -425,10 +425,10 @@ export function AccountSettings({
               </Card>
 
               {/* Digital Signature Card */}
-              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50 mt-6">
+              <Card className="bg-[var(--bg-card)] border-secondary/50 mt-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <PenTool className="w-5 h-5 text-[var(--primary)]" />
+                    <PenTool className="w-5 h-5 text-primary" />
                     {language === 'ar' ? 'التوقيع الرقمي' : 'Digital Signature'}
                   </CardTitle>
                   <CardDescription>
@@ -453,7 +453,7 @@ export function AccountSettings({
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="flex justify-end border-t border-[var(--secondary)]/30 pt-6">
+                <CardFooter className="flex justify-end border-t border-secondary/30 pt-6">
                   <Button 
                     type="button" 
                     onClick={handleUpdateSignature} 
@@ -473,7 +473,7 @@ export function AccountSettings({
 
             {/* Preferences Content */}
             <TabsContent value="preferences" className="mt-0 space-y-6">
-              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50">
+              <Card className="bg-[var(--bg-card)] border-secondary/50">
                 <CardHeader>
                   <CardTitle>{t.theme}</CardTitle>
                   <CardDescription>{t.themeDesc}</CardDescription>
@@ -484,10 +484,10 @@ export function AccountSettings({
                       onClick={handleToggleTheme}
                       className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all
                         ${theme === 'light' 
-                          ? 'border-[var(--primary)] bg-[var(--primary)]/5' 
-                          : 'border-[var(--secondary)]/30 hover:border-[var(--secondary)] bg-[var(--bg-primary)]/50'}`}
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-secondary/30 hover:border-secondary bg-[var(--bg-primary)]/50'}`}
                     >
-                      <div className={`p-3 rounded-lg ${theme === 'light' ? 'bg-[var(--primary)] text-white' : 'bg-[var(--secondary)]/10 text-[var(--text-secondary)]'}`}>
+                      <div className={`p-3 rounded-lg ${theme === 'light' ? 'bg-primary text-primary-foreground' : 'bg-secondary/10 text-[var(--text-secondary)]'}`}>
                         <Sun className="w-6 h-6" />
                       </div>
                       <span className="font-medium text-sm text-[var(--text-primary)]">{t.light}</span>
@@ -496,10 +496,10 @@ export function AccountSettings({
                       onClick={handleToggleTheme}
                       className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all
                         ${theme === 'dark' 
-                          ? 'border-[var(--primary)] bg-[var(--primary)]/5' 
-                          : 'border-[var(--secondary)]/30 hover:border-[var(--secondary)] bg-[var(--bg-primary)]/50'}`}
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-secondary/30 hover:border-secondary bg-[var(--bg-primary)]/50'}`}
                     >
-                      <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-[var(--primary)] text-white' : 'bg-[var(--secondary)]/10 text-[var(--text-secondary)]'}`}>
+                      <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-primary text-primary-foreground' : 'bg-secondary/10 text-[var(--text-secondary)]'}`}>
                         <Moon className="w-6 h-6" />
                       </div>
                       <span className="font-medium text-sm text-[var(--text-primary)]">{t.dark}</span>
@@ -508,7 +508,7 @@ export function AccountSettings({
                 </CardContent>
               </Card>
 
-              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50">
+              <Card className="bg-[var(--bg-card)] border-secondary/50">
                 <CardHeader>
                   <CardTitle>{t.language}</CardTitle>
                   <CardDescription>{t.languageDesc}</CardDescription>
@@ -519,10 +519,10 @@ export function AccountSettings({
                       onClick={handleToggleLanguage}
                       className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all
                         ${language === 'en' 
-                          ? 'border-[var(--primary)] bg-[var(--primary)]/5' 
-                          : 'border-[var(--secondary)]/30 hover:border-[var(--secondary)] bg-[var(--bg-primary)]/50'}`}
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-secondary/30 hover:border-secondary bg-[var(--bg-primary)]/50'}`}
                     >
-                      <div className={`p-3 rounded-lg ${language === 'en' ? 'bg-[var(--primary)] text-white' : 'bg-[var(--secondary)]/10 text-[var(--text-secondary)]'}`}>
+                      <div className={`p-3 rounded-lg ${language === 'en' ? 'bg-primary text-primary-foreground' : 'bg-secondary/10 text-[var(--text-secondary)]'}`}>
                         <Globe className="w-6 h-6" />
                       </div>
                       <span className="font-medium text-sm text-[var(--text-primary)]">English (EN)</span>
@@ -531,10 +531,10 @@ export function AccountSettings({
                       onClick={handleToggleLanguage}
                       className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all
                         ${language === 'ar' 
-                          ? 'border-[var(--primary)] bg-[var(--primary)]/5' 
-                          : 'border-[var(--secondary)]/30 hover:border-[var(--secondary)] bg-[var(--bg-primary)]/50'}`}
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-secondary/30 hover:border-secondary bg-[var(--bg-primary)]/50'}`}
                     >
-                      <div className={`p-3 rounded-lg ${language === 'ar' ? 'bg-[var(--primary)] text-white' : 'bg-[var(--secondary)]/10 text-[var(--text-secondary)]'}`}>
+                      <div className={`p-3 rounded-lg ${language === 'ar' ? 'bg-primary text-primary-foreground' : 'bg-secondary/10 text-[var(--text-secondary)]'}`}>
                         <Globe className="w-6 h-6" />
                       </div>
                       <span className="font-medium text-sm text-[var(--text-primary)]">العربيــة (AR)</span>
@@ -546,7 +546,7 @@ export function AccountSettings({
 
             {/* Security Content */}
             <TabsContent value="security" className="mt-0 space-y-6">
-              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50">
+              <Card className="bg-[var(--bg-card)] border-secondary/50">
                 <form onSubmit={handleUpdateSecurity}>
                   <CardHeader>
                     <CardTitle>{t.changePassword}</CardTitle>
@@ -562,7 +562,7 @@ export function AccountSettings({
                           type="password"
                           value={securityForm.currentPassword}
                           onChange={e => setSecurityForm({...securityForm, currentPassword: e.target.value})}
-                          className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-[var(--secondary)]`}
+                          className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-secondary`}
                         />
                       </div>
                     </div>
@@ -576,7 +576,7 @@ export function AccountSettings({
                             type="password"
                             value={securityForm.newPassword}
                             onChange={e => setSecurityForm({...securityForm, newPassword: e.target.value})}
-                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-[var(--secondary)]`}
+                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-secondary`}
                             dir="ltr"
                           />
                         </div>
@@ -587,7 +587,7 @@ export function AccountSettings({
                                 <div
                                   key={i}
                                   className={`flex-1 rounded-sm transition-colors ${
-                                    i < passwordStrength.strength ? passwordStrength.color : "bg-[var(--secondary)]/50"
+                                    i < passwordStrength.strength ? passwordStrength.color : "bg-secondary/50"
                                   }`}
                                 />
                               ))}
@@ -605,13 +605,13 @@ export function AccountSettings({
                             type="password"
                             value={securityForm.confirmPassword}
                             onChange={e => setSecurityForm({...securityForm, confirmPassword: e.target.value})}
-                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-[var(--secondary)]`}
+                            className={`${isRTL ? 'pr-10' : 'pl-10'} bg-[var(--bg-primary)] border-secondary`}
                           />
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end border-t border-[var(--secondary)]/30 pt-6">
+                  <CardFooter className="flex justify-end border-t border-secondary/30 pt-6">
                     <Button type="submit" disabled={isLoading} className="gap-2">
                       {isLoading ? (
                         <LoadingIndicator type="line-spinner" size="xs" className="text-white" />
@@ -624,7 +624,7 @@ export function AccountSettings({
                 </form>
               </Card>
 
-              <Card className="bg-[var(--bg-card)] border-[var(--secondary)]/50 opacity-60">
+              <Card className="bg-[var(--bg-card)] border-secondary/50 opacity-60">
                 <CardHeader>
                   <CardTitle>{t.twoFactor}</CardTitle>
                   <CardDescription>{t.twoFactorDesc}</CardDescription>

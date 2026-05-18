@@ -47,7 +47,7 @@ export function MainLayout({
       {/* Main Content Area */}
       <div className={`${language === 'ar' ? (isExpanded ? 'mr-64' : 'mr-20') : (isExpanded ? 'ml-64' : 'ml-20')} min-h-screen transition-all duration-300 ease-in-out`}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-[var(--secondary)] shadow-sm transition-colors duration-300">
+        <header className="sticky top-0 z-40 bg-[var(--bg-primary)] border-b border-secondary shadow-sm transition-colors duration-300">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex-1 flex items-center gap-4">
               <button
@@ -56,7 +56,7 @@ export function MainLayout({
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-[var(--secondary)] focus-within:border-[var(--primary)] transition-colors">
+              <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-secondary focus-within:border-primary transition-colors">
                 <Search className="w-4 h-4 text-[var(--text-secondary)]" />
                 <input 
                   type="text" 
@@ -96,9 +96,9 @@ export function MainLayout({
                 {/* Mobile avatar link to settings */}
                 <button 
                   onClick={() => onNavigate('settings')}
-                  className="w-8 h-8 lg:hidden bg-[var(--primary)]/10 rounded-lg flex items-center justify-center"
+                  className="w-8 h-8 lg:hidden bg-primary/10 rounded-lg flex items-center justify-center"
                 >
-                  <UserIcon className="w-4 h-4 text-[var(--primary)]" />
+                  <UserIcon className="w-4 h-4 text-primary" />
                 </button>
 
                 <button 

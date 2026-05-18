@@ -234,21 +234,21 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
           <div className="flex items-center gap-4">
             <button 
               onClick={() => onNavigate('dashboard')}
-              className="p-3 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] rounded-xl text-[var(--text-primary)] transition-all group"
+              className="p-3 bg-[var(--surface)] hover:bg-secondary/10 border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] transition-all group"
             >
               <ArrowLeft className={`w-5 h-5 group-hover:-translate-x-1 transition-transform ${isRTL ? 'rotate-180 group-hover:translate-x-1' : ''}`} />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-              <p className="text-blue-200">{isRTL ? 'اختر سفينة لعرض سجلها التاريخي' : 'Select a vessel to view its historical record'}</p>
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">{t.title}</h1>
+              <p className="text-slate-500 dark:text-slate-400">{isRTL ? 'اختر سفينة لعرض سجلها التاريخي' : 'Select a vessel to view its historical record'}</p>
             </div>
           </div>
         </div>
 
         {/* Vessel Search & Selector */}
-        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-8">
+        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8">
           <div className="flex items-center gap-3 mb-6">
-            <Ship className="w-6 h-6 text-[var(--primary)]" />
+            <Ship className="w-6 h-6 text-primary" />
             <h3 className="text-xl font-bold text-[var(--text-primary)]">
               {isRTL ? 'اختر سفينة' : 'Select a Vessel'}
             </h3>
@@ -262,7 +262,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
               value={vesselSearchText}
               onChange={(e) => setVesselSearchText(e.target.value)}
               placeholder={isRTL ? 'بحث بالاسم أو رقم IMO...' : 'Search by vessel name or IMO number...'}
-              className={`w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-xl py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} focus:outline-none focus:border-[var(--primary)] transition-colors text-base`}
+              className={`w-full bg-[var(--surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-xl py-3.5 ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} focus:outline-none focus:border-primary transition-colors text-base`}
             />
           </div>
 
@@ -273,7 +273,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
               <p className="text-[var(--text-secondary)]">{isRTL ? 'جاري تحميل السفن...' : 'Loading vessels...'}</p>
             </div>
           ) : vesselList.length === 0 ? (
-            <div className="text-center py-16 border border-dashed border-[var(--border)] rounded-xl bg-[var(--surface)]">
+            <div className="text-center py-16 border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--surface)]">
               <Ship className="w-12 h-12 text-[var(--text-secondary)]/50 mx-auto mb-4" />
               <p className="text-[var(--text-secondary)] font-medium text-lg">
                 {isRTL ? 'لا توجد سفن مسجلة' : 'No vessels found'}
@@ -288,11 +288,11 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
                 <button
                   key={vessel.id}
                   onClick={() => handleSelectVessel(vessel)}
-                  className="text-left p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-xl transition-all group transform hover:-translate-y-0.5"
+                  className="text-left p-5 bg-[var(--surface)] hover:bg-secondary/10 border border-[var(--border-color)] hover:border-primary rounded-xl transition-all group transform hover:-translate-y-0.5"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Ship className="w-5 h-5 text-[var(--primary)]" />
+                      <Ship className="w-5 h-5 text-primary" />
                       <span className="text-[var(--text-primary)] font-bold text-base truncate max-w-[140px]">{vessel.name}</span>
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border uppercase tracking-wider ${getVesselStatusColor(vessel.status)}`}>
@@ -309,11 +309,11 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
                       <span>{getTranslatedVesselType(vessel.type, language)} • {vessel.flag || '🏳️'}</span>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between">
+                  <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center justify-between">
                     <span className="text-xs text-[var(--text-secondary)]">
                       {isRTL ? 'عرض السجل' : 'View History'}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-[var(--primary)] -rotate-90 ${isRTL ? 'rotate-90' : ''} group-hover:translate-x-1 transition-transform`} />
+                    <ChevronDown className={`w-4 h-4 text-primary -rotate-90 ${isRTL ? 'rotate-90' : ''} group-hover:translate-x-1 transition-transform`} />
                   </div>
                 </button>
               ))}
@@ -346,13 +346,13 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
         <div className="flex gap-3">
           <button
             onClick={() => { setError(null); setShowSelector(true); setActiveVesselId(''); }}
-            className="px-6 py-3 bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 border border-[var(--primary)]/30 rounded-xl text-[var(--primary)] font-bold transition-all"
+            className="px-6 py-3 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-primary font-bold transition-all"
           >
             {isRTL ? 'اختر سفينة أخرى' : 'Select Another Vessel'}
           </button>
           <button
             onClick={() => onNavigate('dashboard')}
-            className="px-6 py-3 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] rounded-xl text-[var(--text-primary)] transition-all"
+            className="px-6 py-3 bg-[var(--surface)] hover:bg-secondary/10 border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] transition-all"
           >
             {t.back}
           </button>
@@ -369,7 +369,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
         <div className="flex items-center gap-4">
           <button 
             onClick={() => { setShowSelector(true); setActiveVesselId(''); setVesselData(null); setHistoryItems([]); }}
-            className="p-3 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] rounded-xl text-[var(--text-primary)] transition-all group"
+            className="p-3 bg-[var(--surface)] hover:bg-secondary/10 border border-[var(--border-color)] rounded-xl text-[var(--text-primary)] transition-all group"
             title={isRTL ? 'اختر سفينة أخرى' : 'Select Another Vessel'}
           >
             <ArrowLeft className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
@@ -451,7 +451,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
               </div>
               <div className="text-slate-900 dark:text-slate-50 font-bold text-sm line-clamp-1">{vesselData.arrivalDate || 'N/A'}</div>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+            <div className="bg-[var(--surface)] border border-[var(--border-color)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
               <Calendar className="w-5 h-5 text-amber-400 mb-2" />
               <div className="text-[var(--text-secondary)] text-xs mb-1">{t.departureDate}</div>
               <div className="text-[var(--text-primary)] font-bold text-sm">{vesselData.departureDate || 'N/A'}</div>
@@ -482,10 +482,10 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
       )}
 
       {/* Historical Timeline */}
-      <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border)] p-8">
+      <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] p-8">
         <div className="flex items-center justify-between mb-8">
           <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-3">
-            <Clock className="w-6 h-6 text-[var(--primary)]" />
+            <Clock className="w-6 h-6 text-primary" />
             {t.history}
           </h3>
           <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
@@ -495,12 +495,12 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
         </div>
 
         {sortedHistoryItems.length === 0 ? (
-          <div className="text-center py-12 px-6 border border-dashed border-[var(--border)] rounded-xl bg-[var(--surface)]">
+          <div className="text-center py-12 px-6 border border-dashed border-[var(--border-color)] rounded-xl bg-[var(--surface)]">
             <Info className="w-12 h-12 text-[var(--text-secondary)]/50 mx-auto mb-4" />
             <p className="text-[var(--text-secondary)] font-medium text-lg">{t.noHistory}</p>
           </div>
         ) : (
-          <div className="relative border-l border-[var(--border)] ml-4 sm:ml-6 md:ml-8 space-y-10">
+          <div className="relative border-l border-[var(--border-color)] ml-4 sm:ml-6 md:ml-8 space-y-10">
             {sortedHistoryItems.map((item, index) => (
               <div key={`${item.id}-${index}`} className="relative pl-8 sm:pl-10">
                 {/* Timeline Dot */}

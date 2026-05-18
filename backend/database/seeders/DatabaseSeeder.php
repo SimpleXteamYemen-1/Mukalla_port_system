@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             WharfSeeder::class,
             StorageKeywordSeeder::class,
+            VesselSeeder::class,
         ]);
 
         \App\Models\StorageArea::factory(4)->create();

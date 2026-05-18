@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export const LANG_KEY = 'app-language';
 
-export const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`, // Laragon default backend URL

@@ -40,7 +40,7 @@ const STATUS_CONFIG: Record<string, { en: string; ar: string; color: string; ico
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">{label}</label>
       {children}
       {error && <p className="mt-1 text-red-600 dark:text-red-400 text-xs font-medium">{error}</p>}
     </div>
@@ -51,7 +51,7 @@ function Input({ error, ...props }: InputHTMLAttributes<HTMLInputElement> & { er
   return (
     <input
       {...props}
-      className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border ${error ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-50 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm shadow-sm`}
+      className={`w-full px-3 py-2 bg-[var(--surface-highlight)] border ${error ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg text-[var(--text-primary)] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm shadow-sm`}
     />
   );
 }
@@ -60,7 +60,7 @@ function Select({ error, children, ...props }: SelectHTMLAttributes<HTMLSelectEl
   return (
     <select
       {...props}
-      className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border ${error ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm shadow-sm`}
+      className={`w-full px-3 py-2 bg-[var(--surface-highlight)] border ${error ? 'border-red-500' : 'border-[var(--border-color)]'} rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm shadow-sm`}
     >
       {children}
     </select>
@@ -501,17 +501,17 @@ export function UserDirectory({ language }: UserDirectoryProps) {
           
           {/* Create User */}
           {modal === 'create' && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-w-lg w-full p-6 animate-in zoom-in-95 duration-200">
+            <div className="bg-[var(--bg-card)] rounded-lg shadow-xl border border-[var(--border-color)] max-w-lg w-full p-6 animate-in zoom-in-95 duration-200 text-[var(--text-primary)]">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
                     <UserPlus className="w-5 h-5" />
                   </div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">
+                  <h2 className="text-lg font-bold text-[var(--text-primary)]">
                     {isAR ? 'إنشاء حساب جديد' : 'Create New Account'}
                   </h2>
                 </div>
-                <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onClick={closeModal} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -536,9 +536,9 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                     <Input value={createForm.organization} onChange={e => setCreateForm(f => ({ ...f, organization: e.target.value }))} />
                   </Field>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 uppercase tracking-wider">{isAR ? 'كلمة المرور (اختياري)' : 'Password (optional)'}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{isAR ? 'إذا تُركت فارغة، سيُرسَل رابط التعيين للمستخدم.' : 'If empty, a setup link will be emailed.'}</p>
+                <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-4">
+                  <p className="text-xs font-semibold text-[var(--text-primary)] mb-1 uppercase tracking-wider">{isAR ? 'كلمة المرور (اختياري)' : 'Password (optional)'}</p>
+                  <p className="text-xs text-[var(--text-secondary)] mb-3">{isAR ? 'إذا تُركت فارغة، سيُرسَل رابط التعيين للمستخدم.' : 'If empty, a setup link will be emailed.'}</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="relative">
                       <Input type={showPassword ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} placeholder={isAR ? 'كلمة المرور' : 'Password'} />
@@ -551,8 +551,8 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <button onClick={closeModal} className="flex-1 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors text-sm">
+              <div className="flex gap-3 mt-6 pt-4 border-t border-[var(--border-color)]">
+                <button onClick={closeModal} className="flex-1 py-2 border border-[var(--border-color)] hover:bg-[var(--surface-highlight)] text-[var(--text-primary)] rounded-lg font-medium transition-colors text-sm">
                   {isAR ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button onClick={handleCreate} disabled={isSubmitting} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2">
@@ -564,16 +564,16 @@ export function UserDirectory({ language }: UserDirectoryProps) {
 
           {/* Edit User */}
           {modal === 'edit' && selectedUser && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-w-lg w-full p-6 animate-in zoom-in-95 duration-200">
+            <div className="bg-[var(--bg-card)] rounded-lg shadow-xl border border-[var(--border-color)] max-w-lg w-full p-6 animate-in zoom-in-95 duration-200 text-[var(--text-primary)]">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <Avatar name={selectedUser.name} size="md" />
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50">{isAR ? 'تعديل المستخدم' : 'Edit User'}</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs">{selectedUser.email}</p>
+                    <h2 className="text-lg font-bold text-[var(--text-primary)]">{isAR ? 'تعديل المستخدم' : 'Edit User'}</h2>
+                    <p className="text-[var(--text-secondary)] text-xs">{selectedUser.email}</p>
                   </div>
                 </div>
-                <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                <button onClick={closeModal} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -603,7 +603,7 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                       const cfg = STATUS_CONFIG[s];
                       const sel = editForm.status === s;
                       return (
-                        <button key={s} type="button" onClick={() => handleEditStatusChange(s)} className={`flex items-center gap-1.5 px-2 py-1.5 rounded border transition-colors text-xs font-semibold ${sel ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                        <button key={s} type="button" onClick={() => handleEditStatusChange(s)} className={`flex items-center gap-1.5 px-2 py-1.5 rounded border transition-colors text-xs font-semibold ${sel ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300' : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--surface-highlight)]'}`}>
                           {cfg.icon}
                           {isAR ? cfg.ar : cfg.en}
                         </button>
@@ -618,8 +618,8 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                   </div>
                 )}
               </div>
-              <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <button onClick={closeModal} className="flex-1 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors text-sm">
+              <div className="flex gap-3 mt-6 pt-4 border-t border-[var(--border-color)]">
+                <button onClick={closeModal} className="flex-1 py-2 border border-[var(--border-color)] hover:bg-[var(--surface-highlight)] text-[var(--text-primary)] rounded-lg font-medium transition-colors text-sm">
                   {isAR ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button onClick={handleUpdate} disabled={isSubmitting} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2">
@@ -631,14 +631,14 @@ export function UserDirectory({ language }: UserDirectoryProps) {
 
           {/* Suspend Confirmation */}
           {modal === 'edit' && pendingSuspend && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-200 z-50">
+            <div className="bg-[var(--bg-card)] rounded-lg shadow-xl border border-[var(--border-color)] max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-200 z-50 text-[var(--text-primary)]">
                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                  <ShieldOff className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                </div>
-               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-2">{isAR ? 'تأكيد التعليق' : 'Confirm Suspension'}</h3>
-               <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">{isAR ? 'سيلغي هذا جميع جلسات المستخدم.' : 'This will immediately revoke active sessions.'}</p>
+               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">{isAR ? 'تأكيد التعليق' : 'Confirm Suspension'}</h3>
+               <p className="text-[var(--text-secondary)] text-sm mb-6">{isAR ? 'سيلغي هذا جميع جلسات المستخدم.' : 'This will immediately revoke active sessions.'}</p>
                <div className="flex gap-3">
-                 <button onClick={() => setPendingSuspend(false)} className="flex-1 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors text-sm">
+                 <button onClick={() => setPendingSuspend(false)} className="flex-1 py-2 border border-[var(--border-color)] hover:bg-[var(--surface-highlight)] text-[var(--text-primary)] rounded-lg font-medium transition-colors text-sm">
                    {isAR ? 'تراجع' : 'Back'}
                  </button>
                  <button onClick={confirmSuspend} className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors text-sm">
@@ -650,14 +650,14 @@ export function UserDirectory({ language }: UserDirectoryProps) {
 
           {/* Delete Confirmation */}
           {modal === 'delete-confirm' && selectedUser && (
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-200">
+            <div className="bg-[var(--bg-card)] rounded-lg shadow-xl border border-[var(--border-color)] max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-200 text-[var(--text-primary)]">
                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                  <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                </div>
-               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 mb-2">{isAR ? 'إلغاء الوصول' : 'Revoke Access'}</h3>
-               <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">{isAR ? `سيتم منع ${selectedUser.name} من الدخول مع حفظ السجلات.` : `Revoke access for ${selectedUser.name}? Records will be kept.`}</p>
+               <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">{isAR ? 'إلغاء الوصول' : 'Revoke Access'}</h3>
+               <p className="text-[var(--text-secondary)] text-sm mb-4">{isAR ? `سيتم منع ${selectedUser.name} من الدخول مع حفظ السجلات.` : `Revoke access for ${selectedUser.name}? Records will be kept.`}</p>
                <div className="flex gap-3">
-                 <button onClick={closeModal} className="flex-1 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-medium transition-colors text-sm">
+                 <button onClick={closeModal} className="flex-1 py-2 border border-[var(--border-color)] hover:bg-[var(--surface-highlight)] text-[var(--text-primary)] rounded-lg font-medium transition-colors text-sm">
                    {isAR ? 'إلغاء' : 'Cancel'}
                  </button>
                  <button onClick={handleDelete} disabled={isSubmitting} className="flex-1 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2">

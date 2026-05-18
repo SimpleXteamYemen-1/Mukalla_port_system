@@ -112,7 +112,7 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
               <button
                 key={item.page}
                 onClick={() => onNavigate(item.page)}
-                className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-2xl transition-all transform hover:-translate-y-1 group"
+                className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-secondary/10 border border-[var(--border-color)] hover:border-primary rounded-2xl transition-all transform hover:-translate-y-1 group"
               >
                 <div className={`p-4 ${item.iconBg} rounded-xl group-hover:scale-110 transition-transform`}>
                   <Icon className={`w-8 h-8 ${item.iconColor}`} />
@@ -121,7 +121,7 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
                   <div className="text-[var(--text-primary)] font-bold text-lg truncate">{item.label}</div>
                   <div className="text-[var(--text-secondary)] font-medium text-sm mt-1 truncate">{item.sub}</div>
                 </div>
-                <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
+                <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-primary transition-colors ${isRTL ? 'rotate-180' : ''}`} />
               </button>
             );
           })}

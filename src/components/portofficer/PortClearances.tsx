@@ -5,6 +5,8 @@ import { Language } from '../../App';
 import { FileCheck, Ship, Clock, CheckCircle, AlertCircle, QrCode, X, RefreshCw, Download } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { getClearances, approveClearance, rejectClearance, Clearance } from '../../utils/portOfficerApi';
+import { API_BASE_URL } from '@/services/api';
+
 
 // ─── Toast Notification System ────────────────────────────────────────────────
 type ToastType = 'success' | 'error' | 'info';
@@ -388,7 +390,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                   {/* PDF button — only mounts when backend has generated the certificate */}
                   {clearance.certificate_path && (
                     <button
-                      onClick={() => window.open(`http://localhost:8000${clearance.certificate_path}`, '_blank')}
+                      onClick={() => window.open(`${API_BASE_URL}${clearance.certificate_path}`, '_blank')}
                       className="flex items-center justify-center gap-2 w-full bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 py-2 rounded-lg text-sm font-semibold transition-colors"
                     >
                       <Download className="w-4 h-4" />

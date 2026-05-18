@@ -52,6 +52,10 @@
 
     /* Custom Design System Variables (Light) */
     --bg-primary: #f8fafc;
+    --bg-card: #ffffff;
+    --surface: #ffffff;
+    --surface-highlight: #f1f5f9;
+    --border-color: #e2e8f0;
     --text-primary: #0f172a;
     --text-secondary: #475569;
 
@@ -104,6 +108,10 @@
 
     /* Custom Design System Variables (Dark) */
     --bg-primary: #0f172a;
+    --bg-card: #1e293b;
+    --surface: #1e293b;
+    --surface-highlight: #0f172a;
+    --border-color: #334155;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
 
