@@ -404,14 +404,20 @@ class AgentController extends Controller
             'eta' => 'required|date',
             'type' => 'nullable|string',
             'expected_containers' => 'nullable|integer|min:1|required_if:type,container',
-            'flag' => 'nullable|string',
-            'name' => 'nullable|string',
+            'flag' => 'nullable|string|regex:/^[\x20-\x7E\n\r]*$/',
+            'name' => 'nullable|string|regex:/^[\x20-\x7E\n\r]*$/',
             'imo_number' => 'nullable|string',
-            'purpose' => 'nullable|string',
-            'cargo' => 'nullable|string',
+            'purpose' => 'nullable|string|regex:/^[\x20-\x7E\n\r]*$/',
+            'cargo' => 'nullable|string|regex:/^[\x20-\x7E\n\r]*$/',
             'priority' => 'nullable|string|in:Low,Medium,High',
-            'priority_reason' => 'nullable|required_if:priority,Medium|string|min:20',
+            'priority_reason' => 'nullable|required_if:priority,Medium|string|min:20|regex:/^[\x20-\x7E\n\r]*$/',
             'priority_document' => 'nullable|required_if:priority,High|file|mimes:pdf,jpeg,jpg|max:10240',
+        ], [
+            'name.regex' => 'The vessel name must only contain English characters.',
+            'flag.regex' => 'The flag must only contain English characters.',
+            'purpose.regex' => 'The purpose must only contain English characters.',
+            'cargo.regex' => 'The cargo must only contain English characters.',
+            'priority_reason.regex' => 'The priority reason must only contain English characters.',
         ]);
 
         $data = $request->only(['eta', 'type', 'expected_containers', 'flag', 'name', 'imo_number', 'purpose', 'cargo', 'priority', 'priority_reason']);

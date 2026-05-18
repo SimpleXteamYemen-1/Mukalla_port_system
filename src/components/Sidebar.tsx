@@ -17,7 +17,6 @@ export function Sidebar({ currentPage, onNavigate, language }: SidebarProps) {
     { id: 'vessels', label: t.menu.myVessels, icon: Ship },
     { id: 'arrivals', label: t.menu.arrivalNotifications, icon: Bell },
     { id: 'anchorage', label: t.menu.anchorageRequests, icon: Anchor },
-    { id: 'manifests', label: t.menu.cargoManifests, icon: FileText },
     { id: 'clearances', label: t.menu.portClearances, icon: FileCheck },
     { id: 'tracker', label: t.menu.requestStatusTracker, icon: Activity },
     { id: 'report', label: language === 'ar' ? 'تقرير نشاط السفينة' : 'Vessel Activity Report', icon: FileDown },

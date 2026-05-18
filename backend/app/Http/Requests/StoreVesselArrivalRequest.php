@@ -23,16 +23,32 @@ class StoreVesselArrivalRequest extends FormRequest
     {
         return [
             'imo_number' => 'required|string|regex:/^IMO\d{7}$/',
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|regex:/^[\x20-\x7E\n\r]*$/',
             'type' => 'required|string|in:container,bulk,tanker,ro-ro,general',
             'expected_containers' => 'nullable|integer|min:1|required_if:type,container',
-            'flag' => 'nullable|string|max:100',
+            'flag' => 'nullable|string|max:100|regex:/^[\x20-\x7E\n\r]*$/',
             'eta' => 'required|date|after_or_equal:today',
-            'purpose' => 'required|string',
-            'cargo' => 'nullable|string',
+            'purpose' => 'required|string|regex:/^[\x20-\x7E\n\r]*$/',
+            'cargo' => 'nullable|string|regex:/^[\x20-\x7E\n\r]*$/',
             'priority' => 'required|string|in:Low,Medium,High',
-            'priority_reason' => 'nullable|required_if:priority,Medium|string|min:20',
+            'priority_reason' => 'nullable|required_if:priority,Medium|string|min:20|regex:/^[\x20-\x7E\n\r]*$/',
             'priority_document' => 'nullable|required_if:priority,High|file|mimes:pdf,jpeg,jpg|max:10240',
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.regex' => 'The vessel name must only contain English characters.',
+            'flag.regex' => 'The flag must only contain English characters.',
+            'purpose.regex' => 'The purpose must only contain English characters.',
+            'cargo.regex' => 'The cargo must only contain English characters.',
+            'priority_reason.regex' => 'The priority reason must only contain English characters.',
         ];
     }
 
