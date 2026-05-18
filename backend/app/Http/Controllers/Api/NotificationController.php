@@ -19,8 +19,17 @@ class NotificationController extends Controller
 
     public function markAsRead($id)
     {
-        $notification = Notification::findOrFail($id);
+        $notification = Notification::where('user_id', auth()->id())->findOrFail($id);
         $notification->update(['read_at' => now()]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function markAllAsRead(Request $request)
+    {
+        Notification::where('user_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         return response()->json(['success' => true]);
     }

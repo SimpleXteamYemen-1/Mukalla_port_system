@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Language } from '../../App';
+import { Language, User } from '../../App';
 import { Package, Clock, CheckCircle2, XCircle, AlertTriangle, Ship, Calendar } from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { wharfService } from '../../services/wharfService';
 import { PageHeader } from '../ui/PageHeader';
 
 interface WharfDischargeRequestsProps {
+  user: User;
   language: Language;
 }
 
@@ -30,8 +32,17 @@ interface DischargeRequestBatch {
   created_at: string;
 }
 
-export function WharfDischargeRequests({ language }: WharfDischargeRequestsProps) {
+export function WharfDischargeRequests({ user, language }: WharfDischargeRequestsProps) {
   const isRTL = language === 'ar';
+  const { data: notifications = [], markAllAsRead } = useNotifications(user);
+
+  useEffect(() => {
+    // Automatically mark all as read when unread notifications are loaded
+    const hasUnread = notifications.some(n => n.status === 'unread' || n.status === 'pending');
+    if (hasUnread) {
+      markAllAsRead();
+    }
+  }, [notifications.length, markAllAsRead]);
   const [batches, setBatches] = useState<DischargeRequestBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);

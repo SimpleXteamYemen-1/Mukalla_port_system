@@ -8,6 +8,9 @@ use App\Models\Container;
 use App\Models\DischargeRequest;
 
 use Illuminate\Support\Facades\DB;
+use App\Models\Notification;
+use App\Models\User;
+use App\Models\Vessel;
 
 class TraderController extends Controller
 {
@@ -72,6 +75,26 @@ class TraderController extends Controller
                 'batch_id' => $batchId,
                 'requested_date' => $request->requested_date,
                 'notes' => $request->notes,
+            ]);
+        }
+
+        $vessel = Vessel::find($request->vessel_id);
+        $vesselName = $vessel ? $vessel->name : 'Unknown Vessel';
+        
+        // Notify all users with role 'wharf'
+        $wharfUsers = User::where('role', 'wharf')->get();
+        foreach ($wharfUsers as $wharfUser) {
+            Notification::create([
+                'user_id' => $wharfUser->id,
+                'title' => 'New Discharge Request',
+                'message' => "Trader {$request->user()->name} has requested discharge for " . count($discharges) . " container(s) from vessel {$vesselName}.",
+                'type' => 'discharge_request_new',
+                'data' => json_encode([
+                    'vessel' => $vesselName,
+                    'trader' => $request->user()->name,
+                    'batch_id' => $batchId,
+                    'count' => count($discharges)
+                ]),
             ]);
         }
 

@@ -11,10 +11,11 @@ import {
   agentService,
   Vessel,
   VesselActivityReport as VesselReport,
-  ReportArrival,
+  ReportClearance,
   ReportAnchorage,
-  ReportClearance
+  ReportArrival
 } from '../../services/agentService';
+import { getTranslatedStatus, getTranslatedVesselType } from '../../utils/formatters';
 
 interface VesselActivityReportProps {
   language: Language;
@@ -41,6 +42,8 @@ function statusBadge(status: string) {
     rejected:      'bg-rose-500/15   text-rose-400   border-rose-500/30',
     expired:       'bg-rose-500/15   text-rose-400   border-rose-500/30',
     wharf_assigned:'bg-sky-500/15    text-sky-400    border-sky-500/30',
+    clearance_approved: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    pending_clearance: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
   };
   return map[status] ?? 'bg-slate-500/15 text-slate-300 border-slate-500/30';
 }
@@ -55,16 +58,17 @@ function statusIcon(status: string) {
 
 // ─── Sub-cards ─────────────────────────────────────────────────────────────────
 
-function ArrivalCard({ data }: { data: ReportArrival }) {
+function ArrivalCard({ data, language }: { data: ReportArrival; language: Language }) {
+  const isAR = language === 'ar';
   const rows = [
-    { icon: Hash,    label: 'IMO Number',    value: data.imo_number },
-    { icon: Ship,    label: 'Vessel Type',   value: data.type },
-    { icon: Flag,    label: 'Flag',          value: data.flag },
-    { icon: Calendar,label: 'ETA',           value: fmt(data.eta) },
-    { icon: Calendar,label: 'ETD',           value: fmt(data.etd) },
-    { icon: Package, label: 'Cargo',         value: data.cargo || '—' },
-    { icon: Info,    label: 'Purpose',       value: data.purpose || '—' },
-    { icon: Zap,     label: 'Priority',      value: data.priority || 'Low' },
+    { icon: Hash,    label: isAR ? 'رقم IMO' : 'IMO Number',    value: data.imo_number },
+    { icon: Ship,    label: isAR ? 'نوع السفينة' : 'Vessel Type',   value: getTranslatedVesselType(data.type, language) },
+    { icon: Flag,    label: isAR ? 'العلم' : 'Flag',          value: data.flag },
+    { icon: Calendar,label: isAR ? 'وقت الوصول المتوقع' : 'ETA',           value: fmt(data.eta) },
+    { icon: Calendar,label: isAR ? 'وقت المغادرة المتوقع' : 'ETD',           value: fmt(data.etd) },
+    { icon: Package, label: isAR ? 'الشحنة' : 'Cargo',         value: data.cargo || '—' },
+    { icon: Info,    label: isAR ? 'الغرض' : 'Purpose',       value: data.purpose || '—' },
+    { icon: Zap,     label: isAR ? 'الأولوية' : 'Priority',      value: data.priority || (isAR ? 'منخفضة' : 'Low') },
   ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:grid-cols-2">
@@ -83,7 +87,7 @@ function ArrivalCard({ data }: { data: ReportArrival }) {
         <div className="sm:col-span-2 flex items-start gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 print:bg-amber-50 print:border-amber-200">
           <Info className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0 print:text-amber-600" />
           <div>
-            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider font-semibold print:text-gray-500">Priority Reason</p>
+            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider font-semibold print:text-gray-500">{isAR ? 'سبب الأولوية' : 'Priority Reason'}</p>
             <p className="text-[var(--text-primary)] font-medium text-sm print:text-gray-900">{data.priority_reason}</p>
           </div>
         </div>
@@ -92,14 +96,15 @@ function ArrivalCard({ data }: { data: ReportArrival }) {
   );
 }
 
-function AnchorageCard({ data }: { data: ReportAnchorage }) {
+function AnchorageCard({ data, language }: { data: ReportAnchorage; language: Language }) {
+  const isAR = language === 'ar';
   const rows = [
-    { icon: Calendar, label: 'Docking Time',     value: fmt(data.docking_time) },
-    { icon: Clock,    label: 'Duration',          value: `${data.duration} hour(s)` },
-    { icon: MapPin,   label: 'Location',          value: data.location || '—' },
-    { icon: FileText, label: 'Reason',            value: data.reason || '—' },
-    { icon: Anchor,   label: 'Wharf Assigned',    value: data.wharf ? data.wharf.name : '—' },
-    { icon: Calendar, label: 'Wharf Assigned At', value: fmt(data.wharf_assigned_at) },
+    { icon: Calendar, label: isAR ? 'وقت الرسو' : 'Docking Time',     value: fmt(data.docking_time) },
+    { icon: Clock,    label: isAR ? 'المدة' : 'Duration',          value: `${data.duration} ${isAR ? 'ساعة' : 'hour(s)'}` },
+    { icon: MapPin,   label: isAR ? 'الموقع' : 'Location',          value: data.location || '—' },
+    { icon: FileText, label: isAR ? 'السبب' : 'Reason',            value: data.reason || '—' },
+    { icon: Anchor,   label: isAR ? 'الرصيف المعين' : 'Wharf Assigned',    value: data.wharf ? data.wharf.name : '—' },
+    { icon: Calendar, label: isAR ? 'تاريخ التعيين' : 'Wharf Assigned At', value: fmt(data.wharf_assigned_at) },
   ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:grid-cols-2">
@@ -118,7 +123,7 @@ function AnchorageCard({ data }: { data: ReportAnchorage }) {
         <div className="sm:col-span-2 flex items-start gap-3 p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 print:bg-red-50 print:border-red-200">
           <XCircle className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0 print:text-red-600" />
           <div>
-            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider font-semibold print:text-gray-500">Rejection Reason</p>
+            <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider font-semibold print:text-gray-500">{isAR ? 'سبب الرفض' : 'Rejection Reason'}</p>
             <p className="text-[var(--text-primary)] font-medium text-sm print:text-gray-900">{data.rejection_reason}</p>
           </div>
         </div>
@@ -127,13 +132,14 @@ function AnchorageCard({ data }: { data: ReportAnchorage }) {
   );
 }
 
-function ClearanceCard({ data }: { data: ReportClearance }) {
+function ClearanceCard({ data, language }: { data: ReportClearance; language: Language }) {
+  const isAR = language === 'ar';
   const rows = [
-    { icon: Hash,    label: 'Clearance ID', value: data.clearance_id },
-    { icon: MapPin,  label: 'Next Port',    value: data.next_port || '—' },
-    { icon: Calendar,label: 'Issue Date',   value: fmt(data.issue_date) },
-    { icon: Calendar,label: 'Expiry Date',  value: fmt(data.expiry_date) },
-    { icon: User,    label: 'Issued By',    value: data.officer ? data.officer.name : 'System' },
+    { icon: Hash,    label: isAR ? 'رقم التصريح' : 'Clearance ID', value: data.clearance_id },
+    { icon: MapPin,  label: isAR ? 'الميناء التالي' : 'Next Port',    value: data.next_port || '—' },
+    { icon: Calendar,label: isAR ? 'تاريخ الإصدار' : 'Issue Date',   value: fmt(data.issue_date) },
+    { icon: Calendar,label: isAR ? 'تاريخ الانتهاء' : 'Expiry Date',  value: fmt(data.expiry_date) },
+    { icon: User,    label: isAR ? 'صدر بواسطة' : 'Issued By',    value: data.officer ? data.officer.name : (isAR ? 'النظام' : 'System') },
   ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:grid-cols-2">
@@ -168,9 +174,10 @@ interface ModuleSectionProps {
 
 function ModuleSection({
   index, icon: Icon, title, subtitle, status, isMissing,
-  accentClass, iconBgClass, children
-}: ModuleSectionProps) {
+  accentClass, iconBgClass, children, language
+}: ModuleSectionProps & { language: Language }) {
   const [open, setOpen] = useState(true);
+  const isAR = language === 'ar';
 
   return (
     <div className={`card-base overflow-hidden print:border print:border-gray-200 print:rounded-xl print:shadow-none print:break-inside-avoid ${isMissing ? 'border-rose-500/30' : ''}`}>
@@ -188,12 +195,12 @@ function ModuleSection({
           <div>
             <div className="flex items-center gap-2">
               <span className={`text-xs font-bold uppercase tracking-widest ${isMissing ? 'text-rose-400' : 'text-[var(--text-muted)]'}`}>
-                Module {index}
+                {isAR ? 'وحدة' : 'Module'} {index}
               </span>
               {!isMissing && status && (
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${statusBadge(status)}`}>
                   {statusIcon(status)}
-                  <span className="capitalize">{status.replace('_', ' ')}</span>
+                  <span className="capitalize">{getTranslatedStatus(status, language)}</span>
                 </span>
               )}
             </div>
@@ -211,10 +218,15 @@ function ModuleSection({
         <div className="p-5 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-rose-400 font-semibold">Missing Documentation</p>
+            <p className="text-rose-400 font-semibold">{isAR ? 'وثيقة مفقودة' : 'Missing Documentation'}</p>
             <p className="text-[var(--text-secondary)] text-sm mt-1">
-              No <strong className="text-[var(--text-primary)]">{title}</strong> record was found for the selected vessel and date.
-              Please ensure this document has been submitted before generating the PDF report.
+              {isAR ? (
+                <>لا يوجد سجل لـ <strong className="text-[var(--text-primary)]">{title}</strong> لهذه السفينة والتاريخ المحددين.</>
+              ) : (
+                <>No <strong className="text-[var(--text-primary)]">{title}</strong> record was found for the selected vessel and date.</>
+              )}
+              <br />
+              {isAR ? 'يرجى التأكد من تقديم هذه الوثيقة قبل إنشاء تقرير PDF.' : 'Please ensure this document has been submitted before generating the PDF report.'}
             </p>
           </div>
         </div>
@@ -562,8 +574,9 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                   isMissing={!report.arrival}
                   accentClass="from-blue-600 to-cyan-500"
                   iconBgClass="bg-gradient-to-br from-blue-600 to-cyan-500"
+                  language={language}
                 >
-                  <ArrivalCard data={report.arrival!} />
+                  <ArrivalCard data={report.arrival!} language={language} />
                 </ModuleSection>
 
                 {/* Module 2 — Anchorage Request */}
@@ -576,8 +589,9 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                   isMissing={!report.anchorage}
                   accentClass="from-violet-600 to-purple-500"
                   iconBgClass="bg-gradient-to-br from-violet-600 to-purple-500"
+                  language={language}
                 >
-                  <AnchorageCard data={report.anchorage!} />
+                  <AnchorageCard data={report.anchorage!} language={language} />
                 </ModuleSection>
 
                 {/* Module 3 — Port Clearance */}
@@ -590,8 +604,9 @@ export function VesselActivityReport({ language, vesselId }: VesselActivityRepor
                   isMissing={!report.clearance}
                   accentClass="from-emerald-600 to-teal-500"
                   iconBgClass="bg-gradient-to-br from-emerald-600 to-teal-500"
+                  language={language}
                 >
-                  <ClearanceCard data={report.clearance!} />
+                  <ClearanceCard data={report.clearance!} language={language} />
                 </ModuleSection>
 
                 {/* Bottom Export CTA */}

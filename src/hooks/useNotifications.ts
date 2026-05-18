@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { User } from '../App';
 
@@ -33,6 +33,8 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
           submittedTimestamp: item.submittedDate,
           status: 'pending',
           message: `Arrival Request ${item.id} awaiting approval`,
+          type: 'arrival_approval_pending',
+          data: { id: item.id },
           route: `/executive/approvals`,
         }));
         break;
@@ -50,6 +52,8 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
             submittedTimestamp: v.created_at,
             status: v.status === 'awaiting' ? 'pending' : 'unread',
             message: `Vessel ${v.name} is ${v.status === 'awaiting' ? 'awaiting arrival approval' : 'scheduled'}`,
+            type: v.status === 'awaiting' ? 'vessel_awaiting_approval' : 'vessel_scheduled',
+            data: { name: v.name },
             route: `/officer/active-vessels`,
           }));
         break;
@@ -67,20 +71,26 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
             submittedTimestamp: item.submittedDate,
             status: item.status,
             message: `${item.title} for ${item.vessel} is ${item.status}`,
+            type: item.type === 'arrival' 
+              ? (item.status === 'pending' ? 'vessel_awaiting_approval' : 'vessel_rejected') 
+              : (item.type === 'anchorage' ? 'anchorage_request_new' : 'manifest_updated'),
+            data: { name: item.vessel, status: item.status },
             route: `/agent/tracker`,
           }));
         break;
 
       case 'wharf':
-        const [wharvesRes, anchorageRes] = await Promise.all([
+        const [wharvesRes, anchorageRes, dischargeRes] = await Promise.all([
           api.get('/wharf/wharves').catch(() => ({ data: [] })),
-          api.get('/wharf/anchorage-requests').catch(() => ({ data: { requests: [] } }))
+          api.get('/wharf/anchorage-requests').catch(() => ({ data: { requests: [] } })),
+          api.get('/wharf/discharge-requests').catch(() => ({ data: [] }))
         ]);
         
         const availableCount = (wharvesRes.data || []).filter((w: any) => w.status === 'available').length;
         const requestsData = Array.isArray(anchorageRes.data) ? anchorageRes.data : (anchorageRes.data?.requests || []);
+        const dischargeData = dischargeRes.data || [];
         
-        synthesized = requestsData
+        const anchorageNotifications = requestsData
           .filter((r: any) => r.status === 'pending' || r.status === 'waiting')
           .map((r: any) => ({
             id: `wharf-ar-${r.id}`,
@@ -93,8 +103,37 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
             message: r.status === 'waiting' 
                 ? (availableCount > 0 ? `Capacity available: ${availableCount} wharves free for waiting vessel ${r.vessel?.name || 'Unknown'}` : `Vessel ${r.vessel?.name || 'Unknown'} is waitlisted.`)
                 : `New anchorage request for ${r.vessel?.name || 'Unknown'}`,
+            type: r.status === 'waiting' ? 'vessel_waitlisted' : 'anchorage_request_new',
+            data: { 
+              name: r.vessel?.name || 'Unknown', 
+              vessel: r.vessel?.name || 'Unknown', 
+              count: availableCount 
+            },
             route: `/wharf/availability`,
           }));
+
+        const dischargeNotifications = dischargeData
+          .filter((d: any) => d.status === 'pending')
+          .map((d: any) => ({
+            id: `wharf-dr-${d.batch_id}`,
+            operationId: `DR-${d.batch_id}`,
+            senderName: d.trader?.name || 'Trader',
+            senderRole: 'trader',
+            operationType: 'Discharge Request',
+            submittedTimestamp: d.created_at,
+            status: 'pending',
+            message: `New discharge request from ${d.trader?.name || 'Trader'} for ${d.vessel?.name || 'Unknown Vessel'}`,
+            type: 'discharge_request_new',
+            data: {
+              vessel: d.vessel?.name || 'Unknown Vessel',
+              trader: d.trader?.name || 'Trader',
+              batch_id: d.batch_id,
+              count: (d.containers || []).length
+            },
+            route: `/wharf/discharge`,
+          }));
+
+        synthesized = [...anchorageNotifications, ...dischargeNotifications];
         break;
     }
   } catch (error) {
@@ -128,10 +167,37 @@ const fetchNotifications = async (user: User): Promise<NotificationItem[]> => {
 };
 
 export const useNotifications = (user: User | null) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['notifications', user?.id, user?.role],
     queryFn: () => fetchNotifications(user!),
     enabled: !!user,
-    refetchInterval: 30000, // Poll every 30 seconds
+    refetchInterval: 30000,
   });
+
+  const markAsRead = useMutation({
+    mutationFn: async (id: string | number) => {
+      const dbId = typeof id === 'string' && id.startsWith('db-') ? id.replace('db-', '') : id;
+      return api.post(`/notifications/${dbId}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const markAllAsRead = useMutation({
+    mutationFn: async () => {
+      return api.post('/notifications/read-all');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  return {
+    ...query,
+    markAsRead: markAsRead.mutate,
+    markAllAsRead: markAllAsRead.mutate,
+  };
 };

@@ -384,7 +384,7 @@ class AgentController extends Controller
         return response()->json($all);
     }
 
-    private function notifyUsers(array $roles, string $title, string $message)
+    private function notifyUsers(array $roles, string $title, string $message, array $data = [])
     {
         $users = User::role($roles)->get();
         foreach ($users as $user) {
@@ -392,6 +392,8 @@ class AgentController extends Controller
                 'user_id' => $user->id,
                 'title' => $title,
                 'message' => $message,
+                'type' => $data['type'] ?? null,
+                'data' => isset($data['data']) ? json_encode($data['data']) : null,
             ]);
         }
     }
@@ -427,7 +429,10 @@ class AgentController extends Controller
 
         $vessel->update($data);
 
-        $this->notifyUsers(['officer', 'executive'], 'Arrival Updated', "Agent has updated arrival details for vessel {$vessel->name}.");
+        $this->notifyUsers(['officer', 'executive'], 'Arrival Updated', "Agent has updated arrival details for vessel {$vessel->name}.", [
+            'type' => 'arrival_updated',
+            'data' => ['name' => $vessel->name]
+        ]);
 
         return response()->json($vessel);
     }
@@ -475,7 +480,10 @@ class AgentController extends Controller
 
         $manifest->update($data);
 
-        $this->notifyUsers(['officer'], 'Manifest Updated', "Agent has updated cargo manifest for vessel {$manifest->vessel->name}.");
+        $this->notifyUsers(['officer'], 'Manifest Updated', "Agent has updated cargo manifest for vessel {$manifest->vessel->name}.", [
+            'type' => 'manifest_updated',
+            'data' => ['name' => $manifest->vessel->name]
+        ]);
 
         return response()->json($manifest);
     }
@@ -496,7 +504,10 @@ class AgentController extends Controller
             'docking_time' => $request->docking_time,
         ]);
 
-        $this->notifyUsers(['executive'], 'Anchorage Request Updated', "Agent has updated anchorage request for vessel {$anchorage->vessel->name}.");
+        $this->notifyUsers(['executive'], 'Anchorage Request Updated', "Agent has updated anchorage request for vessel {$anchorage->vessel->name}.", [
+            'type' => 'anchorage_updated',
+            'data' => ['name' => $anchorage->vessel->name]
+        ]);
 
         return response()->json($anchorage);
     }
@@ -515,7 +526,10 @@ class AgentController extends Controller
             'next_port' => $request->next_port,
         ]);
 
-        $this->notifyUsers(['officer'], 'Clearance Updated', "Agent has updated port clearance request for vessel {$clearance->vessel->name}.");
+        $this->notifyUsers(['officer'], 'Clearance Updated', "Agent has updated port clearance request for vessel {$clearance->vessel->name}.", [
+            'type' => 'clearance_updated',
+            'data' => ['name' => $clearance->vessel->name]
+        ]);
 
         return response()->json($clearance);
     }
@@ -574,7 +588,10 @@ class AgentController extends Controller
 
         // Dispatch events now that it's officially submitted
         \App\Events\VesselArrived::dispatch($vessel);
-        $this->notifyUsers(['officer', 'executive'], 'New Arrival Notification', "A new arrival notification for {$vessel->name} has been submitted and is ready for review.");
+        $this->notifyUsers(['officer', 'executive'], 'New Arrival Notification', "A new arrival notification for {$vessel->name} has been submitted and is ready for review.", [
+            'type' => 'vessel_awaiting_approval',
+            'data' => ['name' => $vessel->name]
+        ]);
 
         return response()->json([
             'message' => 'Arrival notification successfully finalized and submitted for review.',
@@ -749,7 +766,15 @@ class AgentController extends Controller
                 $this->notifyUsers(
                     ['executive'],
                     'Emergency Vessel Exit',
-                    "Vessel {$vessel->name} (IMO: {$vessel->imo_number}) has been withdrawn by agent {$request->user()->name}. Reason: {$request->exit_reason}"
+                    "Vessel {$vessel->name} (IMO: {$vessel->imo_number}) has been withdrawn by agent {$request->user()->name}. Reason: {$request->exit_reason}",
+                    [
+                        'type' => 'emergency_exit',
+                        'data' => [
+                            'vessel' => $vessel->name,
+                            'agent' => $request->user()->name,
+                            'reason' => $request->exit_reason
+                        ]
+                    ]
                 );
             } catch (\Exception $e) {
                 \Log::error("Post-exit actions failed: " . $e->getMessage());

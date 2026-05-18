@@ -6,6 +6,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { CheckCircle2, XCircle, Info, Search, Filter, Download, Calendar, User as UserIcon } from 'lucide-react';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
+import { getTranslatedStatus } from '../../utils/formatters';
 
 interface DecisionLogsProps {
   language: Language;
@@ -65,12 +66,7 @@ export function DecisionLogs({ language }: DecisionLogsProps) {
   };
 
   const getDecisionLabel = (decision: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      approved: { ar: 'موافق', en: 'Approved' },
-      rejected: { ar: 'مرفوض', en: 'Rejected' },
-      info: { ar: 'معلومة', en: 'Info' },
-    };
-    return labels[decision]?.[language] || decision;
+    return getTranslatedStatus(decision, language);
   };
 
   const handleExport = async () => {

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { User, Language } from '../App';
 import { translations } from '../utils/translations';
 import { useNotifications } from '../hooks/useNotifications';
-import { Bell, ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { Bell, ArrowLeft, CheckCircle, Clock, XCircle, AlertCircle, CheckCheck } from 'lucide-react';
+import { getLocalizedNotificationMessage } from '../utils/notificationUtils';
 
 interface NotificationsPageProps {
   user: User;
@@ -11,7 +12,15 @@ interface NotificationsPageProps {
 
 export function NotificationsPage({ user, language }: NotificationsPageProps) {
   const t = translations[language]?.agent || translations.en.agent;
-  const { data: notifications = [], isLoading } = useNotifications(user);
+  const { data: notifications = [], isLoading, markAllAsRead, markAsRead } = useNotifications(user);
+
+  useEffect(() => {
+    // Automatically mark all as read when unread notifications are loaded
+    const hasUnread = notifications.some(n => n.status === 'unread' || n.status === 'pending');
+    if (hasUnread) {
+      markAllAsRead();
+    }
+  }, [notifications.length, markAllAsRead]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -63,7 +72,15 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
         ) : (
           <div className="divide-y divide-[var(--secondary)]">
             {notifications.map((notif) => (
-              <div key={notif.id} className="p-6 hover:bg-[var(--secondary)]/5 transition-colors flex items-start gap-4">
+              <div 
+                key={notif.id} 
+                className={`p-6 transition-colors flex items-start gap-4 cursor-pointer ${notif.status === 'unread' || notif.status === 'pending' ? 'bg-[var(--primary)]/5 hover:bg-[var(--primary)]/10' : 'hover:bg-[var(--secondary)]/5'}`}
+                onClick={() => {
+                  if (notif.status === 'unread' || notif.status === 'pending') {
+                    markAsRead(notif.id);
+                  }
+                }}
+              >
                 <div className="mt-1 flex-shrink-0">
                   {getStatusIcon(notif.status)}
                 </div>
@@ -74,7 +91,9 @@ export function NotificationsPage({ user, language }: NotificationsPageProps) {
                       {new Date(notif.submittedTimestamp).toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-[var(--text-secondary)] mb-3">{notif.message}</p>
+                  <p className="text-[var(--text-secondary)] mb-3">
+                    {getLocalizedNotificationMessage(notif, language)}
+                  </p>
                   
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-[var(--text-secondary)]">

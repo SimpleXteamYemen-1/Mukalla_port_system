@@ -10,6 +10,7 @@ import {
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { Language } from '../../App';
 import { adminService, AdminUser } from '../../services/adminService';
+import { getTranslatedRole, getTranslatedStatus } from '../../utils/formatters';
 
 interface UserDirectoryProps {
   language: Language;
@@ -72,17 +73,17 @@ function StatusBadge({ status, language }: { status: string; language: Language 
   return (
     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium border ${cfg.color}`}>
       {cfg.icon}
-      {language === 'ar' ? cfg.ar : cfg.en}
+      {getTranslatedStatus(status, language)}
     </span>
   );
 }
 
 // ─── Role Badge ────────────────────────────────────────────────────────────────
 function RoleBadge({ role, language }: { role: string; language: Language }) {
-  const cfg = ROLE_LABELS[role] ?? { en: role, ar: role, color: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' };
+  const cfg = ROLE_LABELS[role] ?? { color: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' };
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${cfg.color}`}>
-      {language === 'ar' ? cfg.ar : cfg.en}
+      {getTranslatedRole(role, language)}
     </span>
   );
 }
@@ -360,7 +361,7 @@ export function UserDirectory({ language }: UserDirectoryProps) {
             className={`${isAR ? 'pr-9 pl-8' : 'pl-9 pr-8'} py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm appearance-none`}
           >
             <option value="">{isAR ? 'كل الأدوار' : 'All Roles'}</option>
-            {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]?.[language === 'ar' ? 'ar' : 'en'] ?? r}</option>)}
+            {ROLES.map(r => <option key={r} value={r}>{getTranslatedRole(r, language)}</option>)}
           </select>
         </div>
 
@@ -372,7 +373,7 @@ export function UserDirectory({ language }: UserDirectoryProps) {
             className="px-3 py-2 pr-8 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm appearance-none"
           >
             <option value="">{isAR ? 'كل الحالات' : 'All Statuses'}</option>
-            {STATUSES.map(s => <option key={s} value={s}>{STATUS_CONFIG[s]?.[language === 'ar' ? 'ar' : 'en'] ?? s}</option>)}
+            {STATUSES.map(s => <option key={s} value={s}>{getTranslatedStatus(s, language)}</option>)}
           </select>
         </div>
 
@@ -528,7 +529,7 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                   <Field label={isAR ? 'الدور' : 'Role'} error={fieldErrors.role}>
                     <Select value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))} error={fieldErrors.role}>
                       <option value="">{isAR ? 'اختر دوراً' : 'Select a role'}</option>
-                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]?.[isAR ? 'ar' : 'en'] ?? r}</option>)}
+                      {ROLES.map(r => <option key={r} value={r}>{getTranslatedRole(r, language)}</option>)}
                     </Select>
                   </Field>
                   <Field label={isAR ? 'المنظمة (اختياري)' : 'Organization (opt.)'}>
@@ -589,7 +590,7 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <Field label={isAR ? 'الدور' : 'Role'} error={fieldErrors.role}>
                     <Select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))} error={fieldErrors.role}>
-                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]?.[isAR ? 'ar' : 'en'] ?? r}</option>)}
+                      {ROLES.map(r => <option key={r} value={r}>{getTranslatedRole(r, language)}</option>)}
                     </Select>
                   </Field>
                   <Field label={isAR ? 'المنظمة' : 'Organization'}>

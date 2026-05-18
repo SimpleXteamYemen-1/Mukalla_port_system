@@ -3,6 +3,7 @@ import { Language } from '../../App';
 import { Bell, CheckCircle2, XCircle, FileText, RefreshCw, Eye, Package } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { getLocalizedNotificationMessage } from '../../utils/notificationUtils';
 
 interface TraderNotificationsProps {
   language: Language;
@@ -16,6 +17,7 @@ interface Notification {
   message: string;
   timestamp: string;
   read: boolean;
+  data?: any;
 }
 
 export function TraderNotifications({ language, userEmail }: TraderNotificationsProps) {
@@ -217,7 +219,17 @@ export function TraderNotifications({ language, userEmail }: TraderNotifications
                         )}
                       </div>
                     </div>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">{notification.message}</p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">
+                      {getLocalizedNotificationMessage({
+                        ...notification,
+                        operationId: notification.id,
+                        operationType: notification.title,
+                        senderName: 'System',
+                        senderRole: 'system',
+                        submittedTimestamp: notification.timestamp,
+                        status: notification.read ? 'read' : 'unread'
+                      } as any, language)}
+                    </p>
                     {!notification.read && (
                       <button
                         onClick={() => markAsRead(notification.id)}

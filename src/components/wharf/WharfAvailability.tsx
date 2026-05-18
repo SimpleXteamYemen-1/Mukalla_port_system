@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Language } from '../../App';
+import { Language, User } from '../../App';
 import { Anchor, Clock, Ship, CheckCircle, RefreshCw, AlertTriangle, Inbox, ChevronDown, FileText, X, FlaskConical, ThermometerSnowflake, Box } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { wharfService } from '../../services/wharfService';
 import { toast } from 'react-toastify';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface WharfAvailabilityProps {
+  user: User;
   language: Language;
 }
 
@@ -37,8 +39,17 @@ interface ContainerItem {
   status: string;
 }
 
-export function WharfAvailability({ language }: WharfAvailabilityProps) {
+export function WharfAvailability({ user, language }: WharfAvailabilityProps) {
   const isRTL = language === 'ar';
+  const { data: notifications = [], markAllAsRead } = useNotifications(user);
+
+  useEffect(() => {
+    // Automatically mark all as read when unread notifications are loaded
+    const hasUnread = notifications.some(n => n.status === 'unread' || n.status === 'pending');
+    if (hasUnread) {
+      markAllAsRead();
+    }
+  }, [notifications.length, markAllAsRead]);
 
   const [wharves, setWharves] = useState<Wharf[]>([]);
   const [anchorageRequests, setAnchorageRequests] = useState<AnchorageRequest[]>([]);

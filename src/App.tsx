@@ -103,6 +103,13 @@ function App() {
     }
   }, [theme]);
 
+  // Sync document direction and language
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
+    root.setAttribute('lang', language);
+  }, [language]);
+
   // Global Echo listener
   useEffect(() => {
     echo.channel('port-operations')

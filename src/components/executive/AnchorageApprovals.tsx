@@ -5,6 +5,7 @@ import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
 import { toast } from 'react-toastify';
+import { getTranslatedStatus } from '../../utils/formatters';
 
 interface AnchorageApprovalsProps {
   language: Language;
@@ -130,7 +131,11 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                         },
                         {
                           label: t.executiveDecision,
-                          subLabel: (request.status === 'approved' || request.status === 'wharf_assigned') ? t.approvedFromWharf : request.status === 'rejected' ? t.rejectedFromWharf : t.readyForDecision,
+                          subLabel: (request.status === 'approved' || request.status === 'wharf_assigned')
+                            ? t.approvedFromWharf
+                            : request.status === 'rejected'
+                              ? t.rejectedFromWharf
+                              : getTranslatedStatus(request.status, language) || (isVesselApproved ? t.readyForDecision : t.blocked),
                           icon: getDecisionStatusIcon(request, isVesselApproved),
                           passed: request.status === 'approved' || request.status === 'wharf_assigned' ? true : request.status === 'rejected' ? false : null,
                         },
@@ -165,9 +170,9 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                     {[
                       { label: t.agent, value: request.vessel?.owner?.name || 'Unknown Agent' },
-                      { label: t.duration, value: `${request.duration} ${language === 'ar' ? 'ساعات' : 'hours'}` },
+                      { label: t.duration, value: `${request.duration} ${language === 'ar' ? 'ساعة' : 'hours'}` },
                       { label: t.location, value: request.location || 'N/A' },
-                      { label: t.submitted, value: new Date(request.created_at).toLocaleString() },
+                      { label: t.submitted, value: new Date(request.created_at).toLocaleString(language === 'ar' ? 'ar-YE' : 'en-GB') },
                     ].map((item) => (
                       <div key={item.label} className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
                         <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.label}</div>

@@ -8,6 +8,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { exportClearancePdf } from '../../utils/exportPdf';
 import { Clearance } from '../../utils/portOfficerApi';
 import { agentService, Vessel } from '../../services/agentService';
+import { getTranslatedStatus } from '../../utils/formatters';
 
 /** Anchorage statuses that mean a vessel has completed the anchoring phase */
 const ANCHORED_STATUSES = ['wharf_assigned'] as const;
@@ -101,6 +102,10 @@ export function PortClearances({ language }: PortClearancesProps) {
 
             setIssuing(false);
         }
+    };
+
+    const getStatusLabel = (status: string) => {
+        return getTranslatedStatus(status, language);
     };
 
     const getStatusColor = (status: string) => {
@@ -244,7 +249,7 @@ export function PortClearances({ language }: PortClearancesProps) {
                                 </div>
                             </div>
                             <div className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(clearance.status)}`}>
-                                {clearance.status === 'valid' ? (t?.valid || 'Valid') : clearance.status === 'expired' ? (t?.expiredStatus || 'Expired') : clearance.status === 'pending_clearance' ? (isRTL ? 'قيد الانتظار' : 'Pending') : clearance.status === 'rejected' ? (isRTL ? 'مرفوض' : 'Rejected') : clearance.status === 'clearance_approved' ? (isRTL ? 'طُبع' : 'Approved') : (t?.expiringSoon || 'Expiring Soon')}
+                                {getStatusLabel(clearance.status)}
                             </div>
                         </div>
 

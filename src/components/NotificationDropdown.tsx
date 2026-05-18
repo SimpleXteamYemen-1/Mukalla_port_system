@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { User, Language } from '../App';
 import { useNotifications } from '../hooks/useNotifications';
+import { getLocalizedNotificationMessage } from '../utils/notificationUtils';
 
 interface NotificationDropdownProps {
   user: User;
@@ -13,7 +14,7 @@ interface NotificationDropdownProps {
 export function NotificationDropdown({ user, language, onNavigate }: NotificationDropdownProps) {
   const t = translations[language]?.agent || translations.en.agent;
   const [showNotifications, setShowNotifications] = useState(false);
-  const { data: notifications = [], isLoading } = useNotifications(user);
+  const { data: notifications = [], isLoading, markAllAsRead } = useNotifications(user);
 
   // Derive unread count from items marked as pending or unread
   const unreadCount = notifications.filter((notif) => ['pending', 'unread'].includes(notif.status)).length;
@@ -97,7 +98,9 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
                       {new Date(notif.submittedTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-[var(--text-primary)] text-sm mb-1 font-medium leading-tight">{notif.message}</p>
+                  <p className="text-[var(--text-primary)] text-sm mb-1 font-medium leading-tight">
+                    {getLocalizedNotificationMessage(notif, language)}
+                  </p>
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-[10px] text-[var(--text-secondary)] opacity-80">Ref: {notif.operationId}</span>
                     <span className="text-[10px] text-[var(--text-secondary)] opacity-80">{notif.operationType}</span>
@@ -112,7 +115,10 @@ export function NotificationDropdown({ user, language, onNavigate }: Notificatio
           </div>
           <div className="p-3 text-center border-t border-[var(--secondary)] bg-[var(--secondary)]/5">
             <button 
-              onClick={() => onNavigate('notifications')}
+              onClick={() => {
+                markAllAsRead();
+                onNavigate('notifications');
+              }}
               className="text-sm text-[var(--accent)] hover:text-[var(--primary)] font-medium"
             >
               {t.viewAll || 'View All Notifications'}

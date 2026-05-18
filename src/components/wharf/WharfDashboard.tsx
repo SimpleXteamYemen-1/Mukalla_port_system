@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Language } from '../../App';
+import { Language, User } from '../../App';
 import { Anchor, Package, BoxSelect, AlertTriangle, TrendingUp, RefreshCw, Database, Clock, Ship, CheckCircle } from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { wharfService, WharfStats, WharfAlert } from '../../services/wharfService';
 import { toast } from 'react-toastify';
@@ -8,11 +9,21 @@ import { StatCard } from '../ui/StatCard';
 import { PageHeader } from '../ui/PageHeader';
 
 interface WharfDashboardProps {
+  user: User;
   language: Language;
 }
 
-export function WharfDashboard({ language }: WharfDashboardProps) {
+export function WharfDashboard({ user, language }: WharfDashboardProps) {
   const isRTL = language === 'ar';
+  const { data: notifications = [], markAllAsRead } = useNotifications(user);
+
+  useEffect(() => {
+    // Automatically mark all as read when unread notifications are loaded
+    const hasUnread = notifications.some(n => n.status === 'unread' || n.status === 'pending');
+    if (hasUnread) {
+      markAllAsRead();
+    }
+  }, [notifications.length, markAllAsRead]);
   const [stats, setStats] = useState<WharfStats>({
     pendingAvailability: 0,
     approvedWharves: 0,

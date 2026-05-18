@@ -8,9 +8,15 @@
     --base-line-height: 1.5;
   }
 
-  [dir="rtl"] {
-    --font-sans: 'IBM Plex Sans Arabic', sans-serif;
-    --base-line-height: 1.7;
+  [dir="rtl"], [dir="rtl"] body {
+    --font-sans: 'Readex Pro', sans-serif;
+    --base-line-height: 1.6;
+    font-family: 'Readex Pro', sans-serif !important;
+  }
+
+  /* Ensure all form elements also use the font */
+  [dir="rtl"] button, [dir="rtl"] input, [dir="rtl"] select, [dir="rtl"] textarea {
+    font-family: 'Readex Pro', sans-serif !important;
   }
 
   :root {

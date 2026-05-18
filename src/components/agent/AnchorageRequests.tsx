@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import { translations } from '../../utils/translations';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { getTranslatedStatus } from '../../utils/formatters';
 import * as z from 'zod';
 
 const anchorageSchema = z.object({
@@ -167,16 +168,7 @@ export function AnchorageRequests({ language }: AnchorageRequestsProps) {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      approved:      { ar: 'موافق',            en: 'Approved' },
-      rejected:      { ar: 'مرفوض',            en: 'Rejected' },
-      pending:       { ar: 'قيد الانتظار',      en: 'Pending Review' },
-      completed:     { ar: 'مكتمل',            en: 'Completed' },
-      cancelled:     { ar: 'ملغى',             en: 'Cancelled' },
-      wharf_assigned:{ ar: 'تم تعيين الرصيف',  en: 'Wharf Assigned' },
-      waiting:       { ar: 'قائمة الانتظار',   en: 'Waitlisted' },
-    };
-    return labels[status]?.[language] || status;
+    return getTranslatedStatus(status, language);
   };
 
   const getStatusIcon = (status: string) => {

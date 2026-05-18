@@ -6,6 +6,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
+import { getTranslatedRole } from '../../utils/formatters';
 
 interface UserApprovalsProps {
   language: Language;
@@ -83,9 +84,7 @@ export function UserApprovals({ language }: UserApprovalsProps) {
   };
 
   const getRoleLabel = (role: string) => {
-    if (role === 'agent') return language === 'ar' ? 'وكيل بحري' : 'Maritime Agent';
-    if (role === 'trader') return language === 'ar' ? 'تاجر' : 'Trader';
-    return role;
+    return getTranslatedRole(role, language);
   };
 
   return (

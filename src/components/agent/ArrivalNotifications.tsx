@@ -9,6 +9,7 @@ import { translations } from '../../utils/translations';
 import { ManifestUploader } from './ManifestUploader';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { getTranslatedStatus, getTranslatedVesselType, getManifestStatusLabel } from '../../utils/formatters';
 import * as z from 'zod';
 
 const englishRegex = /^[\x20-\x7E\n\r]*$/;
@@ -450,14 +451,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      approved: { ar: 'موافق', en: 'Approved' },
-      rejected: { ar: 'مرفوض', en: 'Rejected' },
-      pending: { ar: 'قيد الانتظار', en: 'Pending' },
-      awaiting: { ar: 'في انتظار المراجعة', en: 'Awaiting Review' },
-      draft: { ar: 'مسودة', en: 'Draft' },
-    };
-    return labels[status]?.[language] || status;
+    return getTranslatedStatus(status, language);
   };
 
   return (
@@ -592,8 +586,11 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                         {...register('type')}
                         className={`w-full px-4 py-3 bg-[var(--background)] border ${errors.type ? 'border-[var(--danger)]' : 'border-[var(--secondary)]'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] transition-all [&>option]:bg-[var(--bg-primary)]`}
                       >
-                        <option value="">Select Type</option>
-                        <option value="container">Container Ship</option>
+                        <option value="">{language === 'ar' ? 'اختر النوع' : 'Select Type'}</option>
+                        <option value="container">{getTranslatedVesselType('container', language)}</option>
+                        <option value="tanker">{getTranslatedVesselType('tanker', language)}</option>
+                        <option value="cargo">{getTranslatedVesselType('cargo', language)}</option>
+                        <option value="bulk">{getTranslatedVesselType('bulk', language)}</option>
                       </select>
                       {errors.type && <p className="text-[var(--danger)] text-xs font-bold mt-2">{errors.type.message}</p>}
                     </div>
@@ -778,11 +775,11 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <p className="text-[var(--text-secondary)] text-sm font-bold">{t.requestId}: <span className="font-mono">{notification.id}</span></p>
                       <div className="flex flex-wrap gap-4 text-xs text-[var(--text-secondary)]/80 font-bold uppercase tracking-wider">
                         <span className="flex items-center gap-1"><Ship className="w-3 h-3" /> IMO: {notification.imo_number}</span>
-                        <span>Type: {notification.type}</span>
+                        <span>{language === 'ar' ? 'النوع' : 'Type'}: {getTranslatedVesselType(notification.type, language)}</span>
                         {notification.type === 'container' && notification.expected_containers && (
-                          <span>Containers: {notification.containers?.length || 0} / {notification.expected_containers}</span>
+                          <span>{language === 'ar' ? 'الحاويات' : 'Containers'}: {notification.containers?.length || 0} / {notification.expected_containers}</span>
                         )}
-                        <span>Flag: {notification.flag}</span>
+                        <span>{language === 'ar' ? 'العلم' : 'Flag'}: {notification.flag}</span>
                       </div>
                     </div>
                   </div>
@@ -796,10 +793,10 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                   <span className={`inline-block px-4 py-1.5 rounded-xl text-xs font-bold border ${hasManifest ? 'status-success' : 'bg-[var(--bg-primary)] border-[var(--secondary)] text-[var(--text-secondary)]'}`}>
                     {hasManifest ? (
                       <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Manifest Submitted
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {getManifestStatusLabel(true, language)}
                       </span>
                     ) : (
-                      <span>Manifest Pending</span>
+                      <span>{getManifestStatusLabel(false, language)}</span>
                     )}
                   </span>
 

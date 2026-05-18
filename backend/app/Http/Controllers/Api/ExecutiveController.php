@@ -8,6 +8,7 @@ use App\Models\Log;
 use App\Models\Vessel;
 use App\Models\AnchorageRequest;
 use App\Models\User;
+use App\Models\Notification;
 use App\Events\VesselOperationLogged;
 
 class ExecutiveController extends Controller
@@ -428,6 +429,14 @@ class ExecutiveController extends Controller
             \Log::error("Broadcasting failed in approveArrival: " . $e->getMessage());
         }
 
+        Notification::create([
+            'user_id' => $vessel->owner_id,
+            'title' => 'Arrival Approved',
+            'message' => "Executive management has approved the arrival notification for vessel {$vessel->name}.",
+            'type' => 'arrival_approved',
+            'data' => json_encode(['name' => $vessel->name]),
+        ]);
+
         return response()->json($vessel);
     }
 
@@ -463,6 +472,14 @@ class ExecutiveController extends Controller
         } catch (\Exception $e) {
             \Log::error("Broadcasting failed in rejectArrival: " . $e->getMessage());
         }
+
+        Notification::create([
+            'user_id' => $vessel->owner_id,
+            'title' => 'Arrival Rejected',
+            'message' => "Executive management has rejected the arrival notification for vessel {$vessel->name}. Reason: {$request->reason}",
+            'type' => 'arrival_rejected',
+            'data' => json_encode(['name' => $vessel->name, 'reason' => $request->reason]),
+        ]);
 
         return response()->json([
             'vessel' => $vessel,
@@ -522,6 +539,14 @@ class ExecutiveController extends Controller
             \Log::error("Broadcasting failed in approveAnchorage: " . $e->getMessage());
         }
 
+        Notification::create([
+            'user_id' => $anchorage->agent_id,
+            'title' => 'Anchorage Approved',
+            'message' => "Executive management has approved the anchorage request for vessel {$anchorage->vessel->name}.",
+            'type' => 'anchorage_approved',
+            'data' => json_encode(['vessel' => $anchorage->vessel->name]),
+        ]);
+
         return response()->json($anchorage);
     }
 
@@ -549,6 +574,14 @@ class ExecutiveController extends Controller
             \Log::error("Broadcasting failed in rejectAnchorage: " . $e->getMessage());
         }
 
+        Notification::create([
+            'user_id' => $anchorage->agent_id,
+            'title' => 'Anchorage Rejected',
+            'message' => "Executive management has rejected the anchorage request for vessel {$anchorage->vessel->name}. Reason: {$request->reason}",
+            'type' => 'anchorage_rejected',
+            'data' => json_encode(['vessel' => $anchorage->vessel->name, 'reason' => $request->reason]),
+        ]);
+
         return response()->json($anchorage);
     }
 
@@ -569,6 +602,14 @@ class ExecutiveController extends Controller
             'user_id' => $request->user()->id,
             'action' => 'approve_user',
             'details' => "Executive approved account for {$user->name} ({$user->email})",
+        ]);
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Account Approved',
+            'message' => "Welcome! Your account has been approved by executive management.",
+            'type' => 'user_approved',
+            'data' => json_encode(['name' => $user->name]),
         ]);
 
         return response()->json([
@@ -592,6 +633,14 @@ class ExecutiveController extends Controller
             'user_id' => $request->user()->id,
             'action' => 'reject_user',
             'details' => "Executive rejected account for {$user->name} ({$user->email}). Reason: {$request->reason}",
+        ]);
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Account Rejected',
+            'message' => "Your account request was rejected. Reason: {$request->reason}",
+            'type' => 'user_rejected',
+            'data' => json_encode(['reason' => $request->reason]),
         ]);
 
         return response()->json([

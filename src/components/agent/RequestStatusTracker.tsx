@@ -4,6 +4,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
+import { getTranslatedStatus } from '../../utils/formatters';
 
 interface RequestStatusTrackerProps {
   language: Language;
@@ -73,13 +74,7 @@ export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      approved: { ar: 'موافق', en: 'Approved' },
-      rejected: { ar: 'مرفوض', en: 'Rejected' },
-      pending: { ar: 'قيد الانتظار', en: 'Pending' },
-      completed: { ar: 'مكتمل', en: 'Completed' },
-    };
-    return labels[status]?.[language] || status;
+    return getTranslatedStatus(status, language);
   };
 
   const getTypeIconBg = (type: string) => {
@@ -192,7 +187,7 @@ export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
                         {request.timeline.map((step, index) => (
                           <div key={index} className="flex items-center gap-2">
                             <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium ${getTimelineStepBadge(step.status)}`}>
-                              {step.step}
+                              {getTranslatedStatus(step.status, language)}: {step.step}
                             </span>
                             {index < request.timeline.length - 1 && (
                               <div className="w-4 h-0.5 bg-slate-200 dark:bg-slate-700 rounded-full" />

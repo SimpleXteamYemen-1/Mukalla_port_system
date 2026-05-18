@@ -6,6 +6,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService, PendingApproval } from '../../services/executiveService';
+import { getTranslatedVesselType, getTranslatedCargoType } from '../../utils/formatters';
 
 interface ArrivalApprovalsProps {
   language: Language;
@@ -165,7 +166,7 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
                         <span className="text-xl">{request.vessel.flag}</span>
                       </div>
                       <div className="text-slate-500 dark:text-slate-400 text-xs">{t.requestId}: {request.id}</div>
-                      <div className="text-slate-400 dark:text-slate-500 text-xs">{request.vessel.imo} • {request.vessel.type}</div>
+                      <div className="text-slate-400 dark:text-slate-500 text-xs">{request.vessel.imo} • {getTranslatedVesselType(request.vessel.type, language)}</div>
                     </div>
                   </div>
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityBadge(request.priority)}`}>
@@ -197,7 +198,7 @@ export function ArrivalApprovals({ language, onNavigate }: ArrivalApprovalsProps
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t.purpose}</div>
                   <div className="text-slate-900 dark:text-slate-50 text-sm mb-2">{request.purpose}</div>
                   <div className="flex gap-4 text-xs">
-                    <span className="text-slate-500 dark:text-slate-400">{t.cargoType}: <span className="text-slate-900 dark:text-slate-50 font-medium">{request.cargoType}</span></span>
+                    <span className="text-slate-500 dark:text-slate-400">{t.cargoType}: <span className="text-slate-900 dark:text-slate-50 font-medium">{getTranslatedCargoType(request.cargoType, language)}</span></span>
                     {request.containers > 0 && (
                       <span className="text-slate-500 dark:text-slate-400">{t.containers}: <span className="text-slate-900 dark:text-slate-50 font-medium">{request.containers}</span></span>
                     )}

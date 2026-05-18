@@ -563,11 +563,11 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </div>
               </div>
             )}
-            {currentPage === 'dashboard' && <WharfDashboard language={language} />}
+            {currentPage === 'dashboard' && <WharfDashboard user={user} language={language} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
-            {currentPage === 'availability' && <WharfAvailability language={language} />}
+            {currentPage === 'availability' && <WharfAvailability user={user} language={language} />}
             {currentPage === 'storage' && <StorageManagement language={language} />}
-            {currentPage === 'discharge' && <WharfDischargeRequests language={language} />}
+            {currentPage === 'discharge' && <WharfDischargeRequests user={user} language={language} />}
             {currentPage === 'capacity' && <CapacityOverview language={language} />}
             {currentPage === 'vessel-history' && (
               <WharfVesselHistory 
@@ -586,7 +586,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
               />
             )}
             {/* Catch-all: unknown page → show dashboard */}
-            {!VALID_PAGES.wharf.includes(currentPage) && <WharfDashboard language={language} />}
+            {!VALID_PAGES.wharf.includes(currentPage) && <WharfDashboard user={user} language={language} />}
           </main>
         </div>
       </div>

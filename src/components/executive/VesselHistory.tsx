@@ -4,6 +4,7 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
+import { getTranslatedStatus, getTranslatedVesselType } from '../../utils/formatters';
 import { echo } from '../../utils/echo';
 import { Radio } from 'lucide-react';
 
@@ -295,7 +296,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
                       <span className="text-[var(--text-primary)] font-bold text-base truncate max-w-[140px]">{vessel.name}</span>
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border uppercase tracking-wider ${getVesselStatusColor(vessel.status)}`}>
-                      {vessel.status}
+                      {getTranslatedStatus(vessel.status, language)}
                     </span>
                   </div>
                   <div className="space-y-1.5 text-sm">
@@ -305,7 +306,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
                     </div>
                     <div className="flex items-center gap-2 text-[var(--text-secondary)]">
                       <Info className="w-3.5 h-3.5" />
-                      <span>{vessel.type} • {vessel.flag || '🏳️'}</span>
+                      <span>{getTranslatedVesselType(vessel.type, language)} • {vessel.flag || '🏳️'}</span>
                     </div>
                   </div>
                   <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between">
@@ -424,7 +425,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
             </div>
             <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
               <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">{t.type}</div>
-              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{vesselData.type}</div>
+              <div className="text-slate-900 dark:text-slate-50 font-bold text-base line-clamp-1">{getTranslatedVesselType(vesselData.type, language)}</div>
             </div>
             <div className="bg-slate-50 dark:bg-slate-700/25 border border-slate-200 dark:border-slate-700 rounded-lg p-3">
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs mb-1">
@@ -524,7 +525,7 @@ export function VesselHistory({ language, vesselId, onNavigate }: VesselHistoryP
                     </div>
                     
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${getStatusColor(item.status)}`}>
-                      {item.status}
+                      {getTranslatedStatus(item.status, language)}
                     </span>
                   </div>
                   

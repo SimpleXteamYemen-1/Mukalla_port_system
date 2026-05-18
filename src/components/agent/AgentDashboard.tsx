@@ -7,6 +7,7 @@ import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { agentService, AgentStats, Activity as AgentActivity, Arrival } from '../../services/agentService';
 import { exportArrivalPdf, exportAnchoragePdf, exportClearancePdf } from '../../utils/exportPdf';
+import { getTranslatedStatus } from '../../utils/formatters';
 
 // ─── Lightweight Toast System ─────────────────────────────────────────────────
 type ToastVariant = 'success' | 'error' | 'warning' | 'info';
@@ -131,12 +132,7 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      approved: { ar: 'موافق', en: 'Approved' },
-      rejected: { ar: 'مرفوض', en: 'Rejected' },
-      pending: { ar: 'قيد الانتظار', en: 'Pending' },
-    };
-    return labels[status]?.[language] || status;
+    return getTranslatedStatus(status, language);
   };
 
   const handleExportDocument = async (docType: 'arrival' | 'anchorage' | 'clearance') => {

@@ -131,6 +131,8 @@ class WharfController extends Controller
                 'user_id' => $firstReq->trader_id,
                 'title' => 'Discharge Approved',
                 'message' => "Your Containers from {$vesselName} have been discharged successfully.",
+                'type' => 'discharge_approved',
+                'data' => json_encode(['vessel' => $vesselName]),
             ]);
         }
 
@@ -162,6 +164,8 @@ class WharfController extends Controller
                 'user_id' => $firstReq->trader_id,
                 'title' => 'Discharge Declined',
                 'message' => "Your Discharge Request for {$vesselName} has been declined. Reason: {$request->reason}",
+                'type' => 'discharge_declined',
+                'data' => json_encode(['vessel' => $vesselName, 'reason' => $request->reason]),
             ]);
         }
 
@@ -325,6 +329,8 @@ class WharfController extends Controller
             'user_id' => $anchorage->agent_id,
             'title' => 'Wharf Assigned',
             'message' => "Your anchorage request for vessel {$anchorage->vessel->name} has been approved. Wharf {$wharf->name} has been assigned for your docking time.",
+            'type' => 'wharf_assigned',
+            'data' => json_encode(['vessel' => $anchorage->vessel->name, 'wharf' => $wharf->name]),
         ]);
 
         return response()->json($anchorage->fresh(['vessel', 'wharf']));
@@ -353,6 +359,8 @@ class WharfController extends Controller
             'user_id' => $anchorage->agent_id,
             'title' => 'Vessel on Waitlist',
             'message' => "Your anchorage request for vessel {$anchorage->vessel->name} could not be immediately processed. Your vessel has been placed on a waitlist and will be assigned a wharf slot as soon as one becomes available.",
+            'type' => 'vessel_waitlisted',
+            'data' => json_encode(['vessel' => $anchorage->vessel->name]),
         ]);
 
         return response()->json($anchorage->fresh(['vessel', 'wharf']));
@@ -381,8 +389,8 @@ class WharfController extends Controller
             'message' => "The specified anchorage duration for vessel {$anchorage->vessel->name} has expired. Please take action immediately (Expand Duration or Port Clearance).",
             'type' => 'anchorage_timeout',
             'data' => json_encode([
+                'vessel' => $anchorage->vessel->name,
                 'vessel_id' => $anchorage->vessel_id,
-                'vessel_name' => $anchorage->vessel->name,
                 'request_id' => $anchorage->id,
             ]),
         ]);
