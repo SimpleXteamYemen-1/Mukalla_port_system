@@ -11,19 +11,22 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
+const englishRegex = /^[\x20-\x7E\n\r]*$/;
+const englishMessage = 'Only English characters are allowed';
+
 // Define Zod schema matching the backend StoreVesselArrivalRequest
 const arrivalSchema = z.object({
   imo: z.string().regex(/^\d{7}$/, { message: 'IMO number must be exactly 7 digits' }),
-  vessel: z.string().min(1, { message: 'Vessel name is required' }),
+  vessel: z.string().min(1, { message: 'Vessel name is required' }).regex(englishRegex, { message: englishMessage }),
   type: z.string().min(1, { message: 'Vessel type is required' }),
-  flag: z.string().min(1, { message: 'Flag is required' }).optional().or(z.literal('')),
+  flag: z.string().min(1, { message: 'Flag is required' }).regex(englishRegex, { message: englishMessage }).optional().or(z.literal('')),
   arrivalDate: z.string().min(1, { message: 'Arrival date is required' }),
   arrivalTime: z.string().min(1, { message: 'Arrival time is required' }),
-  purpose: z.string().min(1, { message: 'Purpose is required' }),
-  cargo: z.string().optional(),
+  purpose: z.string().min(1, { message: 'Purpose is required' }).regex(englishRegex, { message: englishMessage }),
+  cargo: z.string().regex(englishRegex, { message: englishMessage }).optional().or(z.literal('')),
   expected_containers: z.coerce.number().min(0, { message: 'Must be 0 or more' }).optional().or(z.literal('')),
   priority: z.enum(['Low', 'Medium', 'High']),
-  priority_reason: z.string().optional(),
+  priority_reason: z.string().regex(englishRegex, { message: englishMessage }).optional().or(z.literal('')),
   priority_document: z.any().optional(),
 }).superRefine((data, ctx) => {
   if (data.priority === 'Medium' && (!data.priority_reason || data.priority_reason.length < 20)) {

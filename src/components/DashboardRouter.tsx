@@ -10,7 +10,6 @@ import { AgentDashboard } from './agent/AgentDashboard';
 import { MyVessels } from './agent/MyVessels';
 import { ArrivalNotifications } from './agent/ArrivalNotifications';
 import { AnchorageRequests } from './agent/AnchorageRequests';
-import { CargoManifests } from './agent/CargoManifests';
 import { RequestStatusTracker } from './agent/RequestStatusTracker';
 import { PortClearances as AgentPortClearances } from './agent/PortClearances';
 import { VesselActivityReport } from './agent/VesselActivityReport';
@@ -65,7 +64,7 @@ const VALID_PAGES: Record<string, string[]> = {
   officer:   ['dashboard', 'notifications', 'berthing', 'vessels', 'clearances', 'logs', 'report', 'vessel-history', 'settings'],
   wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'discharge', 'capacity', 'vessel-history', 'settings'],
   trader:    ['dashboard', 'notifications', 'containers', 'discharge', 'settings'],
-  agent:     ['dashboard', 'notifications', 'vessels', 'arrivals', 'anchorage', 'manifests', 'clearances', 'tracker', 'report', 'settings'],
+  agent:     ['dashboard', 'notifications', 'vessels', 'arrivals', 'anchorage', 'clearances', 'tracker', 'report', 'settings'],
 };
 
 export function DashboardRouter({ user, language, onLogout, onToggleLanguage, theme, onToggleTheme }: DashboardRouterProps) {
@@ -767,7 +766,6 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'vessels' && <MyVessels language={language} onNavigate={setCurrentPage} />}
         {currentPage === 'arrivals' && <ArrivalNotifications language={language} />}
         {currentPage === 'anchorage' && <AnchorageRequests language={language} />}
-        {currentPage === 'manifests' && <CargoManifests language={language} />}
         {currentPage === 'clearances' && <AgentPortClearances language={language} />}
         {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
         {currentPage === 'report' && <VesselActivityReport language={language} vesselId={activeVesselId} />}
