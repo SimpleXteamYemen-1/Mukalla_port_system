@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\AuthController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+use App\Http\Controllers\Api\PasswordResetController;
+Route::post('/password-reset/request', [PasswordResetController::class, 'requestReset']);
+Route::post('/password-reset/verify', [PasswordResetController::class, 'verifyCode']);
+Route::post('/password-reset/recreate', [PasswordResetController::class, 'recreatePassword']);
+
 
 use App\Http\Controllers\Api\AgentController;
 use App\Http\Controllers\Api\PortOfficerController;
@@ -156,5 +161,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/admin/users/{id}',         [AdminController::class, 'update']);   // modify (alias)
         Route::delete('/admin/users/{id}',        [AdminController::class, 'destroy']); // soft-delete
         Route::post('/admin/users/{id}/restore',  [AdminController::class, 'restore']); // restore
+        
+        // ── Admin: Password Resets ──────────────────────────────────────────
+        Route::get('/admin/password-resets', [\App\Http\Controllers\Api\AdminPasswordResetController::class, 'index']);
+        Route::post('/admin/password-resets/{id}/approve', [\App\Http\Controllers\Api\AdminPasswordResetController::class, 'approve']);
+        Route::post('/admin/password-resets/{id}/reject', [\App\Http\Controllers\Api\AdminPasswordResetController::class, 'reject']);
     });
 });

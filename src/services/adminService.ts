@@ -70,4 +70,19 @@ export const adminService = {
     const response = await api.post(`/admin/users/${id}/restore`);
     return response.data;
   },
+
+  getPendingPasswordResets: async (): Promise<any[]> => {
+    const response = await api.get('/admin/password-resets');
+    return response.data;
+  },
+
+  approvePasswordReset: async (id: number): Promise<{ email: string; full_name: string; verification_code: string; message: string }> => {
+    const response = await api.post(`/admin/password-resets/${id}/approve`);
+    return response.data;
+  },
+
+  rejectPasswordReset: async (id: number): Promise<{ message: string }> => {
+    const response = await api.post(`/admin/password-resets/${id}/reject`);
+    return response.data;
+  },
 };

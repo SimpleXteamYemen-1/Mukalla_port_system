@@ -194,26 +194,32 @@ class PortOfficerController extends Controller
         $vessel = $clearance->vessel;
         $officer = $request->user();
         
-        // Handle Signature: Save to temp file for better DOMPDF compatibility
-        $signaturePath = null;
+        // Handle Signature: Read from storage path and embed as base64 for DOMPDF
+        $signatureBase64 = null;
         if ($officer->signature) {
             try {
-                $signatureData = str_replace('data:image/png;base64,', '', $officer->signature);
-                $signatureData = str_replace(' ', '+', $signatureData);
-                $signatureImage = base64_decode($signatureData);
-                $signatureName = 'sig_' . $officer->id . '.png';
-                \Storage::disk('public')->put('temp/' . $signatureName, $signatureImage);
-                $signaturePath = public_path('storage/temp/' . $signatureName);
+                $sigStoragePath = str_replace('/storage/', '', $officer->signature);
+                if (\Storage::disk('public')->exists($sigStoragePath)) {
+                    $sigContent = \Storage::disk('public')->get($sigStoragePath);
+                    $sigMime = \Storage::disk('public')->mimeType($sigStoragePath);
+                    $signatureBase64 = 'data:' . $sigMime . ';base64,' . base64_encode($sigContent);
+                }
             } catch (\Exception $e) {
-                \Log::error('Signature conversion failed: ' . $e->getMessage());
+                \Log::error('Signature read failed: ' . $e->getMessage());
             }
         }
 
-        $signatureHtml = $signaturePath && file_exists($signaturePath)
-            ? "<img src='{$signaturePath}' style='height: 60px; max-width: 180px; display: block; margin: 0 auto;'>" 
+        $signatureHtml = $signatureBase64
+            ? "<img src='{$signatureBase64}' style='height: 60px; max-width: 180px; display: block; margin: 0 auto;'>" 
             : "<div style='height: 60px; color: #94a3b8; font-style: italic; line-height: 60px; font-size: 12px;'>No Digital Signature</div>";
 
-        $yemenLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Emblem_of_Yemen.svg/512px-Emblem_of_Yemen.svg.png";
+        // Yemen emblem: embed local file as base64 for DOMPDF compatibility
+        $yemenLogoBase64 = '';
+        $yemenLogoPath = public_path('storage/yemen_emblem.png');
+        if (file_exists($yemenLogoPath)) {
+            $logoContent = file_get_contents($yemenLogoPath);
+            $yemenLogoBase64 = 'data:image/png;base64,' . base64_encode($logoContent);
+        }
 
         $html = "
             <html>
@@ -249,7 +255,7 @@ class PortOfficerController extends Controller
                     <div class='watermark'>OFFICIAL</div>
                     
                     <div class='header'>
-                        <img src='{$yemenLogoUrl}' class='logo'>
+                        <img src='{$yemenLogoBase64}' class='logo'>
                         <h1>Republic of Yemen</h1>
                         <p>Ministry of Transport - Mukalla Port Authority</p>
                         <h2 style='margin-top: 8px; font-size: 18px; text-transform: uppercase;'>Port Clearance Certificate</h2>

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { RegisterPage } from './components/RegisterPage';
+import { RequestPasswordReset } from './components/RequestPasswordReset';
+import { ForgotPasswordVerification } from './components/ForgotPasswordVerification';
+import { RecreatePassword } from './components/RecreatePassword';
 import { DashboardRouter } from './components/DashboardRouter';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { LoadingIndicator } from './components/application/loading-indicator/loading-indicator';
@@ -32,7 +35,9 @@ export interface User {
 }
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'dashboard'>('login');
+  const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'dashboard' | 'forgot-request' | 'forgot-verify' | 'forgot-recreate'>('login');
+  const [resetToken, setResetToken] = useState<string>('');
+  
   // ── Language: boot from localStorage, fall back to 'ar'
   const [language, setLanguage] = useState<Language>(
     () => (localStorage.getItem(LANG_KEY) as Language) ?? 'ar'
@@ -146,6 +151,7 @@ function App() {
             onToggleLanguage={toggleLanguage}
             onLogin={handleLogin}
             onNavigateToRegister={() => setCurrentPage('register')}
+            onNavigateToForgotPassword={() => setCurrentPage('forgot-verify')}
           />
         )}
         {currentPage === 'register' && (
@@ -154,6 +160,35 @@ function App() {
             onToggleLanguage={toggleLanguage}
             onRegister={handleRegister}
             onNavigateToLogin={() => setCurrentPage('login')}
+          />
+        )}
+        {currentPage === 'forgot-request' && (
+          <RequestPasswordReset
+            language={language}
+            onToggleLanguage={toggleLanguage}
+            onNavigateBack={() => setCurrentPage('login')}
+            onNavigateToVerification={() => setCurrentPage('forgot-verify')}
+          />
+        )}
+        {currentPage === 'forgot-verify' && (
+          <ForgotPasswordVerification
+            language={language}
+            onToggleLanguage={toggleLanguage}
+            onNavigateBack={() => setCurrentPage('login')}
+            onNavigateToRequest={() => setCurrentPage('forgot-request')}
+            onVerified={(token) => {
+              setResetToken(token);
+              setCurrentPage('forgot-recreate');
+            }}
+          />
+        )}
+        {currentPage === 'forgot-recreate' && (
+          <RecreatePassword
+            language={language}
+            onToggleLanguage={toggleLanguage}
+            onNavigateBack={() => setCurrentPage('login')}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            token={resetToken}
           />
         )}
         {currentPage === 'dashboard' && user && (

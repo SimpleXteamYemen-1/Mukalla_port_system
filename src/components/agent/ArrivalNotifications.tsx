@@ -504,7 +504,11 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                     <span className={`absolute ${language === 'ar' ? 'right-4' : 'left-4'} font-bold text-[var(--text-secondary)]`}>IMO</span>
                     <input
                       type="text"
-                      {...register('imo')}
+                      {...register('imo', {
+                        onChange: (e) => {
+                          e.target.value = e.target.value.replace(/\D/g, '');
+                        }
+                      })}
                       maxLength={7}
                       placeholder="1234567"
                       className={`w-full ${language === 'ar' ? 'pr-14 pl-4 text-right' : 'pl-14 pr-4'} py-3 bg-[var(--background)] border ${errors.imo ? 'border-danger' : 'border-secondary'} rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all`}

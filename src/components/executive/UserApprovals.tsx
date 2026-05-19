@@ -7,6 +7,7 @@ import { Language } from '../../App';
 import { translations } from '../../utils/translations';
 import { executiveService } from '../../services/executiveService';
 import { getTranslatedRole } from '../../utils/formatters';
+import { generateGmailUrl } from '../../utils/emailUtils';
 
 interface UserApprovalsProps {
   language: Language;
@@ -49,12 +50,17 @@ export function UserApprovals({ language }: UserApprovalsProps) {
   const handleApprove = async (userId: number) => {
     setActionLoading(userId);
     try {
-      await executiveService.approveUser(userId);
+      const response = await executiveService.approveUser(userId);
       setPendingUsers(prev => prev.filter(u => u.id !== userId));
       toast.success(t.successApprove);
+
+      if (response && response.user && response.user.email) {
+        const { email, name } = response.user;
+        const gmailUrl = generateGmailUrl(email, name);
+        window.open(gmailUrl, '_blank');
+      }
     } catch (error) {
       toast.error('Failed to approve user.');
-
     } finally {
       setActionLoading(null);
     }
