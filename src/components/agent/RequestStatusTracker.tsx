@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Clock, Ship, Anchor, FileText, Calendar } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Ship, Anchor, FileText, Calendar, ClipboardCheck } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { agentService } from '../../services/agentService';
 import { Language } from '../../App';
 import { translations } from '../../utils/translations';
+import { echo } from '../../utils/echo';
 import { getTranslatedStatus } from '../../utils/formatters';
 
 interface RequestStatusTrackerProps {
   language: Language;
   onNavigate: (page: string) => void;
+  userId?: string | number;
 }
 
 interface TimelineStep {
@@ -20,7 +22,7 @@ interface TimelineStep {
 
 interface RequestItem {
   id: string;
-  type: 'arrival' | 'anchorage' | 'manifest';
+  type: 'arrival' | 'anchorage' | 'manifest' | 'clearance';
   vessel: string;
   title: string;
   submittedDate: string;
@@ -31,7 +33,14 @@ interface RequestItem {
   timeline: TimelineStep[];
 }
 
-export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
+const iconMap: Record<string, any> = {
+  arrival: Ship,
+  anchorage: Anchor,
+  manifest: FileText,
+  clearance: ClipboardCheck,
+};
+
+export function RequestStatusTracker({ language, userId }: RequestStatusTrackerProps) {
   const t = translations[language]?.agent?.tracker || translations.en.agent.tracker;
   const [allRequests, setAllRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +51,7 @@ export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
         const data = await agentService.getTrackerData();
         const mapped = data.map((item: any): RequestItem => ({
           ...item,
-          icon: item.type === 'arrival' ? Ship : (item.type === 'anchorage' ? Anchor : FileText),
+          icon: iconMap[item.type] || Clock,
         }));
         setAllRequests(mapped);
       } catch (error) {
@@ -53,6 +62,52 @@ export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
     };
     fetchData();
   }, []);
+
+  // ── Real-time Echo listener for Port Clearance events ──────────────────
+  useEffect(() => {
+    if (!userId) return;
+
+    const channelName = `App.Models.User.${userId}`;
+    const channel = echo.private(channelName);
+
+    const handleClearanceRequested = (payload: any) => {
+      const newItem: RequestItem = {
+        ...payload,
+        icon: ClipboardCheck,
+      };
+      setAllRequests(prev => {
+        // Avoid duplicates
+        if (prev.some(r => r.id === newItem.id)) return prev;
+        return [newItem, ...prev];
+      });
+    };
+
+    const handleClearanceUpdated = (payload: any) => {
+      const updatedItem: RequestItem = {
+        ...payload,
+        icon: ClipboardCheck,
+      };
+      setAllRequests(prev => {
+        const exists = prev.findIndex(r => r.id === updatedItem.id);
+        if (exists !== -1) {
+          const copy = [...prev];
+          copy[exists] = updatedItem;
+          return copy;
+        }
+        // If not found, prepend
+        return [updatedItem, ...prev];
+      });
+    };
+
+    channel.listen('.port-clearance.requested', handleClearanceRequested);
+    channel.listen('.port-clearance.updated', handleClearanceUpdated);
+
+    return () => {
+      channel.stopListening('.port-clearance.requested', handleClearanceRequested);
+      channel.stopListening('.port-clearance.updated', handleClearanceUpdated);
+      echo.leave(channelName);
+    };
+  }, [userId]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -82,6 +137,7 @@ export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
       case 'arrival': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
       case 'anchorage': return 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400';
       case 'manifest': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+      case 'clearance': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400';
       default: return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
     }
   };
@@ -137,7 +193,7 @@ export function RequestStatusTracker({ language }: RequestStatusTrackerProps) {
 
             <div className="space-y-6">
               {allRequests.map((request) => {
-                const Icon = request.icon || Clock;
+                const Icon = request.icon || iconMap[request.type] || Clock;
                 return (
                   <div key={request.id} className="relative">
                     <div className={`absolute ${language === 'ar' ? 'right-0' : 'left-0'} w-12 h-12 ${getTypeIconBg(request.type)} rounded-lg flex items-center justify-center z-10 border border-slate-200 dark:border-slate-700`}>

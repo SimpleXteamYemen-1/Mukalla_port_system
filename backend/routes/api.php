@@ -81,6 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/officer/clearance/{id}/reject', [PortOfficerController::class, 'rejectClearance']);
         Route::get('/officer/clearances', [PortOfficerController::class, 'getClearances']);
         Route::get('/officer/logs', [PortOfficerController::class, 'getLogs']);
+        Route::get('/officer/logs/export', [PortOfficerController::class, 'exportLogs']);
         Route::get('/officer/wharves', [PortOfficerController::class, 'getWharves']);
         // NEW: Scheduled anchorage handoffs from Wharf worker
         Route::get('/officer/scheduled-anchorage', [PortOfficerController::class, 'getScheduledAnchorage']);

@@ -10,6 +10,7 @@ use App\Models\PortClearance;
 use App\Models\Log;
 use App\Models\AnchorageRequest;
 use App\Events\VesselOperationLogged;
+use App\Events\PortClearanceUpdated;
 
 class PortOfficerController extends Controller
 {
@@ -149,6 +150,16 @@ class PortOfficerController extends Controller
             event(new VesselOperationLogged($log, $request->user()->name));
         } catch (\Exception $e) {
             \Log::error("Broadcasting failed in issueClearance: " . $e->getMessage());
+        }
+
+        // Broadcast to the vessel's agent for real-time timeline update
+        try {
+            $agentId = $vessel->owner_id;
+            if ($agentId) {
+                event(new PortClearanceUpdated($clearance, $agentId));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PortClearanceUpdated broadcast failed in issueClearance: ' . $e->getMessage());
         }
 
         return response()->json($clearance, 201);
@@ -299,6 +310,16 @@ class PortOfficerController extends Controller
             \Log::error("Broadcasting failed in approveClearance: " . $e->getMessage());
         }
 
+        // Broadcast to the vessel's agent for real-time timeline update
+        try {
+            $agentId = $vessel->owner_id;
+            if ($agentId) {
+                event(new PortClearanceUpdated($clearance->fresh(), $agentId));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PortClearanceUpdated broadcast failed in approveClearance: ' . $e->getMessage());
+        }
+
         return response()->json($clearance);
     }
 
@@ -329,12 +350,77 @@ class PortOfficerController extends Controller
             \Log::error("Broadcasting failed in rejectClearance: " . $e->getMessage());
         }
 
+        // Broadcast to the vessel's agent for real-time timeline update
+        try {
+            $agentId = $clearance->vessel->owner_id;
+            if ($agentId) {
+                event(new PortClearanceUpdated($clearance->fresh(), $agentId));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PortClearanceUpdated broadcast failed in rejectClearance: ' . $e->getMessage());
+        }
+
         return response()->json($clearance);
     }
 
     public function getLogs()
     {
         return response()->json(Log::with(['user', 'vessel'])->latest()->take(50)->get());
+    }
+
+    public function exportLogs(Request $request)
+    {
+        $query = Log::with(['user', 'vessel'])->latest();
+
+        // Filter by action type
+        if ($action = $request->query('action')) {
+            $query->where('action', $action);
+        }
+
+        // Filter by date (YYYY-MM-DD)
+        if ($date = $request->query('date')) {
+            $query->whereDate('created_at', $date);
+        }
+
+        // Filter by vessel name search
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('vessel_name', 'like', "%{$search}%")
+                  ->orWhereHas('vessel', function ($vq) use ($search) {
+                      $vq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $logs = $query->take(200)->get();
+
+        $callback = function () use ($logs) {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($handle, ['ID', 'Timestamp', 'Action', 'Vessel', 'Details', 'Officer']);
+
+            foreach ($logs as $log) {
+                $vesselName = $log->vessel_name ?? ($log->vessel ? $log->vessel->name : 'Unknown');
+                fputcsv($handle, [
+                    $log->id,
+                    $log->created_at->format('Y-m-d H:i:s'),
+                    $log->action,
+                    $vesselName,
+                    $log->details,
+                    $log->user ? $log->user->name : 'System',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        $filename = 'operational_logs_' . now()->format('Y-m-d_His') . '.csv';
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, no-cache',
+        ]);
     }
 
     public function getWharves()

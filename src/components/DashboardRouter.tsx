@@ -765,7 +765,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'arrivals' && <ArrivalNotifications language={language} />}
         {currentPage === 'anchorage' && <AnchorageRequests language={language} />}
         {currentPage === 'clearances' && <AgentPortClearances language={language} />}
-        {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
+        {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} userId={user.id} />}
         {currentPage === 'report' && <VesselActivityReport language={language} vesselId={activeVesselId} />}
         {currentPage === 'settings' && (
           <AccountSettings 
