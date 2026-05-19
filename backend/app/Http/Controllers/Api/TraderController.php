@@ -148,7 +148,7 @@ class TraderController extends Controller
             'stored' => $containers->where('status', 'assigned')->count(),
             'ready_for_discharge' => $containers->where('status', 'ready_discharge')->count(),
             'unread_notifications' => 5, // Mock for now
-            'pending_discharges' => DischargeRequest::where('trader_id', $request->user()->id)->where('status', 'pending')->count(),
+            'pending_discharges' => DischargeRequest::where('trader_id', $request->user()->id)->where('status', 'pending')->distinct('batch_id')->count('batch_id'),
             'status_change_alerts' => 2, // Mock for now
         ]);
     }

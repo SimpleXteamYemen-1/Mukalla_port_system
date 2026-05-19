@@ -6,7 +6,7 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 use App\Models\DischargeRequest;
 use App\Models\User;
 
-$trader = User::where('role', 'trader')->first();
+$trader = User::where('email', 'trader@example.com')->first();
 echo "Trader: " . ($trader ? $trader->name . " (ID: " . $trader->id . ")" : "NONE") . "\n\n";
 
 $all = DischargeRequest::all();

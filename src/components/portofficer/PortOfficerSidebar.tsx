@@ -15,7 +15,6 @@ export function PortOfficerSidebar({ language, currentPage, onNavigate }: PortOf
 
   const menuItems: MenuItem[] = [
     { id: 'dashboard', label: isRTL ? 'لوحة التحكم' : 'Dashboard', icon: LayoutDashboard },
-    { id: 'berthing', label: isRTL ? 'إدارة الرسو' : 'Berthing Management', icon: Anchor },
     { id: 'vessels', label: isRTL ? 'السفن النشطة' : 'Active Vessels', icon: Ship },
     { id: 'clearances', label: isRTL ? 'تصاريح المغادرة' : 'Port Clearances', icon: FileCheck },
     { id: 'logs', label: isRTL ? 'السجلات التشغيلية' : 'Operational Logs', icon: FileText },

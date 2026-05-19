@@ -99,7 +99,7 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
       {/* Quick Actions */}
       <div className="card-base p-8">
         <h2 className="text-xl font-black text-[var(--text-primary)] mb-6">{t.quickApprovals}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="flex flex-wrap gap-6">
           {[
             { page: 'arrivals', icon: Ship, label: t.arrivalApprovals, sub: `8 ${t.pending}`, iconBg: 'bg-cyan-500/10', iconColor: 'text-cyan-500' },
             { page: 'anchorage', icon: Anchor, label: t.anchorageApprovals, sub: `4 ${t.pending}`, iconBg: 'bg-purple-500/10', iconColor: 'text-purple-500' },
@@ -112,16 +112,16 @@ export function ExecutiveDashboard({ language, onNavigate }: ExecutiveDashboardP
               <button
                 key={item.page}
                 onClick={() => onNavigate(item.page)}
-                className="flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-secondary/10 border border-[var(--border-color)] hover:border-primary rounded-2xl transition-all transform hover:-translate-y-1 group"
+                className="flex-1 min-w-[280px] flex items-center gap-4 p-5 bg-[var(--surface)] hover:bg-[var(--secondary)]/10 border border-[var(--border)] hover:border-[var(--primary)] rounded-2xl transition-all transform hover:-translate-y-1 group"
               >
-                <div className={`p-4 ${item.iconBg} rounded-xl group-hover:scale-110 transition-transform`}>
+                <div className={`p-4 ${item.iconBg} rounded-xl shrink-0 group-hover:scale-110 transition-transform`}>
                   <Icon className={`w-8 h-8 ${item.iconColor}`} />
                 </div>
                 <div className={`${language === 'ar' ? 'text-right' : 'text-left'} flex-1 min-w-0`}>
-                  <div className="text-[var(--text-primary)] font-bold text-lg truncate">{item.label}</div>
-                  <div className="text-[var(--text-secondary)] font-medium text-sm mt-1 truncate">{item.sub}</div>
+                  <div className="text-[var(--text-primary)] font-bold text-lg line-clamp-2">{item.label}</div>
+                  <div className="text-[var(--text-secondary)] font-medium text-sm mt-1 line-clamp-2">{item.sub}</div>
                 </div>
-                <ArrowRight className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-primary transition-colors ${isRTL ? 'rotate-180' : ''}`} />
+                <ArrowRight className={`w-5 h-5 shrink-0 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors ${isRTL ? 'rotate-180' : ''}`} />
               </button>
             );
           })}

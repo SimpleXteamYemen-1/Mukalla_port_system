@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { agentService } from '../../services/agentService';
-import { Ship, Plus, Search, Navigation, ChevronRight, Trash2 } from 'lucide-react';
+import { Ship, Plus, Search, ChevronRight, Trash2 } from 'lucide-react';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
@@ -153,7 +153,6 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
                   {[
                     { label: language === 'ar' ? 'النوع' : 'Type', value: getTranslatedVesselType(vessel.type, language) },
                     { label: language === 'ar' ? 'العلم' : 'Flag', value: vessel.flag },
-                    { label: language === 'ar' ? 'حمولة الساكنة' : 'DWT', value: vessel.dwt || 'N/A' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between text-sm">
                       <span className="text-slate-500 dark:text-slate-400">{item.label}</span>
@@ -162,14 +161,7 @@ export function MyVessels({ language, onNavigate }: MyVesselsProps) {
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                  <div>
-                    <div className="text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-wider mb-1">{language === 'ar' ? 'الموقع الحالي' : 'CURRENT POSITION'}</div>
-                    <div className="text-slate-900 dark:text-slate-50 font-medium text-sm flex items-center gap-1.5">
-                      <Navigation className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                      {vessel.location || (language === 'ar' ? 'في البحر' : 'At Sea')}
-                    </div>
-                  </div>
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setVesselToDelete(vessel.id)}

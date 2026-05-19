@@ -78,14 +78,26 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [stats, activity, arrivals, vesselsData] = await Promise.all([
+        const [stats, trackerData, arrivals, vesselsData] = await Promise.all([
           agentService.getStats(),
-          agentService.getRecentActivity(),
+          agentService.getTrackerData(),
           agentService.getUpcomingArrivals(),
           agentService.getVessels(),
         ]);
         setStatsData(stats);
-        setRecentActivity(activity);
+        
+        const mappedActivity = trackerData
+          .slice(0, 10)
+          .map((item: any, index: number) => ({
+            id: item.id || index,
+            action: item.title || item.type,
+            details: `Vessel: ${item.vessel} - Status: ${item.status}`,
+            ip_address: '',
+            created_at: item.submittedDate || new Date().toISOString(),
+            updated_at: item.submittedDate || new Date().toISOString(),
+          }));
+        setRecentActivity(mappedActivity);
+        
         setUpcomingArrivals(arrivals);
         setVessels(vesselsData || []);
       } catch (error) {
@@ -224,11 +236,13 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
       console.error('Export failed:', err);
       toast.error(language === 'ar' ? 'حدث خطأ أثناء الاستخراج.' : 'An error occurred during export.');
     } finally {
-
       setIsExporting(false);
       setExportingType('');
     }
   };
+
+  const pendingArrivals = upcomingArrivals.filter(a => a.status === 'pending' || a.status === 'awaiting');
+  const peakArrivals = pendingArrivals.slice(0, 10);
 
   return (
     <div className="space-y-8 p-1">
@@ -434,26 +448,42 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
             </button>
           </div>
           <div className="p-6 space-y-4 flex-1">
-            {upcomingArrivals.length === 0 ? (
+            {peakArrivals.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-[var(--text-secondary)] py-12 border-2 border-dashed border-[var(--border-color)] rounded-2xl bg-[var(--background)]/30">
                 <Ship className="w-12 h-12 mb-3 opacity-20" />
-                <p className="font-medium">{t.noUpcomingArrivals || 'No upcoming arrivals'}</p>
+                <p className="font-medium">{t.noUpcomingArrivals || 'No pending arrivals'}</p>
               </div>
-            ) : upcomingArrivals.map(arrival => (
-              <div key={arrival.id} className="flex flex-col p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--surface-highlight)]/30 hover:bg-[var(--surface-highlight)] transition-all duration-300 hover:shadow-md cursor-pointer group gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm">
-                      <Ship className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="text-[var(--text-primary)] font-bold text-lg group-hover:text-primary transition-colors">{arrival.vessel_name}</div>
-                      <div className="text-[var(--text-secondary)] text-xs font-medium bg-[var(--surface)] px-2 py-0.5 rounded-md inline-block mt-1 border border-[var(--border-color)]">
-                        {language === 'ar' ? 'الوصول المتوقع' : 'ETA'}: {new Date(arrival.eta).toLocaleDateString()}
+            ) : peakArrivals.map(arrival => {
+              const arr = arrival as any;
+              return (
+                <div 
+                  key={arrival.id} 
+                  onClick={() => onNavigate('arrivals')}
+                  className="flex flex-col p-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-highlight)]/30 hover:bg-[var(--surface-highlight)] transition-all duration-300 hover:shadow-md cursor-pointer group gap-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm">
+                        <Ship className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="text-[var(--text-primary)] font-bold text-lg group-hover:text-[var(--primary)] transition-colors">
+                          {arr.name || arr.vessel_name || 'Unknown Vessel'}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-1.5">
+                          <div className="text-[var(--text-secondary)] text-xs font-medium bg-[var(--surface)] px-2 py-0.5 rounded-md inline-block border border-[var(--border)]">
+                            {language === 'ar' ? 'رقم IMO' : 'IMO'}: {arr.imo_number || arr.imo || 'N/A'}
+                          </div>
+                          <div className="text-[var(--text-secondary)] text-xs font-medium bg-[var(--surface)] px-2 py-0.5 rounded-md inline-block border border-[var(--border)]">
+                            {language === 'ar' ? 'السبب' : 'Reason'}: {arr.reason || arr.purpose || arr.rejection_reason || 'N/A'}
+                          </div>
+                          <div className="text-[var(--text-secondary)] text-xs font-medium bg-[var(--surface)] px-2 py-0.5 rounded-md inline-block border border-[var(--border)]">
+                            {language === 'ar' ? 'الوصول المتوقع' : 'ETA'}: {new Date(arrival.eta).toLocaleDateString()}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getStatusColor(arrival.status)}`}>
                       {getStatusLabel(arrival.status)}
                     </span>
@@ -468,8 +498,23 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
                     </div>
                   </div>
                 )}
+                <div className="flex gap-2 mt-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); toast.success(language === 'ar' ? 'تم القبول' : 'Accepted'); }} 
+                    className="flex-1 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 rounded-xl font-bold text-sm transition-colors"
+                  >
+                    {language === 'ar' ? 'قبول' : 'Accept'}
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); toast.error(language === 'ar' ? 'تم الرفض' : 'Declined'); }} 
+                    className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl font-bold text-sm transition-colors"
+                  >
+                    {language === 'ar' ? 'رفض' : 'Decline'}
+                  </button>
+                </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       </div>
