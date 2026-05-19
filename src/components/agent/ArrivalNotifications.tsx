@@ -426,6 +426,7 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
     }
 
     setShowForm(true);
+    setExpandedManifestId(notification.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -588,9 +589,6 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       >
                         <option value="">{language === 'ar' ? 'اختر النوع' : 'Select Type'}</option>
                         <option value="container">{getTranslatedVesselType('container', language)}</option>
-                        <option value="tanker">{getTranslatedVesselType('tanker', language)}</option>
-                        <option value="cargo">{getTranslatedVesselType('cargo', language)}</option>
-                        <option value="bulk">{getTranslatedVesselType('bulk', language)}</option>
                       </select>
                       {errors.type && <p className="text-danger text-xs font-bold mt-2">{errors.type.message}</p>}
                     </div>
@@ -919,10 +917,15 @@ export function ArrivalNotifications({ language }: ArrivalNotificationsProps) {
                       <ManifestUploader
                         vesselId={notification.id}
                         language={language}
+                        expectedContainers={notification.expected_containers}
+                        existingContainerCount={notification.containers?.length || 0}
+                        existingContainers={notification.containers || []}
                         onUploadSuccess={() => {
                           setExpandedManifestId(null);
                           loadArrivals();
                         }}
+                        onContainerDeleted={() => loadArrivals()}
+                        onAdjustCount={() => handleEdit(notification)}
                       />
                     </div>
                   ) : (
