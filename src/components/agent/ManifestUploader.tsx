@@ -35,6 +35,7 @@ export function ManifestUploader({ vesselId, language, expectedContainers, exist
   const [uploadErrors, setUploadErrors] = useState<any[]>([]);
   const [manifestToDelete, setManifestToDelete] = useState<number | null>(null);
   const [showMismatchModal, setShowMismatchModal] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -70,24 +71,57 @@ export function ManifestUploader({ vesselId, language, expectedContainers, exist
     setShowMismatchModal(false);
     setIsUploading(true);
     
+    const BATCH_SIZE = 50;
+    const allSuccessful: any[] = [];
+    const allFailed: any[] = [];
+    const totalFiles = selectedFiles.length;
+    setUploadProgress({ current: 0, total: totalFiles });
+    
     try {
-      const formData = new FormData();
-      selectedFiles.forEach((file) => {
-        formData.append('manifests[]', file);
-      });
+      // Split files into batches to avoid PHP max_file_uploads limit and timeouts
+      for (let i = 0; i < totalFiles; i += BATCH_SIZE) {
+        const batch = selectedFiles.slice(i, i + BATCH_SIZE);
+        const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(totalFiles / BATCH_SIZE);
+        
+        // Update progress toast
+        if (totalBatches > 1) {
+          toast.info(
+            isRTL 
+              ? `جاري معالجة الدفعة ${batchNumber} من ${totalBatches} (${Math.min(i + BATCH_SIZE, totalFiles)}/${totalFiles} ملف)...`
+              : `Processing batch ${batchNumber} of ${totalBatches} (${Math.min(i + BATCH_SIZE, totalFiles)}/${totalFiles} files)...`,
+            { autoClose: 2000, toastId: 'batch-progress' }
+          );
+        }
 
-      const response = await api.post(`/arrival-notifications/${vesselId}/manifests`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const formData = new FormData();
+        batch.forEach((file) => {
+          formData.append('manifests[]', file);
+        });
 
-      toast.success(isRTL ? 'تم الرفع ومعالجة الملفات بنجاح!' : 'Files uploaded and processed successfully!');
+        const response = await api.post(`/arrival-notifications/${vesselId}/manifests`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 300000, // 5 min timeout per batch
+        });
+
+        const successfulUploads = response.data.successful_uploads || response.data.results || [];
+        const failedUploads = response.data.failed_uploads || [];
+
+        allSuccessful.push(...successfulUploads);
+        allFailed.push(...failedUploads);
+        setUploadProgress({ current: Math.min(i + BATCH_SIZE, totalFiles), total: totalFiles });
+      }
+
+      toast.dismiss('batch-progress');
+      toast.success(
+        isRTL 
+          ? `تم رفع ومعالجة ${allSuccessful.length} ملف بنجاح!` 
+          : `${allSuccessful.length} files uploaded and processed successfully!`
+      );
       
-      const successfulUploads = response.data.successful_uploads || response.data.results || [];
-      const failedUploads = response.data.failed_uploads || [];
-
-      const flattenedContainers = successfulUploads.map((r: any) => ({
+      const flattenedContainers = allSuccessful.map((r: any) => ({
         ...r.container,
         extraction_status: r.extraction_status,
         extraction_errors: r.extraction_errors,
@@ -95,7 +129,7 @@ export function ManifestUploader({ vesselId, language, expectedContainers, exist
       }));
 
       setExtractedContainers(flattenedContainers);
-      setUploadErrors(failedUploads);
+      setUploadErrors(allFailed);
       setSelectedFiles([]);
       
       if (onUploadSuccess) {
@@ -103,8 +137,24 @@ export function ManifestUploader({ vesselId, language, expectedContainers, exist
       }
     } catch (error: any) {
       console.error(error);
+      toast.dismiss('batch-progress');
       const limitMsg = error.response?.status === 413 ? (isRTL ? 'حجم الملفات كبير جداً.' : 'Files are too large.') : '';
       toast.error(isRTL ? 'فشل في رفع ومعالجة الملفات. ' + limitMsg : 'Failed to upload and parse manifests. ' + limitMsg);
+      
+      // Even on error, show any partial results that succeeded
+      if (allSuccessful.length > 0) {
+        const flattenedContainers = allSuccessful.map((r: any) => ({
+          ...r.container,
+          extraction_status: r.extraction_status,
+          extraction_errors: r.extraction_errors,
+          error_reason: r.error_reason
+        }));
+        setExtractedContainers(flattenedContainers);
+        setUploadErrors(allFailed);
+        if (onUploadSuccess) {
+          onUploadSuccess(flattenedContainers);
+        }
+      }
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -259,7 +309,9 @@ export function ManifestUploader({ vesselId, language, expectedContainers, exist
                   {isUploading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      {isRTL ? 'جاري الاستخراج...' : 'Crunching OCR...'}
+                      {uploadProgress.total > 0 
+                        ? (isRTL ? `جاري المعالجة... ${uploadProgress.current}/${uploadProgress.total}` : `Processing... ${uploadProgress.current}/${uploadProgress.total} files`)
+                        : (isRTL ? 'جاري الاستخراج...' : 'Crunching OCR...')}
                     </>
                   ) : (
                     <>
