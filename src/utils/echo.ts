@@ -19,4 +19,13 @@ export const echo = new Echo({
     wssPort: import.meta.env.VITE_REVERB_PORT || 8081,
     forceTLS: false,
     enabledTransports: ['ws', 'wss'],
+    // Private channel auth — dynamically reads the bearer token at auth time
+    authEndpoint: 'http://localhost:8000/broadcasting/auth',
+    auth: {
+        headers: {
+            get Authorization() {
+                return `Bearer ${localStorage.getItem('token') || ''}`;
+            },
+        },
+    },
 });

@@ -82,7 +82,7 @@ class TraderController extends Controller
         $vesselName = $vessel ? $vessel->name : 'Unknown Vessel';
         
         // Notify all users with role 'wharf'
-        $wharfUsers = User::where('role', 'wharf')->get();
+        $wharfUsers = User::role('wharf')->get();
         foreach ($wharfUsers as $wharfUser) {
             Notification::create([
                 'user_id' => $wharfUser->id,
@@ -114,6 +114,7 @@ class TraderController extends Controller
             ->groupBy('batch_id')
             ->map(function ($group) {
                 $first = $group->first();
+                $wharfUser = $first->status === 'approved' ? User::role('wharf')->first() : null;
                 return [
                     'batch_id'         => $first->batch_id,
                     'vessel'           => $first->vessel,
@@ -123,6 +124,8 @@ class TraderController extends Controller
                     'notes'            => $first->notes,
                     'containers'       => $group->pluck('container')->filter()->values(),
                     'created_at'       => $first->created_at,
+                    'wharf_signature_base64' => $wharfUser ? $wharfUser->signature_base64 : null,
+                    'wharf_officer_name'     => $wharfUser ? $wharfUser->name : null,
                 ];
             })
             ->values();
@@ -148,7 +151,7 @@ class TraderController extends Controller
             'stored' => $containers->where('status', 'assigned')->count(),
             'ready_for_discharge' => $containers->where('status', 'ready_discharge')->count(),
             'unread_notifications' => 5, // Mock for now
-            'pending_discharges' => DischargeRequest::where('trader_id', $request->user()->id)->where('status', 'pending')->count(),
+            'pending_discharges' => DischargeRequest::where('trader_id', $request->user()->id)->where('status', 'pending')->distinct('batch_id')->count('batch_id'),
             'status_change_alerts' => 2, // Mock for now
         ]);
     }

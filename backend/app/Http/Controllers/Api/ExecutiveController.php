@@ -614,7 +614,10 @@ class ExecutiveController extends Controller
 
         return response()->json([
             'message' => 'User account approved successfully.',
-            'user' => $user
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+            ]
         ]);
     }
 

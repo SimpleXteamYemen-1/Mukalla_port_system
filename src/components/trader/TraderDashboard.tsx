@@ -10,9 +10,10 @@ import { StatusBadge } from '../ui/StatusBadge';
 interface TraderDashboardProps {
   language: Language;
   userEmail: string;
+  onNavigate: (page: string) => void;
 }
 
-export function TraderDashboard({ language, userEmail }: TraderDashboardProps) {
+export function TraderDashboard({ language, userEmail, onNavigate }: TraderDashboardProps) {
   const isRTL = language === 'ar';
   const [stats, setStats] = useState<TraderStats>({
     arrived: 0,
@@ -59,28 +60,32 @@ export function TraderDashboard({ language, userEmail }: TraderDashboardProps) {
       value: stats.arrived,
       icon: Package,
       color: 'blue' as const,
-      trend: { value: isRTL ? 'نشط' : 'Active', direction: 'neutral' as const }
+      trend: { value: isRTL ? 'نشط' : 'Active', direction: 'neutral' as const },
+      onClick: () => onNavigate('containers')
     },
     {
       title: isRTL ? 'حاويات مخزنة' : 'Stored',
       value: stats.stored,
       icon: BoxSelect,
       color: 'emerald' as const,
-      trend: { value: '', direction: 'neutral' as const }
+      trend: { value: '', direction: 'neutral' as const },
+      onClick: () => onNavigate('containers')
     },
     {
       title: isRTL ? 'جاهزة للتفريغ' : 'Ready for Discharge',
       value: stats.readyForDischarge,
       icon: CheckCircle2,
       color: 'teal' as const,
-      trend: { value: '', direction: 'neutral' as const }
+      trend: { value: '', direction: 'neutral' as const },
+      onClick: () => onNavigate('containers')
     },
     {
       title: isRTL ? 'إشعارات غير مقروءة' : 'Unread Notifications',
       value: stats.unreadNotifications,
       icon: AlertTriangle,
       color: 'amber' as const,
-      trend: { value: '', direction: 'neutral' as const }
+      trend: { value: '', direction: 'neutral' as const },
+      onClick: () => onNavigate('notifications')
     }
   ];
 
@@ -120,6 +125,7 @@ export function TraderDashboard({ language, userEmail }: TraderDashboardProps) {
             color={stat.color}
             language={language}
             trend={stat.value > 0 && stat.trend.value ? stat.trend : undefined}
+            onClick={stat.onClick}
           />
         ))}
       </div>
@@ -140,7 +146,10 @@ export function TraderDashboard({ language, userEmail }: TraderDashboardProps) {
                   ? `لديك ${stats.statusChangeAlerts} تنبيهات جديدة حول تغييرات حالة الحاوية`
                   : `You have ${stats.statusChangeAlerts} new alerts about container status changes`}
               </p>
-              <button className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 text-sm">
+              <button 
+                onClick={() => onNavigate('notifications')}
+                className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-2 rounded-lg font-medium transition-colors duration-200 text-sm"
+              >
                 {isRTL ? 'عرض التفاصيل' : 'View Details'}
               </button>
             </div>
@@ -166,7 +175,10 @@ export function TraderDashboard({ language, userEmail }: TraderDashboardProps) {
             </div>
           </div>
           <div className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-6">{stats.pendingDischarges}</div>
-          <button className="w-full flex items-center justify-between px-4 py-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors duration-200">
+          <button 
+            onClick={() => onNavigate('discharge')}
+            className="w-full flex items-center justify-between px-4 py-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors duration-200"
+          >
             {isRTL ? 'عرض الطلبات' : 'View Requests'}
             <ArrowRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
           </button>

@@ -167,12 +167,11 @@ export function AnchorageApprovals({ language, onNavigate }: AnchorageApprovalsP
                   )}
 
                   {/* Details Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                     {[
                       { label: t.agent, value: request.vessel?.owner?.name || 'Unknown Agent' },
-                      { label: t.duration, value: `${request.duration} ${language === 'ar' ? 'ساعة' : 'hours'}` },
-                      { label: t.location, value: request.location || 'N/A' },
-                      { label: t.submitted, value: new Date(request.created_at).toLocaleString(language === 'ar' ? 'ar-YE' : 'en-GB') },
+                      { label: t.duration, value: `${request.duration} ${language === 'ar' ? 'ساعات' : 'hours'}` },
+                      { label: t.submitted, value: new Date(request.created_at).toLocaleString() },
                     ].map((item) => (
                       <div key={item.label} className="p-3 bg-slate-50 dark:bg-slate-700/25 rounded-lg border border-slate-200 dark:border-slate-700">
                         <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.label}</div>

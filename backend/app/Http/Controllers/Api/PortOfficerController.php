@@ -10,6 +10,7 @@ use App\Models\PortClearance;
 use App\Models\Log;
 use App\Models\AnchorageRequest;
 use App\Events\VesselOperationLogged;
+use App\Events\PortClearanceUpdated;
 
 class PortOfficerController extends Controller
 {
@@ -151,6 +152,16 @@ class PortOfficerController extends Controller
             \Log::error("Broadcasting failed in issueClearance: " . $e->getMessage());
         }
 
+        // Broadcast to the vessel's agent for real-time timeline update
+        try {
+            $agentId = $vessel->owner_id;
+            if ($agentId) {
+                event(new PortClearanceUpdated($clearance, $agentId));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PortClearanceUpdated broadcast failed in issueClearance: ' . $e->getMessage());
+        }
+
         return response()->json($clearance, 201);
     }
 
@@ -183,26 +194,32 @@ class PortOfficerController extends Controller
         $vessel = $clearance->vessel;
         $officer = $request->user();
         
-        // Handle Signature: Save to temp file for better DOMPDF compatibility
-        $signaturePath = null;
+        // Handle Signature: Read from storage path and embed as base64 for DOMPDF
+        $signatureBase64 = null;
         if ($officer->signature) {
             try {
-                $signatureData = str_replace('data:image/png;base64,', '', $officer->signature);
-                $signatureData = str_replace(' ', '+', $signatureData);
-                $signatureImage = base64_decode($signatureData);
-                $signatureName = 'sig_' . $officer->id . '.png';
-                \Storage::disk('public')->put('temp/' . $signatureName, $signatureImage);
-                $signaturePath = public_path('storage/temp/' . $signatureName);
+                $sigStoragePath = str_replace('/storage/', '', $officer->signature);
+                if (\Storage::disk('public')->exists($sigStoragePath)) {
+                    $sigContent = \Storage::disk('public')->get($sigStoragePath);
+                    $sigMime = \Storage::disk('public')->mimeType($sigStoragePath);
+                    $signatureBase64 = 'data:' . $sigMime . ';base64,' . base64_encode($sigContent);
+                }
             } catch (\Exception $e) {
-                \Log::error('Signature conversion failed: ' . $e->getMessage());
+                \Log::error('Signature read failed: ' . $e->getMessage());
             }
         }
 
-        $signatureHtml = $signaturePath && file_exists($signaturePath)
-            ? "<img src='{$signaturePath}' style='height: 60px; max-width: 180px; display: block; margin: 0 auto;'>" 
+        $signatureHtml = $signatureBase64
+            ? "<img src='{$signatureBase64}' style='height: 60px; max-width: 180px; display: block; margin: 0 auto;'>" 
             : "<div style='height: 60px; color: #94a3b8; font-style: italic; line-height: 60px; font-size: 12px;'>No Digital Signature</div>";
 
-        $yemenLogoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Emblem_of_Yemen.svg/512px-Emblem_of_Yemen.svg.png";
+        // Yemen emblem: embed local file as base64 for DOMPDF compatibility
+        $yemenLogoBase64 = '';
+        $yemenLogoPath = public_path('storage/yemen_emblem.png');
+        if (file_exists($yemenLogoPath)) {
+            $logoContent = file_get_contents($yemenLogoPath);
+            $yemenLogoBase64 = 'data:image/png;base64,' . base64_encode($logoContent);
+        }
 
         $html = "
             <html>
@@ -238,7 +255,7 @@ class PortOfficerController extends Controller
                     <div class='watermark'>OFFICIAL</div>
                     
                     <div class='header'>
-                        <img src='{$yemenLogoUrl}' class='logo'>
+                        <img src='{$yemenLogoBase64}' class='logo'>
                         <h1>Republic of Yemen</h1>
                         <p>Ministry of Transport - Mukalla Port Authority</p>
                         <h2 style='margin-top: 8px; font-size: 18px; text-transform: uppercase;'>Port Clearance Certificate</h2>
@@ -299,6 +316,16 @@ class PortOfficerController extends Controller
             \Log::error("Broadcasting failed in approveClearance: " . $e->getMessage());
         }
 
+        // Broadcast to the vessel's agent for real-time timeline update
+        try {
+            $agentId = $vessel->owner_id;
+            if ($agentId) {
+                event(new PortClearanceUpdated($clearance->fresh(), $agentId));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PortClearanceUpdated broadcast failed in approveClearance: ' . $e->getMessage());
+        }
+
         return response()->json($clearance);
     }
 
@@ -329,12 +356,77 @@ class PortOfficerController extends Controller
             \Log::error("Broadcasting failed in rejectClearance: " . $e->getMessage());
         }
 
+        // Broadcast to the vessel's agent for real-time timeline update
+        try {
+            $agentId = $clearance->vessel->owner_id;
+            if ($agentId) {
+                event(new PortClearanceUpdated($clearance->fresh(), $agentId));
+            }
+        } catch (\Exception $e) {
+            \Log::error('PortClearanceUpdated broadcast failed in rejectClearance: ' . $e->getMessage());
+        }
+
         return response()->json($clearance);
     }
 
     public function getLogs()
     {
         return response()->json(Log::with(['user', 'vessel'])->latest()->take(50)->get());
+    }
+
+    public function exportLogs(Request $request)
+    {
+        $query = Log::with(['user', 'vessel'])->latest();
+
+        // Filter by action type
+        if ($action = $request->query('action')) {
+            $query->where('action', $action);
+        }
+
+        // Filter by date (YYYY-MM-DD)
+        if ($date = $request->query('date')) {
+            $query->whereDate('created_at', $date);
+        }
+
+        // Filter by vessel name search
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('vessel_name', 'like', "%{$search}%")
+                  ->orWhereHas('vessel', function ($vq) use ($search) {
+                      $vq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $logs = $query->take(200)->get();
+
+        $callback = function () use ($logs) {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM for Excel compatibility
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($handle, ['ID', 'Timestamp', 'Action', 'Vessel', 'Details', 'Officer']);
+
+            foreach ($logs as $log) {
+                $vesselName = $log->vessel_name ?? ($log->vessel ? $log->vessel->name : 'Unknown');
+                fputcsv($handle, [
+                    $log->id,
+                    $log->created_at->format('Y-m-d H:i:s'),
+                    $log->action,
+                    $vesselName,
+                    $log->details,
+                    $log->user ? $log->user->name : 'System',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        $filename = 'operational_logs_' . now()->format('Y-m-d_His') . '.csv';
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, no-cache',
+        ]);
     }
 
     public function getWharves()

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\Log;
+use App\Events\PortClearanceRequested;
 
 class AgentController extends Controller
 {
@@ -191,6 +192,13 @@ class AgentController extends Controller
             'status' => 'pending_clearance',
             'next_port' => $request->next_port,
         ]);
+
+        // Broadcast to the agent's private channel for real-time timeline update
+        try {
+            event(new PortClearanceRequested($clearance, $request->user()->id));
+        } catch (\Exception $e) {
+            \Log::error('Broadcasting failed in requestClearance: ' . $e->getMessage());
+        }
 
         return response()->json($clearance, 201);
     }
@@ -378,8 +386,41 @@ class AgentController extends Controller
             ];
         });
 
+        // 4. Port Clearance Requests & Certificates
+        $vesselIds = Vessel::where('owner_id', $userId)->pluck('id');
+        $clearances = PortClearance::whereIn('vessel_id', $vesselIds)
+            ->with('vessel')
+            ->get()
+            ->map(function ($c) {
+                $statusMap = [
+                    'pending_clearance'  => 'pending',
+                    'valid'              => 'approved',
+                    'clearance_approved' => 'approved',
+                    'rejected'           => 'rejected',
+                ];
+                $normalizedStatus = $statusMap[$c->status] ?? $c->status;
+                $isApproved = in_array($c->status, ['valid', 'clearance_approved']);
+                $isRejected = $c->status === 'rejected';
+
+                return [
+                    'id'              => 'PC-' . $c->id,
+                    'type'            => 'clearance',
+                    'vessel'          => $c->vessel->name,
+                    'title'           => $isApproved ? 'Port Clearance Certificate' : 'Port Clearance Request',
+                    'submittedDate'   => $c->created_at->toDateTimeString(),
+                    'status'          => $normalizedStatus,
+                    'completedDate'   => $isApproved ? $c->updated_at->toDateTimeString() : null,
+                    'rejectionReason' => $c->rejection_reason,
+                    'timeline'        => [
+                        ['step' => 'Submitted',    'date' => $c->created_at->toDateTimeString(),                                            'user' => 'Agent',        'status' => 'completed'],
+                        ['step' => 'Under Review', 'date' => ($isApproved || $isRejected) ? $c->updated_at->toDateTimeString() : '',       'user' => 'Port Officer', 'status' => ($isApproved || $isRejected) ? 'completed' : 'pending'],
+                        ['step' => $isRejected ? 'Rejected' : 'Approved', 'date' => $isApproved ? ($c->issue_date ? $c->issue_date->toDateTimeString() : '') : ($isRejected ? $c->updated_at->toDateTimeString() : ''), 'user' => 'Port Officer', 'status' => $isApproved ? 'completed' : ($isRejected ? 'rejected' : 'pending')],
+                    ],
+                ];
+            });
+
         // Merge and sort
-        $all = $arrivals->concat($anchorage)->concat($manifests)->sortByDesc('submittedDate')->values();
+        $all = $arrivals->concat($anchorage)->concat($manifests)->concat($clearances)->sortByDesc('submittedDate')->values();
 
         return response()->json($all);
     }
@@ -453,6 +494,10 @@ class AgentController extends Controller
         }
 
         // Soft delete the vessel by marking it archived
+        if ($vessel->current_wharf_id) {
+            \App\Models\Wharf::where('id', $vessel->current_wharf_id)->update(['status' => 'available']);
+            $vessel->current_wharf_id = null;
+        }
         $vessel->status = 'archived';
         $vessel->save();
 

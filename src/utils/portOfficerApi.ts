@@ -39,7 +39,8 @@ export interface Clearance {
 export interface LogEntry {
   id: string;
   timestamp: string; // created_at
-  action: 'berth_assignment' | 'clearance_issued' | 'berth_release'; // map from backend action strings
+  rawDate: string; // YYYY-MM-DD for date filtering
+  action: string; // backend action key (assign_berth, issue_clearance, berth_release, approve_arrival, etc.)
   vessel: string; // details parsed? or just use details
   details: string;
   officer: string; // user.name
@@ -224,9 +225,14 @@ export async function getLogs(): Promise<LogEntry[]> {
         vesselName = vesselName || 'Unknown Vessel';
       }
 
+      // Extract YYYY-MM-DD from created_at for reliable date filtering
+      const createdDate = new Date(l.created_at);
+      const rawDate = `${createdDate.getFullYear()}-${String(createdDate.getMonth() + 1).padStart(2, '0')}-${String(createdDate.getDate()).padStart(2, '0')}`;
+
       return {
         id: l.id.toString(),
         timestamp: new Date(l.created_at).toLocaleString(),
+        rawDate,
         action: l.action,
         vessel: vesselName,
         details: l.details,
@@ -239,6 +245,15 @@ export async function getLogs(): Promise<LogEntry[]> {
     console.error('Error fetching logs:', error);
     return [];
   }
+}
+
+// Export Logs as CSV (filter-aware)
+export async function exportLogs(params: { action?: string; date?: string; search?: string }): Promise<Blob> {
+  const response = await api.get('/officer/logs/export', {
+    params,
+    responseType: 'blob',
+  });
+  return response.data;
 }
 
 // ─── Scheduled Anchorage Handoffs ─────────────────────────────────────────────

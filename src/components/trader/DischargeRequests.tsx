@@ -5,6 +5,7 @@ import { FileText, Package, Calendar, CheckCircle2, XCircle, Clock, RefreshCw, S
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { traderService } from '../../services/traderService';
 import api from '../../services/api';
+import { exportDischargeRequestPdf } from '../../utils/exportPdf';
 
 interface DischargeRequestsProps {
   language: Language;
@@ -243,11 +244,11 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                   required
                 >
                   <option value="">
-                    {vessels.some(v => v.status === 'departed')
+                    {vessels.some(v => v.status === 'departed' || (v.containers && v.containers.length > 0 && v.containers.every(c => c.status?.toLowerCase() === 'discharged')))
                       ? (isRTL ? 'اختر سفينة...' : 'Choose vessel...')
-                      : (isRTL ? 'لا توجد سفن غادرت الميناء بعد' : 'No vessels have departed yet')}
+                      : (isRTL ? 'لا توجد سفن مؤهلة بعد' : 'No eligible vessels available yet')}
                   </option>
-                  {vessels.filter(v => v.status === 'departed').map(v => {
+                  {vessels.filter(v => v.status === 'departed' || (v.containers && v.containers.length > 0 && v.containers.every(c => c.status?.toLowerCase() === 'discharged'))).map(v => {
                     const eligibleCount = v.containers.filter(c =>
                       ['discharged'].includes(c.status?.toLowerCase())
                     ).length;
@@ -455,17 +456,29 @@ export function DischargeRequests({ language, userEmail }: DischargeRequestsProp
                   <div>
                     {isRTL ? 'تم التقديم:' : 'Submitted:'} {formatDate(batch.created_at)}
                   </div>
-                  <button
-                    onClick={() => toggleBatchExpand(batch.batch_id)}
-                    className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 font-bold transition-colors cursor-pointer"
-                  >
-                    {expandedBatchId === batch.batch_id
-                      ? (isRTL ? 'إخفاء الحاويات ↑' : 'Hide Containers')
-                      : (isRTL ? 'عرض الحاويات →' : 'View Containers →')}
-                    {expandedBatchId === batch.batch_id
-                      ? <ChevronUp className="w-4 h-4" />
-                      : <ChevronDown className="w-4 h-4" />}
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportDischargeRequestPdf(batch as any, 'trader');
+                      }}
+                      className="flex items-center gap-1.5 text-orange-600 hover:text-orange-500 font-bold transition-colors cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4" />
+                      {isRTL ? 'تصدير PDF' : 'Export PDF'}
+                    </button>
+                    <button
+                      onClick={() => toggleBatchExpand(batch.batch_id)}
+                      className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 font-bold transition-colors cursor-pointer"
+                    >
+                      {expandedBatchId === batch.batch_id
+                        ? (isRTL ? 'إخفاء الحاويات ↑' : 'Hide Containers')
+                        : (isRTL ? 'عرض الحاويات →' : 'View Containers →')}
+                      {expandedBatchId === batch.batch_id
+                        ? <ChevronUp className="w-4 h-4" />
+                        : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Expandable Containers Panel */}

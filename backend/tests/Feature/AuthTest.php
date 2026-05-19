@@ -28,10 +28,14 @@ class AuthTest extends TestCase
             'role' => 'agent',
         ]);
 
-        $response->assertStatus(200)
-            ->assertJsonStructure(['access_token', 'user']);
+        $response->assertStatus(202)
+            ->assertJsonStructure(['message', 'user']);
             
-        $this->assertDatabaseHas('users', ['email' => 'test@example.com', 'role' => 'agent']);
+        $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
+        
+        $user = User::where('email', 'test@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue($user->hasRole('agent'));
     }
 
     public function test_user_can_login()
@@ -39,7 +43,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create([
             'email' => 'login@example.com',
             'password' => bcrypt('password'),
-            'role' => 'agent',
+            'status' => User::STATUS_ACTIVE,
         ]);
         $user->assignRole('agent');
 
@@ -57,6 +61,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create([
             'email' => 'login@example.com',
             'password' => bcrypt('password'),
+            'status' => User::STATUS_ACTIVE,
         ]);
 
         $response = $this->postJson('/api/login', [

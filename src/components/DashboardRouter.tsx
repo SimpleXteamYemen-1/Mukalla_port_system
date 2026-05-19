@@ -28,7 +28,6 @@ import { VesselHistory as OfficerVesselHistory } from './portofficer/VesselHisto
 import { VesselHistory as WharfVesselHistory } from './wharf/VesselHistory';
 import { PortOfficerSidebar } from './portofficer/PortOfficerSidebar';
 import { PortOfficerDashboard } from './portofficer/PortOfficerDashboard';
-import { BerthingManagement } from './portofficer/BerthingManagement';
 import { ActiveVessels } from './portofficer/ActiveVessels';
 import { PortClearances } from './portofficer/PortClearances';
 import { OperationalLogs } from './portofficer/OperationalLogs';
@@ -62,7 +61,7 @@ interface DashboardRouterProps {
 // All valid page keys per role — used to guard against stale ?tab= values on refresh
 const VALID_PAGES: Record<string, string[]> = {
   executive: ['dashboard', 'notifications', 'arrivals', 'vessel-history', 'anchorage', 'user-approvals', 'user-directory', 'logs', 'reports', 'emergency-exits', 'settings'],
-  officer:   ['dashboard', 'notifications', 'berthing', 'vessels', 'clearances', 'logs', 'report', 'vessel-history', 'settings'],
+  officer:   ['dashboard', 'notifications', 'vessels', 'clearances', 'logs', 'report', 'vessel-history', 'settings'],
   wharf:     ['dashboard', 'notifications', 'availability', 'storage', 'discharge', 'capacity', 'vessel-history', 'settings'],
   trader:    ['dashboard', 'notifications', 'containers', 'discharge', 'settings'],
   agent:     ['dashboard', 'notifications', 'vessels', 'arrivals', 'anchorage', 'clearances', 'tracker', 'report', 'settings'],
@@ -415,7 +414,6 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
             )}
             {currentPage === 'dashboard' && <PortOfficerDashboard language={language} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
-            {currentPage === 'berthing' && <BerthingManagement language={language} />}
             {currentPage === 'vessels' && <ActiveVessels language={language} onNavigate={setCurrentPage} />}
             {currentPage === 'clearances' && <PortClearances language={language} />}
             {currentPage === 'logs' && <OperationalLogs language={language} />}
@@ -694,7 +692,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
                 </div>
               </div>
             )}
-            {currentPage === 'dashboard' && <TraderDashboard language={language} userEmail={user.email} />}
+            {currentPage === 'dashboard' && <TraderDashboard language={language} userEmail={user.email} onNavigate={setCurrentPage} />}
             {currentPage === 'notifications' && <NotificationsPage user={user} language={language} />}
             {currentPage === 'containers' && <MyContainers language={language} userEmail={user.email} />}
             {currentPage === 'discharge' && <DischargeRequests language={language} userEmail={user.email} userName={user.name} />}
@@ -708,7 +706,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
               />
             )}
             {/* Catch-all: unknown page → show dashboard */}
-            {!VALID_PAGES.trader.includes(currentPage) && <TraderDashboard language={language} userEmail={user.email} />}
+            {!VALID_PAGES.trader.includes(currentPage) && <TraderDashboard language={language} userEmail={user.email} onNavigate={setCurrentPage} />}
           </main>
         </div>
       </div>
@@ -756,7 +754,7 @@ export function DashboardRouter({ user, language, onLogout, onToggleLanguage, th
         {currentPage === 'arrivals' && <ArrivalNotifications language={language} />}
         {currentPage === 'anchorage' && <AnchorageRequests language={language} />}
         {currentPage === 'clearances' && <AgentPortClearances language={language} />}
-        {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} />}
+        {currentPage === 'tracker' && <RequestStatusTracker language={language} onNavigate={setCurrentPage} userId={user.id} />}
         {currentPage === 'report' && <VesselActivityReport language={language} vesselId={activeVesselId} />}
         {currentPage === 'settings' && (
           <AccountSettings 

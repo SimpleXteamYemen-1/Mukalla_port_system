@@ -35,6 +35,7 @@ export interface Vessel {
     status: string;
     owner_id: number;
     expected_containers?: number | null;
+    current_wharf_id?: number | null;
 }
 
 export interface CargoManifest {
@@ -87,6 +88,7 @@ export interface ReportClearance {
     expiry_date: string;
     next_port: string | null;
     officer: { id: number; name: string; email: string } | null;
+    certificate_path?: string | null;
     created_at: string;
 }
 
