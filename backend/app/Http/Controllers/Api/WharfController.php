@@ -65,10 +65,7 @@ class WharfController extends Controller
         $anchoredVesselIds = AnchorageRequest::whereIn('status', ['approved', 'wharf_assigned', 'completed'])
             ->pluck('vessel_id');
 
-        $usedCapacity = Container::whereIn('vessel_id', $anchoredVesselIds)
-            ->whereIn('status', ['pending', 'assigned', 'in_wharf'])
-            ->count();
-        $usedCapacity = Container::where('status', 'assigned')->count();
+        $usedCapacity = Container::where('status', 'discharged')->count();
         
         $pendingDischargeRequests = \App\Models\DischargeRequest::where('status', 'pending')
             ->distinct('batch_id')
@@ -93,16 +90,20 @@ class WharfController extends Controller
             ->get()
             ->groupBy('batch_id')
             ->map(function ($group) {
+                $first = $group->first();
+                $wharfUser = $first->status === 'approved' ? User::role('wharf')->first() : null;
                 return [
-                    'batch_id' => $group->first()->batch_id,
-                    'vessel' => $group->first()->vessel,
-                    'trader' => $group->first()->trader,
-                    'status' => $group->first()->status,
-                    'requested_date' => $group->first()->requested_date,
-                    'rejection_reason' => $group->first()->rejection_reason,
-                    'notes' => $group->first()->notes,
+                    'batch_id' => $first->batch_id,
+                    'vessel' => $first->vessel,
+                    'trader' => $first->trader,
+                    'status' => $first->status,
+                    'requested_date' => $first->requested_date,
+                    'rejection_reason' => $first->rejection_reason,
+                    'notes' => $first->notes,
                     'containers' => $group->pluck('container'),
-                    'created_at' => $group->first()->created_at,
+                    'created_at' => $first->created_at,
+                    'wharf_signature_base64' => $wharfUser ? $wharfUser->signature_base64 : null,
+                    'wharf_officer_name'     => $wharfUser ? $wharfUser->name : null,
                 ];
             })->values();
 

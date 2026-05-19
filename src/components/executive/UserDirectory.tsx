@@ -11,6 +11,8 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/loa
 import { Language } from '../../App';
 import { adminService, AdminUser } from '../../services/adminService';
 import { getTranslatedRole, getTranslatedStatus } from '../../utils/formatters';
+import { generateGmailUrl, generatePasswordResetGmailUrl } from '../../utils/emailUtils';
+import { translations } from '../../utils/translations';
 
 interface UserDirectoryProps {
   language: Language;
@@ -138,22 +140,29 @@ export function UserDirectory({ language }: UserDirectoryProps) {
   const [editForm, setEditForm] = useState({ name: '', email: '', role: '', organization: '', status: '', phone: '' });
   const [pendingSuspend, setPendingSuspend] = useState(false);
 
+  // Password Resets
+  const [passwordResets, setPasswordResets] = useState<any[]>([]);
+
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
   const fetchUsers = useCallback(async (page = currentPage) => {
     setIsLoading(true);
     try {
-      const res = await adminService.getUsers({
-        page,
-        per_page: 12,
-        search: search || undefined,
-        role: filterRole || undefined,
-        status: filterStatus || undefined,
-      });
+      const [res, resetsRes] = await Promise.all([
+        adminService.getUsers({
+          page,
+          per_page: 12,
+          search: search || undefined,
+          role: filterRole || undefined,
+          status: filterStatus || undefined,
+        }),
+        adminService.getPendingPasswordResets()
+      ]);
       setUsers(res.data);
       setTotal(res.total);
       setCurrentPage(res.current_page);
       setLastPage(res.last_page);
+      setPasswordResets(resetsRes);
     } catch {
       toast.error(isAR ? 'فشل تحميل المستخدمين' : 'Failed to load users.');
     } finally {
@@ -170,6 +179,38 @@ export function UserDirectory({ language }: UserDirectoryProps) {
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
   }, [search]);
 
+  const getPasswordStrength = (password: string): { strength: number; label: string; color: string } => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+    const strength = score === 0 && password.length > 0 ? 1 : score;
+    const tRegister = translations[language].register;
+
+    const labels = [
+      tRegister.passwordStrength.weak,
+      tRegister.passwordStrength.weak,
+      tRegister.passwordStrength.fair,
+      tRegister.passwordStrength.good,
+      tRegister.passwordStrength.strong
+    ];
+    const colors = [
+      'bg-muted',
+      'bg-destructive',
+      'bg-amber-500',
+      'bg-yellow-500',
+      'bg-green-500'
+    ];
+
+    return {
+      strength,
+      label: labels[strength],
+      color: colors[strength],
+    };
+  };
+
   // ── Create ─────────────────────────────────────────────────────────────────
   const handleCreate = async () => {
     setFieldErrors({});
@@ -177,6 +218,16 @@ export function UserDirectory({ language }: UserDirectoryProps) {
     if (!createForm.name.trim())  errs.name  = isAR ? 'الاسم مطلوب'           : 'Name is required.';
     if (!createForm.email.trim()) errs.email = isAR ? 'البريد الإلكتروني مطلوب' : 'Email is required.';
     if (!createForm.role)         errs.role  = isAR ? 'الدور مطلوب'            : 'Role is required.';
+    
+    if (createForm.password) {
+      if (createForm.password.length < 8) {
+        errs.password = isAR ? 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.' : 'Password must be at least 8 characters.';
+      }
+      if (createForm.password !== createForm.password_confirmation) {
+        errs.password_confirmation = isAR ? 'كلمتا المرور غير متطابقتين.' : 'Passwords do not match.';
+      }
+    }
+
     if (Object.keys(errs).length) { setFieldErrors(errs); return; }
 
     setIsSubmitting(true);
@@ -196,6 +247,11 @@ export function UserDirectory({ language }: UserDirectoryProps) {
         ? (isAR ? 'تم إنشاء الحساب وإرسال رابط تعيين كلمة المرور' : 'Account created. Password reset link sent.')
         : (isAR ? 'تم إنشاء الحساب بنجاح' : 'Account created successfully.')
       );
+
+      if (res.user && res.user.email) {
+        const gmailUrl = generateGmailUrl(res.user.email, res.user.name);
+        window.open(gmailUrl, '_blank');
+      }
     } catch (err: any) {
 
       if (err?.response?.status === 422) {
@@ -209,6 +265,30 @@ export function UserDirectory({ language }: UserDirectoryProps) {
     } finally {
 
       setIsSubmitting(false);
+    }
+  };
+
+  // ── Password Reset Actions ─────────────────────────────────────────────────
+  const handleApprovePasswordReset = async (id: number) => {
+    try {
+      const res = await adminService.approvePasswordReset(id);
+      setPasswordResets(prev => prev.filter(r => r.id !== id));
+      toast.success(isAR ? 'تمت الموافقة على إعادة تعيين كلمة المرور.' : 'Password reset approved.');
+      
+      const gmailUrl = generatePasswordResetGmailUrl(res.email, res.full_name, res.verification_code);
+      window.open(gmailUrl, '_blank');
+    } catch {
+      toast.error(isAR ? 'حدث خطأ' : 'An error occurred.');
+    }
+  };
+
+  const handleRejectPasswordReset = async (id: number) => {
+    try {
+      await adminService.rejectPasswordReset(id);
+      setPasswordResets(prev => prev.filter(r => r.id !== id));
+      toast.info(isAR ? 'تم رفض طلب إعادة التعيين.' : 'Reset request rejected.');
+    } catch {
+      toast.error(isAR ? 'حدث خطأ' : 'An error occurred.');
     }
   };
 
@@ -389,6 +469,43 @@ export function UserDirectory({ language }: UserDirectoryProps) {
         )}
       </div>
 
+      {/* ── Password Reset Requests (Big Red Card) ── */}
+      {passwordResets.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500 rounded-lg p-6 shadow-md mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            <h3 className="text-lg font-bold text-red-700 dark:text-red-300">
+              {isAR ? 'طلبات إعادة تعيين كلمة المرور المعلقة' : 'Pending Password Reset Requests'}
+            </h3>
+          </div>
+          <div className="space-y-4">
+            {passwordResets.map(req => (
+              <div key={req.id} className="flex flex-col sm:flex-row items-center justify-between bg-white dark:bg-slate-800 p-4 rounded-lg border border-red-200 dark:border-red-900/30">
+                <div className="mb-4 sm:mb-0">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">{req.user?.name}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{req.email}</p>
+                  <p className="text-xs text-slate-500 mt-1">{isAR ? 'تاريخ الطلب:' : 'Requested at:'} {new Date(req.created_at).toLocaleString(isAR ? 'ar' : 'en')}</p>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={() => handleRejectPasswordReset(req.id)}
+                    className="flex-1 sm:flex-none px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    {isAR ? 'رفض' : 'Reject'}
+                  </button>
+                  <button 
+                    onClick={() => handleApprovePasswordReset(req.id)}
+                    className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm"
+                  >
+                    {isAR ? 'موافقة وإرسال الرمز' : 'Approve & Send Code'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Data Grid ── */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden">
         {isLoading ? (
@@ -526,27 +643,84 @@ export function UserDirectory({ language }: UserDirectoryProps) {
                   </Field>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label={isAR ? 'الدور' : 'Role'} error={fieldErrors.role}>
-                    <Select value={createForm.role} onChange={e => setCreateForm(f => ({ ...f, role: e.target.value }))} error={fieldErrors.role}>
-                      <option value="">{isAR ? 'اختر دوراً' : 'Select a role'}</option>
-                      {ROLES.map(r => <option key={r} value={r}>{getTranslatedRole(r, language)}</option>)}
-                    </Select>
-                  </Field>
-                  <Field label={isAR ? 'المنظمة (اختياري)' : 'Organization (opt.)'}>
-                    <Input value={createForm.organization} onChange={e => setCreateForm(f => ({ ...f, organization: e.target.value }))} />
-                  </Field>
+                  <div className={createForm.role === 'agent' ? 'col-span-1' : 'col-span-2'}>
+                    <Field label={isAR ? 'الدور' : 'Role'} error={fieldErrors.role}>
+                      <Select 
+                        value={createForm.role} 
+                        onChange={e => {
+                          const newRole = e.target.value;
+                          setCreateForm(f => ({ 
+                            ...f, 
+                            role: newRole, 
+                            organization: newRole === 'agent' ? f.organization : '' 
+                          }));
+                        }} 
+                        error={fieldErrors.role}
+                      >
+                        <option value="">{isAR ? 'اختر دوراً' : 'Select a role'}</option>
+                        {ROLES.map(r => <option key={r} value={r}>{getTranslatedRole(r, language)}</option>)}
+                      </Select>
+                    </Field>
+                  </div>
+                  {createForm.role === 'agent' && (
+                    <div className="col-span-1">
+                      <Field label={isAR ? 'المنظمة (اختياري)' : 'Organization (opt.)'} error={fieldErrors.organization}>
+                        <Input value={createForm.organization} onChange={e => setCreateForm(f => ({ ...f, organization: e.target.value }))} error={fieldErrors.organization} />
+                      </Field>
+                    </div>
+                  )}
                 </div>
                 <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-4">
                   <p className="text-xs font-semibold text-[var(--text-primary)] mb-1 uppercase tracking-wider">{isAR ? 'كلمة المرور (اختياري)' : 'Password (optional)'}</p>
                   <p className="text-xs text-[var(--text-secondary)] mb-3">{isAR ? 'إذا تُركت فارغة، سيُرسَل رابط التعيين للمستخدم.' : 'If empty, a setup link will be emailed.'}</p>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="relative">
-                      <Input type={showPassword ? 'text' : 'password'} value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} placeholder={isAR ? 'كلمة المرور' : 'Password'} />
-                      <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                    <div>
+                      <div className="relative">
+                        <Input 
+                          type={showPassword ? 'text' : 'password'} 
+                          value={createForm.password} 
+                          onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} 
+                          placeholder={isAR ? 'كلمة المرور' : 'Password'} 
+                          error={fieldErrors.password}
+                        />
+                        <button type="button" onClick={() => setShowPassword(v => !v)} className={`absolute ${isAR ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}>
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {fieldErrors.password && <p className="mt-1 text-red-600 dark:text-red-400 text-xs font-medium">{fieldErrors.password}</p>}
+                      {createForm.password && (
+                        <div className="mt-2 space-y-1.5">
+                          {(() => {
+                            const pStrength = getPasswordStrength(createForm.password);
+                            return (
+                              <>
+                                <div className="flex gap-1 h-1">
+                                  {[...Array(4)].map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className={`flex-1 rounded-sm transition-colors ${
+                                        i < pStrength.strength ? pStrength.color : "bg-slate-200 dark:bg-slate-700"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{pStrength.label}</p>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
-                    <Input type="password" value={createForm.password_confirmation} onChange={e => setCreateForm(f => ({ ...f, password_confirmation: e.target.value }))} placeholder={isAR ? 'تأكيد' : 'Confirm'} />
+                    <div>
+                      <Input 
+                        type="password" 
+                        value={createForm.password_confirmation} 
+                        onChange={e => setCreateForm(f => ({ ...f, password_confirmation: e.target.value }))} 
+                        placeholder={isAR ? 'تأكيد' : 'Confirm'} 
+                        error={fieldErrors.password_confirmation}
+                      />
+                      {fieldErrors.password_confirmation && <p className="mt-1 text-red-600 dark:text-red-400 text-xs font-medium">{fieldErrors.password_confirmation}</p>}
+                    </div>
                   </div>
                 </div>
               </div>

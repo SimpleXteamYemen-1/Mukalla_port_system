@@ -60,7 +60,7 @@ export function PortClearances({ language }: PortClearancesProps) {
             );
 
             const eligibleVessels: Pick<Vessel, 'id' | 'name'>[] = (vesselsData as Vessel[])
-                .filter((v) => anchoredVesselIds.has(v.id))
+                .filter((v) => v.current_wharf_id !== null && v.current_wharf_id !== undefined)
                 .map((v) => ({ id: v.id, name: v.name }));
             // ───────────────────────────────────────────────────────────────
 

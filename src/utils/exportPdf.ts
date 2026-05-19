@@ -36,6 +36,7 @@ function buildDocumentHtml(opts: {
   extraBlocks?: string;
   signatureUrl?: string | null;
   userName?: string | null;
+  customSigGrid?: string;
 }): string {
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', { dateStyle: 'long' });
@@ -153,6 +154,7 @@ function buildDocumentHtml(opts: {
   <!-- Signature Block -->
   <div class="sig-area">
     <div class="sig-title">Validation &amp; Authorization</div>
+    ${opts.customSigGrid ? opts.customSigGrid : `
     <div class="sig-grid">
       <div class="sig-field">
         <label>Authenticated Agent</label>
@@ -169,6 +171,7 @@ function buildDocumentHtml(opts: {
         </div>
       </div>
     </div>
+    `}
     <div class="hash-box">
       <div class="hash-label">System Authentication Hash</div>
       <div class="hash-value">${hash}</div>
@@ -376,6 +379,93 @@ export function exportClearancePdf(c: ClearanceExportData) {
     vesselFlag: c.vessel?.flag,
     rows,
     signatureUrl: getSignatureUrl(),
+    userName: localStorage.getItem('user_name'),
+  });
+
+  openPrintWindow(html, filename);
+}
+
+export interface DischargeExportData {
+  batch_id: string;
+  vessel: { name: string; imo_number?: string; type?: string; flag?: string } | null;
+  trader?: { name: string; email?: string; signature_base64?: string | null } | null;
+  status: string;
+  requested_date: string;
+  rejection_reason?: string | null;
+  notes?: string | null;
+  containers: any[];
+  created_at: string;
+}
+
+export function exportDischargeRequestPdf(d: DischargeExportData, role: 'trader' | 'wharf') {
+  const vesselName = d.vessel?.name || 'Unknown Vessel';
+  const filename = `DISCHARGE_Request_${d.batch_id}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+  const rows = [
+    tableRow('Request Batch ID', d.batch_id, 0),
+    tableRow('Vessel Name', vesselName, 1),
+    tableRow('Trader', d.trader?.name || localStorage.getItem('user_name'), 2),
+    tableRow('Requested Date', fmt(d.requested_date), 3),
+    tableRow('Number of Containers', d.containers.length.toString(), 4),
+    tableRow('Official Status', d.status.toUpperCase(), 5),
+    tableRow('Submitted On', fmt(d.created_at), 6),
+  ].join('');
+
+  const extra = d.rejection_reason
+    ? `<div class="rejection"><strong>⚠ Rejection Reason</strong>${d.rejection_reason}</div>`
+    : '';
+
+  const timeStr = new Date().toLocaleString();
+  
+  // Trader signature
+  const traderSig = role === 'trader' ? getSignatureUrl() : (d.trader?.signature_base64 || null);
+  const traderName = d.trader?.name || localStorage.getItem('user_name');
+  
+  // Wharf signature
+  const wharfSig = role === 'wharf' && d.status !== 'pending'
+    ? getSignatureUrl()
+    : (d.status === 'approved' && d.wharf_signature_base64 ? d.wharf_signature_base64 : null);
+
+  const wharfName = role === 'wharf'
+    ? localStorage.getItem('user_name')
+    : (d.status === 'approved' ? (d.wharf_officer_name || 'Wharf Officer') : null);
+
+  const customSigGrid = `
+    <div class="sig-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+      <div class="sig-field">
+        <label>Trader / Consignee</label>
+        <div class="sig-line" style="min-height: 50px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;">
+          ${traderSig ? `<img src="${traderSig}" style="max-height: 40px; display: block;" alt="Trader Signature" />` : ''}
+          <span style="margin-top: 4px;">${traderName || '&nbsp;'}</span>
+        </div>
+      </div>
+      <div class="sig-field">
+        <label>Extraction Timestamp</label>
+        <div class="sig-line" style="min-height: 50px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;">
+          <span style="margin-top: 4px;">${timeStr}</span>
+        </div>
+      </div>
+      <div class="sig-field right">
+        <label>Wharf Authority</label>
+        <div class="sig-line" style="min-height: 50px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end;">
+          ${wharfSig ? `<img src="${wharfSig}" style="max-height: 40px; display: block; margin-left: auto;" alt="Wharf Signature" />` : (d.status === 'approved' ? '<span style="color: #059669; font-style: italic;">Approved by Wharf</span>' : '&nbsp;')}
+          <span style="margin-top: 4px;">${wharfName || (d.status === 'approved' ? 'Wharf Officer' : '&nbsp;')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const html = buildDocumentHtml({
+    docType: 'DISCHARGE',
+    docTypeLabel: 'Container Discharge Request',
+    accentColor: '#ea580c',
+    vesselName,
+    vesselImo: d.vessel?.imo_number || '—',
+    vesselType: d.vessel?.type,
+    vesselFlag: d.vessel?.flag,
+    rows,
+    extraBlocks: extra,
+    customSigGrid,
     userName: localStorage.getItem('user_name'),
   });
 

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Language, User } from '../../App';
-import { Package, Clock, CheckCircle2, XCircle, AlertTriangle, Ship, Calendar } from 'lucide-react';
+import { Package, Clock, CheckCircle2, XCircle, AlertTriangle, Ship, Calendar, FileText } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 import { wharfService } from '../../services/wharfService';
 import { PageHeader } from '../ui/PageHeader';
+import { exportDischargeRequestPdf } from '../../utils/exportPdf';
 
 interface WharfDischargeRequestsProps {
   user: User;
@@ -52,15 +53,15 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
   const [showDeclineModal, setShowDeclineModal] = useState<string | null>(null); // batch_id
   const [declineReason, setDeclineReason] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await wharfService.getDischargeRequests();
       setBatches(data);
     } catch (error) {
       toast.error(isRTL ? 'فشل تحميل طلبات التفريغ' : 'Failed to load discharge requests');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -74,7 +75,9 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
       await wharfService.approveDischargeRequest(batchId);
       toast.success(isRTL ? 'تم الموافقة على طلب التفريغ بنجاح' : 'Discharge request approved successfully');
       setShowWarningModal(null);
-      await loadData();
+      // Optimistically update status to approved so the UI updates instantly
+      setBatches(prev => prev.map(b => b.batch_id === batchId ? { ...b, status: 'approved' } : b));
+      await loadData(true); // Silent reload
     } catch (error) {
       toast.error(isRTL ? 'فشل الموافقة على الطلب' : 'Failed to approve request');
     } finally {
@@ -91,8 +94,10 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
       await wharfService.declineDischargeRequest(showDeclineModal, declineReason);
       toast.success(isRTL ? 'تم رفض طلب التفريغ' : 'Discharge request declined');
       setShowDeclineModal(null);
+      // Optimistically update status to declined
+      setBatches(prev => prev.map(b => b.batch_id === showDeclineModal ? { ...b, status: 'declined', rejection_reason: declineReason } : b));
       setDeclineReason('');
-      await loadData();
+      await loadData(true); // Silent reload
     } catch (error) {
       toast.error(isRTL ? 'فشل رفض الطلب' : 'Failed to decline request');
     } finally {
@@ -229,6 +234,13 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
                         <XCircle className="w-5 h-5" />
                         {isRTL ? 'رفض' : 'Decline'}
                       </button>
+                      <button
+                        onClick={() => exportDischargeRequestPdf(batch as any, 'wharf')}
+                        className="w-full bg-white dark:bg-slate-800 border border-orange-200 dark:border-orange-900/50 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 py-3 rounded-lg font-semibold shadow-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <FileText className="w-5 h-5" />
+                        {isRTL ? 'تصدير PDF' : 'Export PDF'}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -252,6 +264,7 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
                       <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الحاويات' : 'Containers'}</th>
                       <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'التاريخ' : 'Date'}</th>
                       <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الحالة' : 'Status'}</th>
+                      <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase text-right">{isRTL ? 'إجراءات' : 'Actions'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -273,6 +286,15 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
                               {isRTL ? 'مرفوض' : 'Declined'}
                             </span>
                           )}
+                        </td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={() => exportDischargeRequestPdf(batch as any, 'wharf')}
+                            className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
+                            title={isRTL ? 'تصدير PDF' : 'Export PDF'}
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}

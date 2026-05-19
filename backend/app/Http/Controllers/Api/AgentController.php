@@ -494,6 +494,10 @@ class AgentController extends Controller
         }
 
         // Soft delete the vessel by marking it archived
+        if ($vessel->current_wharf_id) {
+            \App\Models\Wharf::where('id', $vessel->current_wharf_id)->update(['status' => 'available']);
+            $vessel->current_wharf_id = null;
+        }
         $vessel->status = 'archived';
         $vessel->save();
 

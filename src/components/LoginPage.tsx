@@ -22,9 +22,10 @@ interface LoginPageProps {
   onToggleLanguage: () => void;
   onLogin: (user: User) => void;
   onNavigateToRegister: () => void;
+  onNavigateToForgotPassword: () => void;
 }
 
-export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToRegister }: LoginPageProps) {
+export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToRegister, onNavigateToForgotPassword }: LoginPageProps) {
   const t = translations[language].login;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -159,6 +160,7 @@ export function LoginPage({ language, onToggleLanguage, onLogin, onNavigateToReg
                   <FieldLabel htmlFor="password">{t.password}</FieldLabel>
                   <button
                     type="button"
+                    onClick={onNavigateToForgotPassword}
                     className="text-xs font-semibold text-primary hover:text-primary/80 hover:underline"
                   >
                     {t.forgotPassword}

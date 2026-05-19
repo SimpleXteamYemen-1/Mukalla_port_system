@@ -8,6 +8,7 @@ import { translations } from '../../utils/translations';
 import { agentService, AgentStats, Activity as AgentActivity, Arrival } from '../../services/agentService';
 import { exportArrivalPdf, exportAnchoragePdf, exportClearancePdf } from '../../utils/exportPdf';
 import { getTranslatedStatus } from '../../utils/formatters';
+import { API_BASE_URL } from '../../services/api';
 
 // ─── Lightweight Toast System ─────────────────────────────────────────────────
 type ToastVariant = 'success' | 'error' | 'warning' | 'info';
@@ -203,20 +204,24 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
           created_at: data.anchorage.created_at,
         });
       } else if (docType === 'clearance' && data.clearance) {
-        exportClearancePdf({
-          id: data.clearance.id,
-          status: data.clearance.status,
-          issue_date: data.clearance.issue_date,
-          expiry_date: data.clearance.expiry_date,
-          next_port: data.clearance.next_port,
-          vessel: {
-            name: data.vessel.name,
-            imo_number: (data.vessel as any).imo || (data.vessel as any).imo_number || '—',
-            type: (data.vessel as any).type,
-            flag: (data.vessel as any).flag,
-          },
-          officer: data.clearance.officer,
-        });
+        if (data.clearance.certificate_path) {
+          window.open(`${API_BASE_URL}${data.clearance.certificate_path}`, '_blank');
+        } else {
+          exportClearancePdf({
+            id: data.clearance.id,
+            status: data.clearance.status,
+            issue_date: data.clearance.issue_date,
+            expiry_date: data.clearance.expiry_date,
+            next_port: data.clearance.next_port,
+            vessel: {
+              name: data.vessel.name,
+              imo_number: (data.vessel as any).imo || (data.vessel as any).imo_number || '—',
+              type: (data.vessel as any).type,
+              flag: (data.vessel as any).flag,
+            },
+            officer: data.clearance.officer,
+          });
+        }
       } else {
         const labels = {
           arrival: language === 'ar' ? 'بلاغ الوصول' : 'Arrival Approval',
@@ -498,20 +503,6 @@ export function AgentDashboard({ language, onNavigate }: AgentDashboardProps) {
                     </div>
                   </div>
                 )}
-                <div className="flex gap-2 mt-2">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); toast.success(language === 'ar' ? 'تم القبول' : 'Accepted'); }} 
-                    className="flex-1 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 rounded-xl font-bold text-sm transition-colors"
-                  >
-                    {language === 'ar' ? 'قبول' : 'Accept'}
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); toast.error(language === 'ar' ? 'تم الرفض' : 'Declined'); }} 
-                    className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl font-bold text-sm transition-colors"
-                  >
-                    {language === 'ar' ? 'رفض' : 'Decline'}
-                  </button>
-                </div>
               </div>
             );
           })}
