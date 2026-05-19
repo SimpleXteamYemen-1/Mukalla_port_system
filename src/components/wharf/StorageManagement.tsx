@@ -167,7 +167,7 @@ export function StorageManagement({ language }: { language: Language }) {
 
       {/* Categorical Results Table */}
       <div className="bg-[var(--card)] border border-secondary/20 rounded-3xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className={`px-6 py-5 border-b border-secondary/10 flex justify-between items-center
+        <div className={`px-6 py-5 border-b border-secondary/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3
           ${activeTab === 'chemical' ? 'bg-amber-500/5' : ''}
           ${activeTab === 'frozen' ? 'bg-cyan-500/5' : ''}
           ${activeTab === 'dry' ? 'bg-slate-500/5' : ''}

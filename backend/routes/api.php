@@ -16,12 +16,13 @@ use App\Http\Controllers\Api\ExecutiveController;
 use App\Http\Controllers\Api\ManifestUploadController;
 
 use App\Http\Controllers\Api\AdminController;
-
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\SearchController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/search', [SearchController::class, 'search']);
     
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);

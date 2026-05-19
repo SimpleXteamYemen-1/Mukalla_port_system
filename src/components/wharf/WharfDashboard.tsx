@@ -126,7 +126,7 @@ export function WharfDashboard({ user, language }: WharfDashboardProps) {
       {/* Action Required: Waitlist Section */}
       {waitlistedRequests.length > 0 && (
         <div className="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/30 rounded-lg p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                 <Clock className="w-5 h-5 text-amber-700 dark:text-amber-400" />
@@ -159,12 +159,12 @@ export function WharfDashboard({ user, language }: WharfDashboardProps) {
                     <p className="text-xs text-slate-500 dark:text-slate-400">#{request.id} · {request.duration}h duration</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                   <select
                     value={selectedWharfMap[request.id] || ''}
                     onChange={(e) => setSelectedWharfMap(prev => ({...prev, [request.id]: Number(e.target.value)}))}
                     disabled={availableWharves.length === 0}
-                    className="flex-1 md:w-44 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900/20 disabled:opacity-40 transition-colors"
+                    className="flex-1 md:w-44 px-3 py-2.5 sm:py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-blue-900/20 disabled:opacity-40 transition-colors"
                   >
                     <option value="">{isRTL ? '-- اختر رصيفاً --' : '-- Select Wharf --'}</option>
                     {availableWharves.map((w) => (
@@ -174,7 +174,7 @@ export function WharfDashboard({ user, language }: WharfDashboardProps) {
                   <button
                     onClick={() => handleQuickAssign(request.id)}
                     disabled={!selectedWharfMap[request.id] || processing === request.id}
-                    className="bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700 px-4 py-2 rounded-lg font-medium text-xs transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 whitespace-nowrap min-w-[100px] justify-center"
+                    className="bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700 px-4 py-2.5 sm:py-2 rounded-lg font-medium text-xs transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 whitespace-nowrap min-w-[100px] justify-center"
                   >
                     {processing === request.id ? <LoadingIndicator type="line-spinner" size="xs" className="text-white" /> : <CheckCircle className="w-3 h-3" />}
                     {isRTL ? 'تعيين' : 'Assign'}

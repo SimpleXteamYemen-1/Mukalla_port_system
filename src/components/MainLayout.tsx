@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bell, LogOut, User as UserIcon, ChevronDown, Globe, Settings, Sun, Moon, Menu, Search } from 'lucide-react';
 import { User, Language } from '../App';
+import { SearchAutocomplete } from './SearchAutocomplete';
 import { Sidebar } from './Sidebar';
 import { useSidebar } from '../contexts/SidebarContext';
 import { translations } from '../utils/translations';
@@ -56,14 +57,7 @@ export function MainLayout({
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <div className="hidden md:flex items-center bg-[var(--background)] rounded-md px-3 py-1.5 mx-2 border border-secondary focus-within:border-primary transition-colors">
-                <Search className="w-4 h-4 text-[var(--text-secondary)]" />
-                <input 
-                  type="text" 
-                  placeholder={language === 'ar' ? 'بحث...' : 'Search'} 
-                  className="bg-transparent border-none outline-none text-sm text-[var(--text-primary)] mx-2 w-48 placeholder-[var(--text-secondary)]" 
-                />
-              </div>
+              <SearchAutocomplete user={user} language={language} onNavigate={onNavigate} />
             </div>
 
             {/* Right Actions */}

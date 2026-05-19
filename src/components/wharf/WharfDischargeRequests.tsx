@@ -244,40 +244,42 @@ export function WharfDischargeRequests({ user, language }: WharfDischargeRequest
                 {isRTL ? 'السجل' : 'History'}
               </h2>
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الدفعة' : 'Batch ID'}</th>
-                      <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'السفينة' : 'Vessel'}</th>
-                      <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الحاويات' : 'Containers'}</th>
-                      <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'التاريخ' : 'Date'}</th>
-                      <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الحالة' : 'Status'}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {historyBatches.map(batch => (
-                      <tr key={batch.batch_id} className="hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors">
-                        <td className="p-4 text-sm font-mono text-slate-600 dark:text-slate-300">{batch.batch_id}</td>
-                        <td className="p-4 text-sm font-medium text-slate-900 dark:text-slate-50">{batch.vessel?.name || '-'}</td>
-                        <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{batch.containers.length}</td>
-                        <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{formatDate(batch.created_at)}</td>
-                        <td className="p-4">
-                          {batch.status === 'approved' ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              {isRTL ? 'موافق عليه' : 'Approved'}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" title={batch.rejection_reason}>
-                              <XCircle className="w-3.5 h-3.5" />
-                              {isRTL ? 'مرفوض' : 'Declined'}
-                            </span>
-                          )}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+                        <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الدفعة' : 'Batch ID'}</th>
+                        <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'السفينة' : 'Vessel'}</th>
+                        <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الحاويات' : 'Containers'}</th>
+                        <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'التاريخ' : 'Date'}</th>
+                        <th className="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{isRTL ? 'الحالة' : 'Status'}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                      {historyBatches.map(batch => (
+                        <tr key={batch.batch_id} className="hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors">
+                          <td className="p-4 text-sm font-mono text-slate-600 dark:text-slate-300">{batch.batch_id}</td>
+                          <td className="p-4 text-sm font-medium text-slate-900 dark:text-slate-50">{batch.vessel?.name || '-'}</td>
+                          <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{batch.containers.length}</td>
+                          <td className="p-4 text-sm text-slate-600 dark:text-slate-300">{formatDate(batch.created_at)}</td>
+                          <td className="p-4">
+                            {batch.status === 'approved' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                {isRTL ? 'موافق عليه' : 'Approved'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" title={batch.rejection_reason}>
+                                <XCircle className="w-3.5 h-3.5" />
+                                {isRTL ? 'مرفوض' : 'Declined'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </section>
           )}

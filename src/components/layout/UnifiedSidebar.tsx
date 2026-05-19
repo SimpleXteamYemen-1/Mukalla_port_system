@@ -34,7 +34,7 @@ export function UnifiedSidebar({
   systemStatusText,
   systemNameOverride,
 }: UnifiedSidebarProps) {
-  const { isExpanded } = useSidebar();
+  const { isExpanded, setExpanded } = useSidebar();
   const t = translations[language];
   const isRTL = language === 'ar';
   
@@ -45,13 +45,22 @@ export function UnifiedSidebar({
     'Port System';
 
   return (
-    <aside
-      className={`fixed top-0 bottom-0 z-50 flex flex-col 
-      ${isRTL ? 'right-0 border-l' : 'left-0 border-r'}
-      bg-blue-900 dark:bg-blue-950 border-blue-800 dark:border-blue-900 shadow-xl
-      transition-all duration-300 ease-in-out
-      ${isExpanded ? 'w-64' : 'w-20'} overflow-x-hidden`}
-    >
+    <>
+      {/* Mobile Backdrop */}
+      <div 
+        className={`lg:hidden fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+        onClick={() => setExpanded(false)}
+      />
+      <aside
+        className={`fixed top-0 bottom-0 z-50 flex flex-col 
+        ${isRTL ? 'right-0 border-l' : 'left-0 border-r'}
+        bg-blue-900 dark:bg-blue-950 border-blue-800 dark:border-blue-900 shadow-xl
+        transition-all duration-300 ease-in-out
+        ${isExpanded 
+          ? 'w-64 translate-x-0' 
+          : `w-64 lg:w-20 ${isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}`} 
+        overflow-x-hidden`}
+      >
       {/* Logo Area */}
       <div className={`p-4 border-b border-blue-800 dark:border-blue-900 flex ${isExpanded ? 'items-center gap-3' : 'justify-center'} min-h-[5rem]`}>
         <div className="w-10 h-10 flex-shrink-0 bg-white/10 rounded-lg flex items-center justify-center border border-white/20">
@@ -75,7 +84,12 @@ export function UnifiedSidebar({
             return (
               <li key={item.id} title={!isExpanded ? item.label : undefined}>
                 <button
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => {
+                    onNavigate(item.id);
+                    if (window.innerWidth < 1024) {
+                      setExpanded(false);
+                    }
+                  }}
                   className={`flex items-center gap-3 py-3 rounded-lg transition-colors duration-200 relative
                     ${isExpanded ? 'w-full px-4' : 'w-12 h-12 justify-center mx-auto'} 
                     ${isActive
@@ -122,5 +136,6 @@ export function UnifiedSidebar({
         )}
       </div>
     </aside>
+    </>
   );
 }

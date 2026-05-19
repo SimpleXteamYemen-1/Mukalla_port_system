@@ -334,11 +334,11 @@ export function WharfAvailability({ user, language }: WharfAvailabilityProps) {
             {pendingRequests.map((request) => (
               <div key={request.id} className="p-5">
                 <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/25 -m-1 p-1 rounded-lg transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/25 -m-1 p-2 rounded-lg transition-colors"
                   onClick={() => setExpandedRequest(expandedRequest === request.id ? null : request.id)}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-lg shrink-0">
                       <Ship className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     </div>
                     <div>
@@ -391,7 +391,7 @@ export function WharfAvailability({ user, language }: WharfAvailabilityProps) {
 
                     <div className="flex flex-col gap-2">
                       {/* Row 1: Wharf Selector + Approve */}
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <select
                           value={selectedWharfMap[request.id] || ''}
                           onChange={(e) => setSelectedWharfMap((prev) => ({ ...prev, [request.id]: Number(e.target.value) }))}
@@ -413,7 +413,7 @@ export function WharfAvailability({ user, language }: WharfAvailabilityProps) {
                         </button>
                       </div>
                       {/* Row 2: Hold / Waitlist + Simple Manifest */}
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <button
                           onClick={() => handleWaitlist(request)}
                           disabled={processing === request.id}
@@ -448,9 +448,9 @@ export function WharfAvailability({ user, language }: WharfAvailabilityProps) {
           <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {processedRequests.map((req) => (
               <div key={req.id}>
-                <div className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors duration-200">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-lg border ${
+                <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 dark:hover:bg-slate-700/25 transition-colors duration-200">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`p-2 rounded-lg border shrink-0 ${
                       req.status === 'wharf_assigned' ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-900/30' :
                       req.status === 'left_wharf' || req.status === 'departed' ? 'bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700' :
                       'bg-amber-50 border-amber-200 dark:bg-amber-900/30 dark:border-amber-900/30'
@@ -469,7 +469,7 @@ export function WharfAvailability({ user, language }: WharfAvailabilityProps) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     {req.status === 'wharf_assigned' && checkTimeout(req) && (
                       <div className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold border ${
                         checkTimeout(req)?.isExpired 
