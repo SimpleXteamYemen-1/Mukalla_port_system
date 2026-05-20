@@ -211,12 +211,16 @@ function openPrintWindow(html: string, filename: string) {
   win.document.title = filename;
 }
 
-function getSignatureUrl(): string | null {
-  let sig = localStorage.getItem('user_signature');
+/**
+ * Normalise any signature value into a usable image URL.
+ * Handles: data URIs, absolute URLs, relative storage paths, raw base64.
+ */
+function normalizeSignatureUrl(sig: string | null | undefined): string | null {
   if (!sig) return null;
-  
-  // Clean up any whitespaces or newlines that might break the data URI
+
+  // Clean up any whitespace or newlines that might break the data URI
   sig = sig.trim().replace(/\n|\r/g, '');
+  if (!sig) return null;
 
   // If it's already a Data URI, return as is
   if (sig.startsWith('data:image')) {
@@ -236,6 +240,11 @@ function getSignatureUrl(): string | null {
 
   // Otherwise, assume it's raw base64 and prefix it
   return `data:image/png;base64,${sig}`;
+}
+
+/** Get the current logged-in user's signature from localStorage. */
+function getSignatureUrl(): string | null {
+  return normalizeSignatureUrl(localStorage.getItem('user_signature'));
 }
 
 // ─── Public Exports ────────────────────────────────────────────────────────
@@ -388,13 +397,15 @@ export function exportClearancePdf(c: ClearanceExportData) {
 export interface DischargeExportData {
   batch_id: string;
   vessel: { name: string; imo_number?: string; type?: string; flag?: string } | null;
-  trader?: { name: string; email?: string; signature_base64?: string | null } | null;
+  trader?: { name: string; email?: string; signature?: string | null; signature_base64?: string | null } | null;
   status: string;
   requested_date: string;
   rejection_reason?: string | null;
   notes?: string | null;
   containers: any[];
   created_at: string;
+  wharf_signature_base64?: string | null;
+  wharf_officer_name?: string | null;
 }
 
 export function exportDischargeRequestPdf(d: DischargeExportData, role: 'trader' | 'wharf') {
@@ -417,14 +428,16 @@ export function exportDischargeRequestPdf(d: DischargeExportData, role: 'trader'
 
   const timeStr = new Date().toLocaleString();
   
-  // Trader signature
-  const traderSig = role === 'trader' ? getSignatureUrl() : (d.trader?.signature_base64 || null);
+  // Trader signature: current user's own sig when trader, otherwise from API data
+  const traderSig = role === 'trader'
+    ? getSignatureUrl()
+    : normalizeSignatureUrl(d.trader?.signature_base64 || d.trader?.signature);
   const traderName = d.trader?.name || localStorage.getItem('user_name');
   
-  // Wharf signature
+  // Wharf signature: current user's own sig when wharf, otherwise from API data
   const wharfSig = role === 'wharf' && d.status !== 'pending'
     ? getSignatureUrl()
-    : (d.status === 'approved' && d.wharf_signature_base64 ? d.wharf_signature_base64 : null);
+    : normalizeSignatureUrl(d.status === 'approved' ? d.wharf_signature_base64 : null);
 
   const wharfName = role === 'wharf'
     ? localStorage.getItem('user_name')
