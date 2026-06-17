@@ -42,7 +42,6 @@ import { TraderSidebar } from './trader/TraderSidebar';
 import { TraderDashboard } from './trader/TraderDashboard';
 import { MyContainers } from './trader/MyContainers';
 import { DischargeRequests } from './trader/DischargeRequests';
-import { TraderNotifications } from './trader/TraderNotifications';
 import { NotificationDropdown } from './NotificationDropdown';
 import { NotificationsPage } from './NotificationsPage';
 import { useNotifications, NotificationItem } from '../hooks/useNotifications';
