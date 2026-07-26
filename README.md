@@ -162,3 +162,4 @@ The database seeder configures the following default users for testing. All acco
 *   **Real-time Operations**: Connected to Laravel Reverb. When a vessel arrives or status updates are processed, notifications will instantly dispatch to relevant dashboards.
 *   **Signature Capture**: Includes an HTML5 Canvas signature pad under Account Settings and approval pages for authentic digital signing.
 *   **Idle Timeout**: Logged-in users will automatically log out after 5 minutes of inactivity to protect sensitive port data.# MPMS
+# MPMS
